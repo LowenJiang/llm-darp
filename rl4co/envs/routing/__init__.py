@@ -17,6 +17,9 @@ from rl4co.envs.routing.pctsp.env import PCTSPEnv
 from rl4co.envs.routing.pctsp.generator import PCTSPGenerator
 from rl4co.envs.routing.pdp.env import PDPEnv, PDPRuinRepairEnv
 from rl4co.envs.routing.pdp.generator import PDPGenerator
+from rl4co.envs.routing.pdptw.generator import PDPTWGenerator
+from rl4co.envs.routing.pdptw.sf_generator import SFGenerator
+from rl4co.envs.routing.pdptw.env import PDPTWEnv
 from rl4co.envs.routing.sdvrp.env import SDVRPEnv
 from rl4co.envs.routing.shpp.env import SHPPEnv
 from rl4co.envs.routing.shpp.generator import SHPPGenerator
