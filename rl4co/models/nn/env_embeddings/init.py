@@ -4,7 +4,7 @@ import torch.nn as nn
 from tensordict.tensordict import TensorDict
 
 from rl4co.models.nn.ops import PositionalEncoding
-from rl4co.utils.ops import batched_scatter_sum, cartesian_to_polar
+from rl4co.utils.ops import batched_scatter_sum, cartesian_to_polar, gather_by_index
 
 
 def env_init_embedding(env_name: str, config: dict) -> nn.Module:
@@ -42,6 +42,8 @@ def env_init_embedding(env_name: str, config: dict) -> nn.Module:
         "shpp": TSPInitEmbedding,
         "flp": FLPInitEmbedding,
         "mcp": MCPInitEmbedding,
+        "darp": DARPInitEmbedding,
+        "pdptw": PDPTWInitEmbedding
     }
 
     if env_name not in embedding_registry:
@@ -67,6 +69,71 @@ class TSPInitEmbedding(nn.Module):
         out = self.init_embed(td["locs"])
         return out
 
+class DARPInitEmbedding(nn.Module):
+    """Initial embedding for the Dial-a-Ride Problem (DARP).
+    Embed the following node features to the embedding space:
+        - locs: x, y coordinates of the nodes (depot, pickups and dropoffs separately)
+        - demand: demand of each node (positive for pickup, negative for dropoff)
+        - time_windows: time window (deadline) for each node
+    
+    Note: Pickups and dropoffs are paired - pickup i corresponds to dropoff (i + num_loc//2)
+    """
+
+    def __init__(self, embed_dim, linear_bias=True):
+        super(DARPInitEmbedding, self).__init__()
+        # Depot: x, y
+        self.init_embed_depot = nn.Linear(2, embed_dim, linear_bias)
+        # Pickup nodes: x, y, demand, time_window, dropoff_x, dropoff_y
+        self.init_embed_pickup = nn.Linear(6, embed_dim, linear_bias)
+        # Dropoff nodes: x, y, demand (negative), time_window
+        self.init_embed_dropoff = nn.Linear(4, embed_dim, linear_bias)
+
+    def forward(self, td):
+        # td["locs"] has shape [batch_size, num_loc + 1, 2] (depot + interleaved customers)
+        # depot is at index 0, then requests are interleaved: pickup at odd indices, dropoff at even indices
+        depot = td["locs"][:, 0:1, :]
+        num_loc = td["locs"].shape[-2] - 1
+        num_pickups = num_loc // 2
+
+        # Interleaved indices
+        pickups = td["locs"][:, 1::2, :]
+        dropoffs = td["locs"][:, 2::2, :]
+
+        if td["demand"].shape[-1] == num_loc + 1:
+            pickup_demands = td["demand"][:, 1::2]
+            dropoff_demands = td["demand"][:, 2::2]
+            pickup_tws = td["time_windows"][:, 1::2]
+            dropoff_tws = td["time_windows"][:, 2::2]
+        else:
+            pickup_demands = td["demand"][:, 0::2]
+            dropoff_demands = td["demand"][:, 1::2]
+            pickup_tws = td["time_windows"][:, 0::2]
+            dropoff_tws = td["time_windows"][:, 1::2]
+
+        depot_embedding = self.init_embed_depot(depot)
+
+        pickup_feats = torch.cat(
+            [
+                pickups,
+                pickup_demands.unsqueeze(-1),
+                pickup_tws.unsqueeze(-1).float(),
+                dropoffs,
+            ],
+            dim=-1,
+        )
+        pickup_embeddings = self.init_embed_pickup(pickup_feats)
+
+        dropoff_feats = torch.cat(
+            [
+                dropoffs,
+                dropoff_demands.unsqueeze(-1),
+                dropoff_tws.unsqueeze(-1).float(),
+            ],
+            dim=-1,
+        )
+        dropoff_embeddings = self.init_embed_dropoff(dropoff_feats)
+
+        return torch.cat([depot_embedding, pickup_embeddings, dropoff_embeddings], dim=-2)
 
 class MatNetInitEmbedding(nn.Module):
     """
@@ -136,6 +203,33 @@ class VRPInitEmbedding(nn.Module):
         # [batch, n_city+1, embed_dim]
         out = torch.cat((depot_embedding, node_embeddings), -2)
         return out
+
+# TODO:
+class PDPTWInitEmbedding(nn.Module):
+    def __init__(self, embed_dim, linear_bias=True, num_h3=207):
+        super(PDPTWInitEmbedding, self).__init__()
+        # We use the travel time vector to all other H3 cells as the location feature
+        # This vector has size num_h3
+        # Plus demand (1) and time windows (2)
+        self.project = nn.Linear(num_h3 + 3, embed_dim, bias=linear_bias)
+
+    def forward(self, td):
+        # h3_indices: [batch, num_nodes]
+        # travel_time_matrix: [batch, num_h3, num_h3]
+        
+        # Gather the travel time vector for each node
+        # [batch, num_nodes, num_h3]
+        h3_feats = gather_by_index(td["travel_time_matrix"], td["h3_indices"], dim=1)
+        
+        demand = td["demand"][..., None] # [batch, num_nodes, 1]
+        time_windows = td["time_windows"] # [batch, num_nodes, 2]
+        
+        # Concatenate
+        feats = torch.cat([h3_feats, demand, time_windows], dim=-1)
+        
+        # Project
+        return self.project(feats)
+
 
 
 class VRPTWInitEmbedding(VRPInitEmbedding):

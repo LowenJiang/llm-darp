@@ -11,6 +11,7 @@ from rl4co.utils.pylogger import get_pylogger
 
 from .generator import TSPGenerator
 
+# * Oh this local search is optional post-refinement! Let's not look at it for now. 
 try:
     from .local_search import local_search
 except ImportError:
@@ -59,47 +60,74 @@ class TSPEnv(RL4COEnvBase):
         self.generator = generator
         self._make_spec(self.generator)
 
-    @staticmethod
+    @staticmethod 
+    # It means this function just happens to live inside of the class. No class-specific arguments self passed. 
+    # What could step mean? 
+    # A hypothesis: a step takes an action and update to the state
+    # What could the action be? Selecting a new node to cover. What could the state be? Previously visited nodes
+    # A step takes a tensordict (td) and returns a tensordict 
+    # what is a tensordict? Primarily used in TorchRL to store python dict-like data structure
+    
     def _step(td: TensorDict) -> TensorDict:
+        # "action" is encoded in the dict passed to _step
         current_node = td["action"]
+        # check: first node (in the ICLR paper the first node is also encoded in the input to at-mo)
         first_node = current_node if td["i"].all() == 0 else td["first_node"]
 
-        # # Set not visited to 0 (i.e., we visited the node)
+        # Set not visited to 0 (i.e., we visited the node)
+        # scatter the 0 - mask into -1 dimension at current node in the action_mask thingy
+        # I think at the beginning everything is 1, and gradully you add 0 (scatter/sprinkle 0 into it) 
+
         available = td["action_mask"].scatter(
             -1, current_node.unsqueeze(-1).expand_as(td["action_mask"]), 0
         )
-
+        
         # We are done there are no unvisited locations
-        done = torch.sum(available, dim=-1) == 0
+        done = torch.sum(available, dim=-1) == 0 # Boolean, sure. 
 
         # The reward is calculated outside via get_reward for efficiency, so we set it to 0 here
+        # It seems like there is only one reward collected eoe, is the zeros_like because thy are parallelzing ? Must be, no?
         reward = torch.zeros_like(done)
 
-        td.update(
+        # Finally, state-update, gotta love that. 
+        # Here we also have an overview of what keys are inside of the td. 
+        td.update( 
             {
                 "first_node": first_node,
-                "current_node": current_node,
-                "i": td["i"] + 1,
-                "action_mask": available,
+                "current_node": current_node, # ? Where is the action sampled? It is in the "action" which I suppose later will be sampled from attention model
+                "i": td["i"] + 1,             # index
+                "action_mask": available,     # visited 0-masked out
                 "reward": reward,
                 "done": done,
             },
         )
-        return td
+        return td        # * Great! OK - td is passed to am to get the new action.
 
+    # reset the game: I suppose they will resample from the generator. Wait and see. 
+    # Why resample? Let's say that each time you press the reset button to start the RL system
+    # Optional = Type Union, you can pass in a td or leave it as None. 
+    # ? How are the new nodes sampled? I suppose they are from generator, and from the _make_spec function? 
+
+    # * OK they are reset the agents, more about resetting the cached results
     def _reset(self, td: Optional[TensorDict] = None, batch_size=None) -> TensorDict:
         # Initialize locations
+        # Where are we? 
         device = td.device
         init_locs = td["locs"]
 
         # We do not enforce loading from self for flexibility
+        # Gosh, I don't know how they are operating the dimensions, but that is a trivial thing to fix when coding. 
         num_loc = init_locs.shape[-2]
 
         # Other variables
+        # Reset current node
         current_node = torch.zeros((batch_size), dtype=torch.int64, device=device)
+        # All nodes become one, all nodes allowed. 
         available = torch.ones(
             (*batch_size, num_loc), dtype=torch.bool, device=device
         )  # 1 means not visited, i.e. action is allowed
+
+        # reset i to zero, restart the game.
         i = torch.zeros((*batch_size, 1), dtype=torch.int64, device=device)
 
         return TensorDict(
@@ -114,17 +142,24 @@ class TSPEnv(RL4COEnvBase):
             batch_size=batch_size,
         )
 
+    # How do you understand the _make_spec? What does spec stand for
+    # * spec = specification, what is the size of observation and action space 
+    # * Note how generator is passed into the _make_spec as argument
     def _make_spec(self, generator: TSPGenerator):
-        self.observation_spec = Composite(
-            locs=Bounded(
+        self.observation_spec = Composite( # Composite is making a tensor-dict
+            # locs : TSP nodes, think of this as defining the scheme or allocating memory 
+            # * Sort of like defining data-types
+            # * This should be included in my customized environment! 
+            # ? Think about: What observation_spec should the DARP Environment take? 
+            locs=Bounded( # Bounded is saying there is a range for the values
                 low=generator.min_loc,
                 high=generator.max_loc,
-                shape=(generator.num_loc, 2),
+                shape=(generator.num_loc, 2), # Appearing in pairs. HOw to debug? 
                 dtype=torch.float32,
             ),
             first_node=Unbounded(
-                shape=(1),
-                dtype=torch.int64,
+                shape=(1), # apparently this is index rather than real node 
+                dtype=torch.int64, # As above
             ),
             current_node=Unbounded(
                 shape=(1),
@@ -132,10 +167,10 @@ class TSPEnv(RL4COEnvBase):
             ),
             i=Unbounded(
                 shape=(1),
-                dtype=torch.int64,
+                dtype=torch.int64, # Progress tracker
             ),
             action_mask=Unbounded(
-                shape=(generator.num_loc),
+                shape=(generator.num_loc), # [0,1,00000 , 1]
                 dtype=torch.bool,
             ),
             shape=(),
@@ -144,7 +179,7 @@ class TSPEnv(RL4COEnvBase):
             shape=(1),
             dtype=torch.int64,
             low=0,
-            high=generator.num_loc,
+            high=generator.num_loc,  # Selecting one node as action
         )
         self.reward_spec = Unbounded(shape=(1))
         self.done_spec = Unbounded(shape=(1), dtype=torch.bool)
@@ -154,11 +189,18 @@ class TSPEnv(RL4COEnvBase):
             self.check_solution_validity(td, actions)
 
         # Gather locations in order of tour and return distance between them (i.e., -reward)
+        # ? What is the role of actions and td here? 
+        # * Action would be a series of node indices: [142536] etc. 
+        # * td['locs'] are the actual, unordered node (x,y) pairs, 
+        # * get_tour_length(gather_by_index) returns the distance of the trip defined by actions on locs.
+        # ? What is the return of gather_by_index tho?
+
         locs_ordered = gather_by_index(td["locs"], actions)
-        return -get_tour_length(locs_ordered)
+        return - get_tour_length(locs_ordered)
 
     @staticmethod
     def check_solution_validity(td: TensorDict, actions: torch.Tensor) -> None:
+        # Somehow a way to check validity, I don't care now. 
         """Check that solution is valid: nodes are visited exactly once"""
         assert (
             torch.arange(actions.size(1), out=actions.data.new())
@@ -167,6 +209,7 @@ class TSPEnv(RL4COEnvBase):
             == actions.data.sort(1)[0]
         ).all(), "Invalid tour"
 
+    # ! I don't understand what this is for! 
     def replace_selected_actions(
         self,
         cur_actions: torch.Tensor,
@@ -196,7 +239,7 @@ class TSPEnv(RL4COEnvBase):
         return render(td, actions, ax)
 
 
-class TSPkoptEnv(ImprovementEnvBase):
+class TSPkoptEnv(ImprovementEnvBase):#
     """Traveling Salesman Problem (PDP) environment for performing the neural k-opt search.
 
     The goal is to search for optimal solutions to TSP by performing a k-opt neighborhood search on a given initial solution.

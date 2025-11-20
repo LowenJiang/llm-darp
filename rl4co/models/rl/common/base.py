@@ -221,24 +221,27 @@ class RL4COLitModule(LightningModule, metaclass=abc.ABCMeta):
         dataloader_name = ""
         if dataloader_idx is not None and self.dataloader_names is not None:
             dataloader_name = "/" + self.dataloader_names[dataloader_idx]
-        metrics = {
-            f"{phase}/{k}{dataloader_name}": (
-                v.mean() if isinstance(v, torch.Tensor) else v
-            )
-            for k, v in metric_dict.items()
-            if k in metrics
-        }
+        log_values = {}
+        for k, v in metric_dict.items():
+            if k not in metrics:
+                continue
+            key = f"{phase}/{k}{dataloader_name}"
+            if isinstance(v, torch.Tensor):
+                tensor = v.float() if not torch.is_floating_point(v) else v
+                log_values[key] = tensor.mean()
+            else:
+                log_values[key] = v
         log_on_step = self.log_on_step if phase == "train" else False
-        on_epoch = False if phase == "train" else True
+        on_epoch = True  # Always log on epoch for better W&B visibility
         self.log_dict(
-            metrics,
+            log_values,
             on_step=log_on_step,
             on_epoch=on_epoch,
             prog_bar=True,
             sync_dist=True,
             add_dataloader_idx=False,  # we add manually above
         )
-        return metrics
+        return log_values
 
     def forward(self, td, **kwargs):
         """Forward pass for the model. Simple wrapper around `policy`. Uses `env` from the module if not provided."""

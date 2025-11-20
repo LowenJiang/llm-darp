@@ -71,8 +71,8 @@ class AttentionModelDecoder(AutoregressiveDecoder):
         embed_dim: int = 128,
         num_heads: int = 8,
         env_name: str = "tsp",
-        context_embedding: nn.Module = None,
-        dynamic_embedding: nn.Module = None,
+        context_embedding: nn.Module = None, # Context (per environment)
+        dynamic_embedding: nn.Module = None, # Dynamic (per environment)
         mask_inner: bool = True,
         out_bias_pointer_attn: bool = False,
         linear_bias: bool = False,

@@ -68,13 +68,15 @@ class CVRPTWGenerator(CVRPGenerator):
             vehicle_capacity=vehicle_capacity,
             capacity=capacity,
             **kwargs,
-        )
+        ) 
         self.max_loc = max_loc
         self.min_time = 0.0
         self.max_time = max_time
         self.scale = scale
 
     def _generate(self, batch_size) -> TensorDict:
+        
+        # Genereate a tensordict already; invoking the CVRP Generator. 
         td = super()._generate(batch_size)
 
         batch_size = [batch_size] if isinstance(batch_size, int) else batch_size

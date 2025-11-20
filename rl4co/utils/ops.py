@@ -81,6 +81,45 @@ def get_distance(x: Tensor, y: Tensor):
     """Euclidean distance between two tensors of shape `[..., n, dim]`"""
     return (x - y).norm(p=2, dim=-1)
 
+def get_geo_distance(x: Tensor, y: Tensor):
+    """Geodesic distance between two points using the Haversine formula (km).
+
+    Computes the great-circle distance between points on a sphere given their
+    latitudes and longitudes.
+
+    Args:
+        x: Tensor of shape [..., 2] with (latitude, longitude) in degrees
+        y: Tensor of shape [..., 2] with (latitude, longitude) in degrees
+
+    Returns:
+        Tensor of shape [...] containing distances in kilometers
+
+    Reference:
+        Haversine formula: https://en.wikipedia.org/wiki/Haversine_formula
+    """
+    # Earth's radius in kilometers
+    EARTH_RADIUS_KM = 6371.0
+
+    # Convert latitude and longitude from degrees to radians
+    lat1 = torch.deg2rad(x[..., 0])
+    lon1 = torch.deg2rad(x[..., 1])
+    lat2 = torch.deg2rad(y[..., 0])
+    lon2 = torch.deg2rad(y[..., 1])
+
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    a = torch.sin(dlat / 2) ** 2 + torch.cos(lat1) * torch.cos(lat2) * torch.sin(dlon / 2) ** 2
+    c = 2 * torch.atan2(torch.sqrt(a), torch.sqrt(1 - a))
+
+    distance_km = EARTH_RADIUS_KM * c
+
+    return distance_km
+
+def get_geod_tour_length(ordered_locs):
+    ordered_locs_next = torch.roll(ordered_locs, -1, dims=-2)
+    return get_geo_distance(ordered_locs_next, ordered_locs).sum(-1)
 
 def get_tour_length(ordered_locs):
     """Compute the total tour distance for a batch of ordered tours.

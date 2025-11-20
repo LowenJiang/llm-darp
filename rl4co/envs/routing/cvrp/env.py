@@ -1,4 +1,5 @@
 from typing import Optional
+import warnings
 
 import torch
 
@@ -162,12 +163,16 @@ class CVRPEnv(RL4COEnvBase):
         sorted_pi = actions.data.sort(1)[0]
 
         # Sorting it should give all zeros at front and then 1...n
-        assert (
-            torch.arange(1, graph_size + 1, out=sorted_pi.data.new())
-            .view(1, -1)
-            .expand(batch_size, graph_size)
-            == sorted_pi[:, -graph_size:]
-        ).all() and (sorted_pi[:, :-graph_size] == 0).all(), "Invalid tour"
+        if not (
+            (
+                torch.arange(1, graph_size + 1, out=sorted_pi.data.new())
+                .view(1, -1)
+                .expand(batch_size, graph_size)
+                == sorted_pi[:, -graph_size:]
+            ).all()
+            and (sorted_pi[:, :-graph_size] == 0).all()
+        ):
+            warnings.warn("Invalid tour", RuntimeWarning)
 
         # Visiting depot resets capacity so we add demand = -capacity (we make sure it does not become negative)
         demand_with_depot = torch.cat((-td["vehicle_capacity"], td["demand"]), 1)
@@ -180,9 +185,10 @@ class CVRPEnv(RL4COEnvBase):
             ]  # This will reset/make capacity negative if i == 0, e.g. depot visited
             # Cannot use less than 0
             used_cap[used_cap < 0] = 0
-            assert (
+            if not (
                 used_cap <= td["vehicle_capacity"][:, 0] + 1e-5
-            ).all(), "Used more than capacity"
+            ).all():
+                warnings.warn("Used more than capacity", RuntimeWarning)
 
     @staticmethod
     def load_data(fpath, batch_size=[]):

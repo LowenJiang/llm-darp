@@ -47,7 +47,7 @@ class MDCPDPGenerator(Generator):
         depot_distribution: Union[int, float, str, type, Callable] = Uniform,
         min_capacity: int = 3,
         max_capacity: int = 3,
-        min_lateness_weight: float = 1.0,
+        min_lateness_weight: float = 0.9,
         max_lateness_weight: float = 1.0,
         lateness_weight_distribution: Union[int, float, str, type, Callable] = Uniform,
         **kwargs,

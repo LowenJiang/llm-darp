@@ -19,11 +19,11 @@ class AttentionModel(REINFORCE):
 
     def __init__(
         self,
-        env: RL4COEnvBase,
-        policy: AttentionModelPolicy = None,
-        baseline: REINFORCEBaseline | str = "rollout",
-        policy_kwargs={},
-        baseline_kwargs={},
+        env: RL4COEnvBase, # Class
+        policy: AttentionModelPolicy = None, # Class
+        baseline: str = "rollout", 
+        policy_kwargs: dict = {},
+        baseline_kwargs: dict = {},
         **kwargs,
     ):
         if policy is None:

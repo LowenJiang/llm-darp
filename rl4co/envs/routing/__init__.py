@@ -28,3 +28,10 @@ from rl4co.envs.routing.svrp.env import SVRPEnv
 from rl4co.envs.routing.svrp.generator import SVRPGenerator
 from rl4co.envs.routing.tsp.env import DenseRewardTSPEnv, TSPEnv, TSPkoptEnv
 from rl4co.envs.routing.tsp.generator import TSPGenerator
+
+from rl4co.envs.routing.darp.env import DARPEnv
+from rl4co.envs.routing.darp.generator import DARPGenerator
+
+from rl4co.envs.routing.pdptw.generator import PDPTWGenerator
+from rl4co.envs.routing.pdptw.env import PDPTWEnv
+from rl4co.envs.routing.pdptw.sf_generator import SFGenerator

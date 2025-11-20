@@ -60,19 +60,20 @@ class REINFORCE(RL4COLitModule):
         self, batch: Any, batch_idx: int, phase: str, dataloader_idx: int = None
     ):
         td = self.env.reset(batch)
+        baseline_td = td.clone() if phase == "train" else None  # policy mutates td in-place
         # Perform forward pass (i.e., constructing solution and computing log-likelihoods)
         out = self.policy(td, self.env, phase=phase, select_best=phase != "train")
 
         # Compute loss
         if phase == "train":
-            out = self.calculate_loss(td, batch, out)
+            out = self.calculate_loss(baseline_td, batch, out)
 
         metrics = self.log_metrics(out, phase, dataloader_idx=dataloader_idx)
         return {"loss": out.get("loss", None), **metrics}
 
     def calculate_loss(
         self,
-        td: TensorDict,
+        initial_td: TensorDict,
         batch: TensorDict,
         policy_out: dict,
         reward: Optional[torch.Tensor] = None,
@@ -81,7 +82,7 @@ class REINFORCE(RL4COLitModule):
         """Calculate loss for REINFORCE algorithm.
 
         Args:
-            td: TensorDict containing the current state of the environment
+            initial_td: Cloned initial environment state before the policy rollout
             batch: Batch of data. This is used to get the extra loss terms, e.g., REINFORCE baseline
             policy_out: Output of the policy network
             reward: Reward tensor. If None, it is taken from `policy_out`
@@ -94,10 +95,48 @@ class REINFORCE(RL4COLitModule):
             log_likelihood if log_likelihood is not None else policy_out["log_likelihood"]
         )
 
+        # Action validation: filter out invalid instances if environment supports it
+        actions = policy_out.get("actions", None)
+        if actions is not None and hasattr(self.env, 'validate_actions'):
+            valid_mask = self.env.validate_actions(actions)  # [batch_size]
+            num_invalid = (~valid_mask).sum().item()
+
+            if num_invalid > 0:
+                batch_size = valid_mask.shape[0]
+                log.warning(
+                    f"Found {num_invalid}/{batch_size} invalid instances "
+                    f"(didn't visit all customer nodes). Excluding from loss computation."
+                )
+
+                # If all invalid, return zero loss
+                if not valid_mask.any():
+                    log.error("All instances invalid! Returning zero loss.")
+                    zero_loss = torch.tensor(0.0, device=actions.device, requires_grad=True)
+                    policy_out.update({
+                        "loss": zero_loss,
+                        "reinforce_loss": zero_loss,
+                        "bl_loss": torch.tensor(0.0, device=actions.device),
+                        "bl_val": torch.zeros_like(reward),
+                    })
+                    return policy_out
+
+                # Filter to valid instances only
+                reward = reward[valid_mask]
+                log_likelihood = log_likelihood[valid_mask]
+                if initial_td is not None:
+                    valid_indices = torch.where(valid_mask)[0]
+                    initial_td = initial_td[valid_indices]
+                if extra is not None:
+                    extra = extra[valid_mask]
+
         # REINFORCE baseline
-        bl_val, bl_loss = (
-            self.baseline.eval(td, reward, self.env) if extra is None else (extra, 0)
-        )
+        if extra is None:
+            assert (
+                initial_td is not None
+            ), "Initial environment state is required for baseline evaluation"
+            bl_val, bl_loss = self.baseline.eval(initial_td, reward, self.env)
+        else:
+            bl_val, bl_loss = extra, 0
 
         # Main loss function
         advantage = reward - bl_val  # advantage = reward - baseline

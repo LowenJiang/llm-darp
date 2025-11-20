@@ -37,6 +37,8 @@ def env_context_embedding(env_name: str, config: dict) -> nn.Module:
         "shpp": TSPContext,
         "flp": FLPContext,
         "mcp": MCPContext,
+        "darp": DARPContext,
+        "pdptw": PDPTWContext
     }
 
     if env_name not in embedding_registry:
@@ -139,6 +141,97 @@ class TSPContext(EnvContext):
             ).view(batch_size, *node_dim)
         return self.project_context(context_embedding)
 
+class DARPContext(EnvContext):
+    """Context embedding for the Dial-a-Ride Problem (DARP).
+    Project the following to the embedding space:
+        - current node embedding
+        - current agent embedding (which vehicle is active)
+        - current load (remaining capacity)
+        - current time
+        - number of unvisited nodes
+        - number of picked up requests awaiting dropoff by current vehicle
+    """
+
+    def __init__(self, embed_dim):
+        super(DARPContext, self).__init__(
+            embed_dim=embed_dim, 
+            step_context_dim=embed_dim * 2 + 4  # node + agent + 4 scalars
+        )
+        # Project agent index to embedding
+        self.proj_agent = nn.Linear(1, embed_dim, bias=False)
+
+    def _cur_agent_embedding(self, td):
+        """Get embedding representing the current agent"""
+        # Project agent index to embedding space; ensure feature dim of size 1
+        num_agents = float(td["capacity"].shape[-1])
+        agent_idx_normalized = td["current_agent"].float() / num_agents
+        if agent_idx_normalized.dim() == len(td.batch_size):
+            agent_idx_normalized = agent_idx_normalized.unsqueeze(-1)
+        elif agent_idx_normalized.shape[-1] != 1:
+            agent_idx_normalized = agent_idx_normalized[..., :1]
+        return self.proj_agent(agent_idx_normalized)
+
+    def _state_embedding(self, embeddings, td):
+        """Get state features for DARP with consistent batch dims matching `visited`."""
+        num_loc = td["locs"].shape[-2] - 1  # excluding depot
+        batch_shape = td["visited"].shape[:-1]
+
+        def col(x):
+            x = x.to(torch.float32)
+            return x.view(*batch_shape, -1)[..., :1]
+
+        # 1) Remaining capacity (normalized)
+        current_agent = td["current_agent"].view(*batch_shape, -1)[..., :1].long()
+        current_capacity = td["capacity"].gather(-1, current_agent).to(torch.float32)
+        current_load = col(td["current_load"])  # [...,1]
+        remaining_capacity = (current_capacity - current_load) / current_capacity.clamp_min(1.0)
+
+        # 2) Current time (normalized)
+        normalized_time = col(td["current_time"]) / 48.0
+
+        # 3) Fraction of unvisited nodes [...,1]
+        unvisited_nodes = (~td["visited"][..., 1:]).sum(dim=-1, keepdim=True).to(torch.float32)
+        fraction_unvisited = unvisited_nodes / float(num_loc)
+
+        # 4) Number picked up by current vehicle awaiting dropoff (normalized) [...,1]
+        picked_up_count = td["picked_up_by_current"][..., 1:].sum(dim=-1, keepdim=True).to(torch.float32)
+        normalized_picked_up = picked_up_count / float(max(num_loc / 2, 1))
+
+        # Align feature dims to match `visited`’s batch and a trailing size-1 feature dim
+        base = td["visited"][..., :1].to(torch.float32)  # shape: batch_shape + (1,)
+        def to_base(f):
+            f = f.to(torch.float32)
+            # add/remove singleton dims to match base.ndim
+            while f.ndim < base.ndim:
+                f = f.unsqueeze(-1)
+            while f.ndim > base.ndim:
+                f = f.squeeze(-1)
+            # ensure last feature dim is size 1
+            if f.shape[-1] != 1:
+                f = f[..., :1]
+            # broadcast to base
+            return f.expand_as(base)
+
+        aligned = [to_base(remaining_capacity), to_base(normalized_time), to_base(fraction_unvisited), to_base(normalized_picked_up)]
+        return torch.cat(aligned, dim=-1)
+
+    def forward(self, embeddings, td):
+        # Get current node embedding
+        cur_node_embedding = self._cur_node_embedding(embeddings, td)
+        
+        # Get current agent embedding
+        cur_agent_embedding = self._cur_agent_embedding(td)
+        
+        # Get state features
+        state_embedding = self._state_embedding(embeddings, td)
+        
+        # Concatenate all context information
+        context_embedding = torch.cat(
+            [cur_node_embedding, cur_agent_embedding, state_embedding], 
+            dim=-1
+        )
+        
+        return self.project_context(context_embedding)
 
 class VRPContext(EnvContext):
     """Context embedding for the Capacitated Vehicle Routing Problem (CVRP).
@@ -147,15 +240,33 @@ class VRPContext(EnvContext):
         - remaining capacity (vehicle_capacity - used_capacity)
     """
 
-    def __init__(self, embed_dim):
+    def __init__(self, embed_dim, extra_state_dim: int = 1):
         super(VRPContext, self).__init__(
-            embed_dim=embed_dim, step_context_dim=embed_dim + 1
+            embed_dim=embed_dim, step_context_dim=embed_dim + extra_state_dim
         )
 
     def _state_embedding(self, embeddings, td):
         state_embedding = td["vehicle_capacity"] - td["used_capacity"]
         return state_embedding
 
+class PDPTWContext(VRPContext):
+    """Context embedding for the Capacitated Vehicle Routing Problem (CVRP).
+    Project the following to the embedding space:
+        - current node embedding
+        - remaining capacity (vehicle_capacity - used_capacity)
+        - current time
+    """
+
+    def __init__(self, embed_dim):
+        super(PDPTWContext, self).__init__(
+            embed_dim=embed_dim, extra_state_dim=3
+        )
+
+    def _state_embedding(self, embeddings, td):
+        capacity = super()._state_embedding(embeddings, td)
+        current_time = td["current_time"]
+        i = td['i']
+        return torch.cat([capacity, current_time, i], -1)
 
 class VRPTWContext(VRPContext):
     """Context embedding for the Capacitated Vehicle Routing Problem (CVRP).
@@ -166,8 +277,8 @@ class VRPTWContext(VRPContext):
     """
 
     def __init__(self, embed_dim):
-        super(VRPContext, self).__init__(
-            embed_dim=embed_dim, step_context_dim=embed_dim + 2
+        super(VRPTWContext, self).__init__(
+            embed_dim=embed_dim, extra_state_dim=2
         )
 
     def _state_embedding(self, embeddings, td):

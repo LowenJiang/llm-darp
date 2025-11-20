@@ -27,9 +27,9 @@ model = REINFORCE(
     env,
     policy=policy,            # or omit to use the default AttentionModelPolicy
     baseline="rollout",
-    batch_size=16,
-    train_data_size=100,
-    val_data_size=10,
+    batch_size=512,
+    train_data_size=100_000,
+    val_data_size=5000,
     optimizer_kwargs={"lr": 1e-4},
     metrics={
         "train": ["loss", "reward", "vehicles_used"],
@@ -40,7 +40,7 @@ model = REINFORCE(
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-logger = WandbLogger(project="rl4co", name="sf-newenv-2")
+logger = WandbLogger(project="rl4co", name="sf-newenv-2", id="s73fo521", resume='must')
 
 checkpoint_callback = ModelCheckpoint(  dirpath="checkpoints/sf_newenv_2", # save to checkpoints/
                                         filename="epoch_{epoch:03d}",  # save as epoch_XXX.ckpt
@@ -53,11 +53,11 @@ rich_model_summary = RichModelSummary(max_depth=3)
 callbacks = [checkpoint_callback, rich_model_summary]
 
 trainer = RL4COTrainer(
-    max_epochs=5,
+    max_epochs=80,
     accelerator="gpu",
     devices=-1,
     logger=logger,
     callbacks=callbacks,
 )
 
-trainer.fit(model)
+trainer.fit(model, ckpt_path="checkpoints/sf_newenv_2/epoch_epoch=048.ckpt")
