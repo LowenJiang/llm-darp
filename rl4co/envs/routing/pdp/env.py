@@ -70,6 +70,7 @@ class PDPEnv(RL4COEnvBase):
         num_loc = td["locs"].shape[-2] - 1  # except depot
 
         # Pickup and delivery node pair of selected node
+        # set to_deliver to True if its corresponding pickup has been visited. 
         new_to_deliver = (current_node + num_loc // 2) % (num_loc + 1)
 
         # Set available to 0 (i.e., we visited the node)

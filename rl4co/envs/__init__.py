@@ -13,6 +13,7 @@ from rl4co.envs.routing import (
     CVRPEnv,
     CVRPMVCEnv,
     CVRPTWEnv,
+    PDPTWEnv,
     DenseRewardTSPEnv,
     MDCPDPEnv,
     MTSPEnv,
@@ -27,6 +28,7 @@ from rl4co.envs.routing import (
     SVRPEnv,
     TSPEnv,
     TSPkoptEnv,
+    DARPEnv
 )
 
 # Scheduling
@@ -37,6 +39,7 @@ ENV_REGISTRY = {
     "atsp": ATSPEnv,
     "cvrp": CVRPEnv,
     "cvrptw": CVRPTWEnv,
+    "pdptw": PDPTWEnv,
     "cvrpmvc": CVRPMVCEnv,
     "dpp": DPPEnv,
     "ffsp": FFSPEnv,
@@ -59,6 +62,7 @@ ENV_REGISTRY = {
     "tsp_kopt": TSPkoptEnv,
     "mcp": MCPEnv,
     "flp": FLPEnv,
+    "darp": DARPEnv
 }
 
 

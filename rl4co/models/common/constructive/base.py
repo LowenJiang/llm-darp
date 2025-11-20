@@ -256,6 +256,15 @@ class ConstructivePolicy(nn.Module):
             ),
         }
 
+        # Surface environment bookkeeping metrics if present
+        for attr in ("feasibility", "vehicles_used", "vehicle_penalty", "waiting_penalty"):
+            if attr in td.keys():
+                outdict[attr] = td[attr]
+
+        # Add environment-specific metrics if available in TensorDict
+        if "successful_requests" in td.keys():
+            outdict["successful_requests"] = td["successful_requests"]
+
         if return_actions:
             outdict["actions"] = actions
         if return_entropy:

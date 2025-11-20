@@ -35,6 +35,8 @@ def env_dynamic_embedding(env_name: str, config: dict) -> nn.Module:
         "jssp": JSSPDynamicEmbedding,
         "fjsp": JSSPDynamicEmbedding,
         "mtvrp": StaticEmbedding,
+        "darp": DARPDynamicEmbedding,
+        "pdptw": StaticEmbedding
     }
 
     if env_name not in embedding_registry:
@@ -43,6 +45,87 @@ def env_dynamic_embedding(env_name: str, config: dict) -> nn.Module:
         )
     return embedding_registry.get(env_name, StaticEmbedding)(**config)
 
+class DARPDynamicEmbedding(nn.Module):
+    """Dynamic embedding for the Dial-a-Ride Problem (DARP).
+    Embed the following dynamic node features to the embedding space:
+        - visited: whether each node has been visited by any vehicle
+        - picked_up_by_current: whether each pickup has been picked up by the current vehicle
+        - feasible_time: whether the node is feasible given current time constraints
+
+    These features change during the rollout and are used to modify the query, key,
+    and value vectors of the attention mechanism.
+    """
+
+    def __init__(self, embed_dim, linear_bias=False):
+        super(DARPDynamicEmbedding, self).__init__()
+        # Project 3 binary features (visited, picked_up_by_current, time_feasible) to 3 * embed_dim
+        self.projection = nn.Linear(3, 3 * embed_dim, bias=linear_bias)
+
+    def forward(self, td):
+        num_loc = td["locs"].shape[-2]  # including depot
+        device = td["locs"].device
+
+        # Feature 1: Visited status (binary) - global across all vehicles
+        visited = td["visited"].float()  # [..., num_loc]
+
+        # Feature 2: Picked up status for pickups by current vehicle (binary)
+        # For depot and dropoffs, this is 0; for pickups, it's whether they've been picked up by current vehicle
+        picked_up_feat = torch.zeros_like(visited)
+        num_pickups = (num_loc - 1) // 2
+        # Interleaved: pickups at odd indices starting at 1
+        if num_pickups > 0:
+            picked_up = td["picked_up_by_current"].float()
+            picked_up_shape = picked_up.shape
+            visited_shape = visited.shape
+            # Only reshape if the shapes don't match
+            if picked_up_shape != visited_shape:
+                picked_up = picked_up.reshape(*visited_shape[:-1], -1)[..., :visited_shape[-1]]
+            picked_up_feat[..., 1::2] = picked_up[..., 1::2]
+        
+        # Feature 3: Time feasibility (binary)
+        # Whether each node can be reached within its time window from current position
+        time_feasible = self._compute_time_feasibility(td)
+        
+        # Stack features: [batch_size, num_loc, 3]
+        dynamic_features = torch.stack([visited, picked_up_feat, time_feasible], dim=-1)
+        
+        # Project to embedding space: [batch_size, num_loc, 3*embed_dim]
+        projected = self.projection(dynamic_features)
+        
+        # Split into glimpse_key, glimpse_val, and logit_key
+        glimpse_key_dynamic, glimpse_val_dynamic, logit_key_dynamic = projected.chunk(3, dim=-1)
+        
+        return glimpse_key_dynamic, glimpse_val_dynamic, logit_key_dynamic
+    
+    def _compute_time_feasibility(self, td):
+        """Compute whether each node is time-feasible from current position"""
+        batch_shape = td["locs"].shape[:-2]
+        N = td["locs"].shape[-2]
+
+        current_node = td["current_node"].long()
+        current_node = current_node.reshape(*batch_shape, -1)[..., :1]
+        current_time = td["current_time"].float().reshape(*batch_shape, -1)[..., 0]
+
+        locs = td["locs"]
+        curr_loc = locs.gather(
+            -2,
+            current_node.unsqueeze(-1).expand(*batch_shape, 1, locs.size(-1)),
+        )  # batch_shape + (1, 2)
+
+        dist = (locs - curr_loc).norm(p=2, dim=-1)
+        
+        # Compute travel time (assuming vehicle_speed is available)
+        vehicle_speed = 25.0  # Default from DARPGenerator
+        travel_time = torch.round(dist / vehicle_speed).long()
+        
+        # Compute arrival time
+        arrival_time = current_time.unsqueeze(-1) + travel_time  # batch_shape + (N,)
+        
+        # Check if arrival time is within time window
+        time_windows = td["time_windows"].reshape(*batch_shape, -1)[..., :N]
+        time_feasible = arrival_time <= time_windows
+        
+        return time_feasible.float()
 
 class StaticEmbedding(nn.Module):
     """Static embedding for general problems.

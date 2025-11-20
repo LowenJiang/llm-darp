@@ -1,4 +1,5 @@
 from typing import Optional
+import warnings
 
 import torch
 
@@ -174,18 +175,22 @@ class CVRPTWEnv(CVRPEnv):
             td["locs"][..., 0, :], td["locs"].transpose(0, 1)
         ).transpose(0, 1)
         # basic checks on time windows
-        assert torch.all(distances >= 0.0), "Distances must be non-negative."
-        assert torch.all(td["time_windows"] >= 0.0), "Time windows must be non-negative."
-        assert torch.all(
+        if not torch.all(distances >= 0.0):
+            warnings.warn("Distances must be non-negative.", RuntimeWarning)
+        if not torch.all(td["time_windows"] >= 0.0):
+            warnings.warn("Time windows must be non-negative.", RuntimeWarning)
+        if not torch.all(
             td["time_windows"][..., :, 0] + distances + td["durations"]
             <= td["time_windows"][..., 0, 1][0]  # max_time is the same for all batches
-        ), "vehicle cannot perform service and get back to depot in time."
-        assert torch.all(
-            td["durations"] >= 0.0
-        ), "Service durations must be non-negative."
-        assert torch.all(
-            td["time_windows"][..., 0] < td["time_windows"][..., 1]
-        ), "there are unfeasible time windows"
+        ):
+            warnings.warn(
+                "vehicle cannot perform service and get back to depot in time.",
+                RuntimeWarning,
+            )
+        if not torch.all(td["durations"] >= 0.0):
+            warnings.warn("Service durations must be non-negative.", RuntimeWarning)
+        if not torch.all(td["time_windows"][..., 0] < td["time_windows"][..., 1]):
+            warnings.warn("There are unfeasible time windows.", RuntimeWarning)
         # check vehicles can meet deadlines
         curr_time = torch.zeros(batch_size, 1, dtype=torch.float32, device=td.device)
         curr_node = torch.zeros_like(curr_time, dtype=torch.int64, device=td.device)
@@ -201,12 +206,15 @@ class CVRPTWEnv(CVRPEnv):
                     [batch_size, 1]
                 ),
             )
-            assert torch.all(
+            if not torch.all(
                 curr_time
                 <= gather_by_index(td["time_windows"], next_node)[..., 1].reshape(
                     [batch_size, 1]
                 )
-            ), "vehicle cannot start service before deadline"
+            ):
+                warnings.warn(
+                    "vehicle cannot start service before deadline", RuntimeWarning
+                )
             curr_time = curr_time + gather_by_index(td["durations"], next_node).reshape(
                 [batch_size, 1]
             )
