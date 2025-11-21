@@ -40,7 +40,7 @@ model = REINFORCE(
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-logger = WandbLogger(project="rl4co", name="sf-newenv-2", id="s73fo521", resume='must')
+logger = WandbLogger(project="rl4co", name="sf-newenv-2", id="s73fo521", resume='allow')
 
 checkpoint_callback = ModelCheckpoint(  dirpath="checkpoints/sf_newenv_2", # save to checkpoints/
                                         filename="epoch_{epoch:03d}",  # save as epoch_XXX.ckpt
@@ -54,10 +54,10 @@ callbacks = [checkpoint_callback, rich_model_summary]
 
 trainer = RL4COTrainer(
     max_epochs=80,
-    accelerator="gpu",
-    devices=-1,
+    accelerator="cpu",#"gpu",
+#    devices=-1,
     logger=logger,
     callbacks=callbacks,
 )
 
-trainer.fit(model, ckpt_path="checkpoints/sf_newenv_2/epoch_epoch=048.ckpt")
+trainer.fit(model) #trainer.fit(model, ckpt_path="checkpoints/sf_newenv_2/epoch=048.ckpt")
