@@ -28,7 +28,7 @@ model = REINFORCE(
     policy=policy,            # or omit to use the default AttentionModelPolicy
     baseline="rollout",
     batch_size=512,
-    train_data_size=100_000,
+    train_data_size=10_000,#100_000,
     val_data_size=5000,
     optimizer_kwargs={"lr": 1e-4},
     metrics={
@@ -55,7 +55,7 @@ callbacks = [checkpoint_callback, rich_model_summary]
 trainer = RL4COTrainer(
     max_epochs=80,
     accelerator="cpu",#"gpu",
-#    devices=-1,
+    devices=4,#-1,
     logger=logger,
     callbacks=callbacks,
 )
