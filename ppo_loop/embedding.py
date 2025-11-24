@@ -71,7 +71,7 @@ class OnlineTravelerDataset(torch.utils.data.Dataset):
             pickup_shift, dropoff_shift = action_space_map[action]
             early_shift = abs(pickup_shift)
             late_shift = dropoff_shift
-            
+
             # Check consistency for ALL 4 personalities
             for flex_idx, _ in enumerate(flexibility_personalities):
                 # 1. Determine theoretical behavior
@@ -83,17 +83,17 @@ class OnlineTravelerDataset(torch.utils.data.Dataset):
                     would_accept = (early_shift == 0 and late_shift == 0)
                 else:               # Both Flex
                     would_accept = True
-                
+
                 theoretical = "accept" if would_accept else "reject"
-                
+
                 # 2. Compare with reality
                 # If theoretical matches actual, we put 1.0 (consistent)
                 # If not, we put 0.0 (inconsistent)
                 is_consistent = 1.0 if theoretical == actual else 0.0
                 row_consistencies.append(is_consistent)
-            
+
             decision_matrix.append(row_consistencies)
-            
+
         self.ind_matrix = torch.FloatTensor(decision_matrix)
 
     def __len__(self):

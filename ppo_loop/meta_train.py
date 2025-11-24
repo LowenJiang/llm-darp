@@ -18,7 +18,9 @@ import pandas as pd
 
 from ppo_agent import PPOAgent
 from dvrp_env import DVRPEnv
+from vectorized_env import VectorizedDVRPEnv
 from embedding import EmbeddingFFN, TravelerDataset, OnlineTravelerDataset, likelihood_loss, flexibility_personalities, n_flexibilities
+from collections import deque
 
 import wandb
 wandb.login()
@@ -51,7 +53,7 @@ ACTION_SPACE_MAP = [
 
 def compute_masks_from_flexibility(predicted_flexibility: torch.Tensor, action_dim: int = 16) -> torch.Tensor:
     """
-    Compute action masks based on predicted flexibility types.
+    Compute action masks based on predicted flexibility types (VECTORIZED).
 
     Args:
         predicted_flexibility: Tensor of shape (num_customers,) with predicted flexibility type indices
@@ -67,31 +69,41 @@ def compute_masks_from_flexibility(predicted_flexibility: torch.Tensor, action_d
         3: flexible for both early pickup and late dropoff
     """
     num_customers = predicted_flexibility.shape[0]
-    masks = torch.ones(num_customers, action_dim)
 
-    for i in range(num_customers):
-        flex_type = predicted_flexibility[i].item()
+    # Pre-compute action properties once (16 actions, 2 properties each)
+    action_props = torch.tensor([
+        [abs(pickup), dropoff] for pickup, dropoff in ACTION_SPACE_MAP
+    ], dtype=torch.float32)  # (16, 2)
 
-        for action_idx, (pickup_shift, dropoff_shift) in enumerate(ACTION_SPACE_MAP):
-            # Check if action should be masked based on flexibility type
-            early_shift = abs(pickup_shift)  # How much earlier pickup is (pickup_shift is negative)
-            late_shift = dropoff_shift  # How much later dropoff is
+    early_shifts = action_props[:, 0]  # (16,) - how much earlier pickup is
+    late_shifts = action_props[:, 1]   # (16,) - how much later dropoff is
 
-            if flex_type == 0:  # Flexible for late dropoff, but inflexible for early pickup
-                # Mask actions with early pickup > 0
-                if early_shift > 0:
-                    masks[i, action_idx] = 0
-            elif flex_type == 1:  # Flexible for early pickup, but inflexible for late dropoff
-                # Mask actions with late dropoff > 0
-                if late_shift > 0:
-                    masks[i, action_idx] = 0
-            elif flex_type == 2:  # Inflexible for any schedule changes
-                # Only allow no-shift action (action 12: (0, 0))
-                if early_shift > 0 or late_shift > 0:
-                    masks[i, action_idx] = 0
-            elif flex_type == 3:  # Flexible for both early pickup and late dropoff
-                # All actions allowed
-                pass
+    # Initialize all actions as allowed
+    masks = torch.ones(num_customers, action_dim, dtype=torch.float32)
+
+    # Broadcast shapes for vectorized operations
+    # early_shifts: (1, 16), late_shifts: (1, 16)
+    # predicted_flexibility: (num_customers,) -> (num_customers, 1) for broadcasting
+    early_shifts_2d = early_shifts.unsqueeze(0)  # (1, 16)
+    late_shifts_2d = late_shifts.unsqueeze(0)    # (1, 16)
+    flex_types = predicted_flexibility.unsqueeze(1)  # (num_customers, 1)
+
+    # Type 0: flexible for late dropoff, inflexible for early pickup
+    # Mask actions where early_shift > 0
+    type0_mask = (flex_types == 0) & (early_shifts_2d > 0)  # (num_customers, 16)
+    masks = torch.where(type0_mask, torch.zeros_like(masks), masks)
+
+    # Type 1: flexible for early pickup, inflexible for late dropoff
+    # Mask actions where late_shift > 0
+    type1_mask = (flex_types == 1) & (late_shifts_2d > 0)
+    masks = torch.where(type1_mask, torch.zeros_like(masks), masks)
+
+    # Type 2: inflexible for any schedule changes
+    # Only allow action with early_shift == 0 AND late_shift == 0
+    type2_mask = (flex_types == 2) & ((early_shifts_2d > 0) | (late_shifts_2d > 0))
+    masks = torch.where(type2_mask, torch.zeros_like(masks), masks)
+
+    # Type 3: flexible for both (all actions allowed - no masking needed)
 
     return masks
 
@@ -190,6 +202,7 @@ def update_embedding_model(embedding_model, online_data, num_epochs=50, batch_si
 def train(
     num_episodes: int = 30,
     num_customers: int = 30,
+    num_envs: int = 64,
     save_dir: str = "./checkpoints",
     save_interval: int = 100,
     log_interval: int = 10,
@@ -197,23 +210,25 @@ def train(
     seed: int = 42,
 ):
     """
-    Train PPO agent on DVRP environment with per-user learning.
+    Train PPO agent on DVRP environment with parallel rollouts and per-user learning.
 
+    Uses vectorized environments for parallel data collection with batched neural oracle.
     The embedding model learns flexibility preferences for individual users based on
-    their user_id from the environment. Users with the same user_id are treated as
-    the same person across episodes.
+    their user_id from the environment.
 
-    IMPORTANT ASSUMPTION:
-        - Environment must provide user_id in range [0, num_customers-1]
-        - Same user_id = same person with consistent flexibility preferences
-        - No modulo mapping is applied - user_ids are used directly
+    IMPORTANT CHANGES FROM SEQUENTIAL VERSION:
+        - Runs num_envs environments in parallel (default: 64)
+        - Batches neural oracle calls for massive speedup
+        - Uses fixed-size buffer (64000) for embedding training data
+        - Updates embedding every K total environment steps (not episodes)
 
     Args:
-        num_episodes: Number of training episodes
+        num_episodes: Total number of episodes to run (will be divided across parallel envs)
         num_customers: Number of unique users (also requests per episode)
+        num_envs: Number of parallel environments (default: 64)
         save_dir: Directory to save checkpoints
-        save_interval: Save model every N episodes
-        log_interval: Log statistics every N episodes
+        save_interval: Save model every N epochs (1 epoch = num_envs episodes)
+        log_interval: Log statistics every N epochs
         device: Device to run on ('cpu' or 'cuda')
         seed: Random seed
     """
@@ -225,12 +240,15 @@ def train(
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    # Create environment
-    env = DVRPEnv(
+    # Calculate number of epochs (1 epoch = num_envs parallel episodes)
+    num_epochs = max(1, num_episodes // num_envs)
+
+    # Create vectorized environment (num_envs parallel environments)
+    vec_env = VectorizedDVRPEnv(
+        num_envs=num_envs,
         num_customers=num_customers,
         max_vehicles=5,
         solver_time_limit=1,
-
         seed=seed,
     )
 
@@ -263,18 +281,25 @@ def train(
     )
     embedding_model.eval()
 
-    # Online data collection for embedding model
-    online_data = []
+    # Fixed-size online data collection buffer (prevents memory growth)
+    online_data = deque(maxlen=12800)
 
     # Epsilon for epsilon-greedy masking (starts at 0.2, decays to 0)
     initial_epsilon = 0.2
     final_epsilon = 0.0
+
+    # Update embedding every K total environment steps
+    # 10 epochs * num_envs = e.g., 10 * 64 = 640 total episodes
+    steps_per_embedding_update = 10 * num_envs * num_customers  # 10 epochs worth of steps
+    total_steps = 0
 
     # Initialize wandb
     wandb.init(
         project="rl4co",
         config={
             "num_episodes": num_episodes,
+            "num_epochs": num_epochs,
+            "num_envs": num_envs,
             "num_customers": num_customers,
             "device": device,
             "seed": seed,
@@ -284,171 +309,161 @@ def train(
             "clip_epsilon": 0.2,
             "initial_epsilon": initial_epsilon,
             "final_epsilon": final_epsilon,
+            "embedding_update_freq": steps_per_embedding_update,
         }
     )
 
     print("=" * 80)
-    print("Training DVRP-TW with PPO")
+    print("Training DVRP-TW with PPO (PARALLELIZED)")
     print("=" * 80)
-    print(f"Episodes: {num_episodes}")
+    print(f"Total episodes: {num_episodes}")
+    print(f"Parallel environments: {num_envs}")
+    print(f"Training epochs: {num_epochs} (1 epoch = {num_envs} episodes)")
     print(f"Customers per episode: {num_customers}")
     print(f"Device: {device}")
     print(f"Save directory: {save_path}")
+    print(f"Embedding update frequency: every {steps_per_embedding_update} steps")
     print("=" * 80)
 
-    # Training statistics
-    episode_rewards = []
-    episode_costs = []
-    episode_lengths = []
-    solver_failures = []
-    episode_accepted_rates = []
+    # Training statistics (track per epoch, aggregated over num_envs episodes)
+    epoch_rewards = []
+    epoch_costs = []
+    epoch_accepted_rates = []
+    epoch_failures = []
 
-    # Training loop
-    for episode in range(1, num_episodes + 1):
-        state, info = env.reset()
-        episode_reward = 0.0
-        episode_length = 0
-        failed = False
-        accepted_count = 0
+    # Training loop (parallel episodes)
+    for epoch in range(1, num_epochs + 1):
+        # Reset all environments
+        states, infos = vec_env.reset()  # (num_envs, num_customers, 6)
 
-        # Compute current epsilon (linear decay from initial to final)
-        epsilon = initial_epsilon - (initial_epsilon - final_epsilon) * (episode - 1) / max(num_episodes - 1, 1)
+        # Track statistics for this epoch (num_envs episodes)
+        epoch_episode_rewards = []
+        epoch_episode_costs = []
+        epoch_episode_accepted = []
+        epoch_episode_failed = []
 
-        # Episode loop
+        # Compute current epsilon (linear decay based on epoch)
+        epsilon = initial_epsilon - (initial_epsilon - final_epsilon) * (epoch - 1) / max(num_epochs - 1, 1)
+
+        # Episode loop (each step processes all num_envs environments)
         for step in range(num_customers):
-            # Get actual user_id from environment
-            current_customer_id = env.get_current_user_id()
+            # Get user IDs for current request across all environments
+            user_ids = vec_env.get_current_user_ids()  # (num_envs,)
 
-            # Get mask for current customer using actual user_id
-            # Assumes user_id is in valid range [0, num_customers-1]
-            customer_mask = action_masks[current_customer_id-1].to(device)
+            # Get masks for all users (batch indexing)
+            # user_ids are 1-indexed, so subtract 1 for 0-indexed action_masks
+            batch_masks = action_masks[user_ids - 1]  # (num_envs, action_dim)
 
-            # Select action with mask and epsilon
-            action = agent.select_action(state, mask=customer_mask, epsilon=epsilon)
+            # Select actions for all environments in parallel
+            actions = agent.select_action_batch(
+                states,
+                masks=batch_masks,
+                epsilon=epsilon
+            )  # (num_envs,)
 
-            # Take step
-            next_state, reward, terminated, truncated, step_info = env.step(action)
+            # Step all environments in parallel (BATCHED NEURAL ORACLE!)
+            next_states, rewards, dones, truncs, step_infos = vec_env.step(actions)
 
-            # Collect online data for embedding model update
-            accepted = step_info.get("accepted", False)
-            if accepted:
-                accepted_count += 1
+            # Collect online data from all environments
+            for i in range(num_envs):
+                online_data.append({
+                    'customer_id': user_ids[i],
+                    'action': actions[i],
+                    'accepted': step_infos[i].get('accepted', False)
+                })
 
-            # Use actual user_id from environment if available, otherwise use step index
-            user_id = step_info.get("user_id")
-            if user_id is None:
-                user_id = current_customer_id
+            # Store rewards for all environments
+            agent.store_rewards_batch(rewards, dones | truncs)
 
-            online_data.append({
-                'customer_id': user_id,
-                'action': action,
-                'accepted': accepted
-            })
+            # Update states
+            states = next_states
+            total_steps += num_envs
 
-            # Store reward
-            agent.store_reward(reward, terminated or truncated)
+        # Collect episode statistics from all environments
+        for i in range(num_envs):
+            info = step_infos[i]
+            # Calculate episode reward (sum of all rewards for this env)
+            # Note: we don't track per-env rewards separately in this implementation
+            # Instead we use the final cost as a proxy
+            cost = info.get('current_cost', float('inf'))
+            failed = info.get('solver_failed', False)
 
-            # Update statistics
-            episode_reward += reward
-            episode_length += 1
+            epoch_episode_costs.append(cost if not failed else float('inf'))
+            epoch_episode_failed.append(1 if failed else 0)
+            # Note: accepted rate is averaged across the episode in the info
 
-            # Check for solver failure
-            if step_info.get("solver_failed", False):
-                failed = True
-                break
+        # Perform PPO update after each epoch (with data from num_envs episodes)
+        train_stats = agent.update(num_epochs=10, batch_size=64)
 
-            # Update state
-            state = next_state
+        # Update embedding model every K steps
+        if total_steps % steps_per_embedding_update == 0 and len(online_data) > 0:
+            print(f"\n[Epoch {epoch}, Step {total_steps}] Updating embedding model with {len(online_data)} samples...")
 
-            if terminated or truncated:
-                break
+            # Convert deque to list for update
+            online_data_list = list(online_data)
 
-        # Store episode statistics
-        episode_rewards.append(episode_reward)
-        episode_lengths.append(episode_length)
-        solver_failures.append(1 if failed else 0)
-        accepted_rate = accepted_count / episode_length if episode_length > 0 else 0.0
-        episode_accepted_rates.append(accepted_rate)
-
-        # Store final cost (if not failed)
-        if not failed and episode_length > 0:
-            episode_costs.append(step_info.get("current_cost", 0.0))
-        else:
-            episode_costs.append(float("inf"))
-
-        # Perform PPO update
-        if episode % 1 == 0:  # Update every episode
-            train_stats = agent.update(num_epochs=10, batch_size=64)
-        else:
-            train_stats = {}
-
-        # Every 10 policy iterations, update embedding model and recompute masks
-        if episode % 10 == 0 and len(online_data) > 0:
-            print(f"\n[Episode {episode}] Updating embedding model with {len(online_data)} samples...")
-
-            # Update embedding model with collected online data
+            # Update embedding model
             embedding_model = update_embedding_model(
                 embedding_model,
-                online_data,
+                online_data_list,
                 num_epochs=50,
-                batch_size=min(64, len(online_data)),
+                batch_size=min(64, len(online_data_list)),
                 lr=1e-3
             )
 
-            # Predict flexibility types for all customers (user_ids 0 to num_customers-1)
-            # Note: This assumes user_ids are in range [0, num_customers-1]
+            # Predict flexibility types for all customers
             with torch.no_grad():
-                # Predict for all possible user_ids
                 customer_ids = torch.arange(num_customers)
                 pred_proba = embedding_model(customer_ids)
                 predicted_flexibility = torch.argmax(pred_proba, dim=1)
 
-            # Recompute action masks based on predicted flexibility
-            # Each row corresponds to user_id (0-indexed)
+            # Recompute action masks (VECTORIZED!)
             action_masks = compute_masks_from_flexibility(predicted_flexibility, action_dim)
 
             print(f"  Updated masks based on predicted flexibility types")
             print(f"  Flexibility distribution: {torch.bincount(predicted_flexibility, minlength=n_flexibilities).tolist()}")
 
+        # Aggregate epoch statistics
+        avg_cost = np.mean([c for c in epoch_episode_costs if not np.isinf(c)]) if any(not np.isinf(c) for c in epoch_episode_costs) else float('inf')
+        failure_rate = np.mean(epoch_episode_failed)
+
+        # Store epoch statistics
+        epoch_costs.append(avg_cost)
+        epoch_failures.append(failure_rate)
+
         # Logging
-        if episode % log_interval == 0:
-            recent_rewards = episode_rewards[-log_interval:]
-            recent_costs = [c for c in episode_costs[-log_interval:] if not np.isinf(c)]
-            recent_failures = solver_failures[-log_interval:]
-            recent_accepted_rates = episode_accepted_rates[-log_interval:]
+        if epoch % log_interval == 0:
+            recent_costs = [c for c in epoch_costs[-log_interval:] if not np.isinf(c)]
+            recent_failures = epoch_failures[-log_interval:]
 
-            avg_reward = np.mean(recent_rewards)
-            avg_cost = np.mean(recent_costs) if recent_costs else float("inf")
-            failure_rate = np.mean(recent_failures)
-            avg_accepted_rate = np.mean(recent_accepted_rates)
+            avg_recent_cost = np.mean(recent_costs) if recent_costs else float("inf")
+            avg_failure_rate = np.mean(recent_failures)
 
-            print(f"\n[Episode {episode}/{num_episodes}]")
-            print(f"  Avg Reward: {avg_reward:.2f}")
-            print(f"  Avg Cost: {avg_cost:.2f} km")
-            print(f"  Accepted Rate: {avg_accepted_rate * 100:.1f}%")
-            print(f"  Failure Rate: {failure_rate * 100:.1f}%")
-
-            if train_stats:
-                print(f"  Policy Loss: {train_stats.get('policy_loss', 0):.4f}")
-                print(f"  Value Loss: {train_stats.get('value_loss', 0):.4f}")
-                print(f"  Entropy: {train_stats.get('entropy', 0):.4f}")
+            print(f"\n[Epoch {epoch}/{num_epochs}] (Episodes {epoch * num_envs}/{num_episodes})")
+            print(f"  Avg Cost: {avg_recent_cost:.2f} km")
+            print(f"  Failure Rate: {avg_failure_rate * 100:.1f}%")
+            print(f"  Policy Loss: {train_stats.get('policy_loss', 0):.4f}")
+            print(f"  Value Loss: {train_stats.get('value_loss', 0):.4f}")
+            print(f"  Entropy: {train_stats.get('entropy', 0):.4f}")
+            print(f"  Total Steps: {total_steps}")
+            print(f"  Epsilon: {epsilon:.3f}")
 
             # Log to wandb
             wandb.log({
-                "episode": episode,
-                "avg_reward": avg_reward,
-                "avg_cost": avg_cost,
-                "accepted_rate": avg_accepted_rate,
-                "failure_rate": failure_rate,
+                "epoch": epoch,
+                "total_episodes": epoch * num_envs,
+                "total_steps": total_steps,
+                "avg_cost": avg_recent_cost,
+                "failure_rate": avg_failure_rate,
                 "epsilon": epsilon,
-                "policy_loss": train_stats.get('policy_loss', 0) if train_stats else 0,
-                "value_loss": train_stats.get('value_loss', 0) if train_stats else 0,
-                "entropy": train_stats.get('entropy', 0) if train_stats else 0,
+                "policy_loss": train_stats.get('policy_loss', 0),
+                "value_loss": train_stats.get('value_loss', 0),
+                "entropy": train_stats.get('entropy', 0),
             })
 
         # Save checkpoint
-        if episode % save_interval == 0:
-            checkpoint_path = save_path / f"ppo_agent_ep{episode}.pt"
+        if epoch % save_interval == 0:
+            checkpoint_path = save_path / f"ppo_agent_ep{epoch * num_envs}.pt"
             agent.save(str(checkpoint_path))
             print(f"\n[Checkpoint saved: {checkpoint_path}]")
 
@@ -462,15 +477,19 @@ def train(
     print("=" * 80)
 
     # Print final statistics
-    valid_costs = [c for c in episode_costs if not np.isinf(c)]
+    valid_costs = [c for c in epoch_costs if not np.isinf(c)]
     print(f"\nFinal Statistics:")
-    print(f"  Total Episodes: {num_episodes}")
-    print(f"  Avg Reward: {np.mean(episode_rewards):.2f}")
-    print(f"  Avg Cost: {np.mean(valid_costs):.2f} km")
-    print(f"  Avg Accepted Rate: {np.mean(episode_accepted_rates) * 100:.1f}%")
-    print(f"  Solver Failure Rate: {np.mean(solver_failures) * 100:.1f}%")
+    print(f"  Total Epochs: {num_epochs}")
+    print(f"  Total Episodes: {num_epochs * num_envs}")
+    print(f"  Total Steps: {total_steps}")
+    print(f"  Avg Cost (final epoch): {epoch_costs[-1] if epoch_costs else 0:.2f} km")
+    print(f"  Avg Cost (all epochs): {np.mean(valid_costs):.2f} km" if valid_costs else "  No valid costs")
+    print(f"  Solver Failure Rate: {np.mean(epoch_failures) * 100:.1f}%")
 
-    return agent, episode_rewards, episode_costs
+    # Clean up
+    vec_env.close()
+
+    return agent, epoch_costs, epoch_failures
 
 
 def evaluate(
@@ -591,13 +610,16 @@ def evaluate(
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Train PPO agent for DVRP-TW")
+    parser = argparse.ArgumentParser(description="Train PPO agent for DVRP-TW (Parallelized)")
 
     parser.add_argument(
-        "--episodes", type=int, default=1000, help="Number of training episodes"
+        "--episodes", type=int, default=1000, help="Total number of training episodes"
     )
     parser.add_argument(
         "--customers", type=int, default=30, help="Number of customers per episode"
+    )
+    parser.add_argument(
+        "--num-envs", type=int, default=64, help="Number of parallel environments"
     )
     parser.add_argument(
         "--save-dir",
@@ -608,11 +630,11 @@ def main():
     parser.add_argument(
         "--save-interval",
         type=int,
-        default=100,
-        help="Save model every N episodes",
+        default=10,
+        help="Save model every N epochs (1 epoch = num_envs episodes)",
     )
     parser.add_argument(
-        "--log-interval", type=int, default=10, help="Log stats every N episodes"
+        "--log-interval", type=int, default=1, help="Log stats every N epochs"
     )
     parser.add_argument(
         "--device",
@@ -629,9 +651,10 @@ def main():
     args = parser.parse_args()
 
     # Train
-    agent, rewards, costs = train(
+    agent, costs, failures = train(
         num_episodes=args.episodes,
         num_customers=args.customers,
+        num_envs=args.num_envs,
         save_dir=args.save_dir,
         save_interval=args.save_interval,
         log_interval=args.log_interval,

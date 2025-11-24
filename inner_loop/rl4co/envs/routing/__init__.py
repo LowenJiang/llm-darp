@@ -4,7 +4,7 @@ from .pdptw.sf_generator import SFGenerator
 from .pdptw.env import PDPTWEnv
 from .darp.env import DARPEnv
 from .darp.generator import DARPGenerator
-from .pdptw.env_modified_mask import PDPTWModEnv
+
 # Import remaining from original rl4co package
 from rl4co.envs.routing.atsp.env import ATSPEnv
 from rl4co.envs.routing.atsp.generator import ATSPGenerator

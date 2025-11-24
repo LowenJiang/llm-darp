@@ -10,7 +10,7 @@ from .generator import PDPTWGenerator
 from .sf_generator import SFGenerator
 from .render import render
 
-class PDPTWModEnv(CVRPTWEnv):
+class PDPTWEnv(CVRPTWEnv):
     """
     Pickup and Delivery Problem with Time Windows (PDPTW) environment.
     """
@@ -22,10 +22,14 @@ class PDPTWModEnv(CVRPTWEnv):
         generator_params: dict = {},
         depot_penalty: int = 100,
         fleet_count: int = 5,
+        vehicle_speed: float = 0.3, 
+        late_penalty_factor: float = 1.0,
         **kwargs,
     ):
         self.depot_penalty_factor = int(depot_penalty)
         self.fleet_count = fleet_count
+        self.vehicle_speed = vehicle_speed
+        self.late_penalty_factor = late_penalty_factor
         if generator is None:
             generator = SFGenerator(**generator_params)
         super().__init__(generator=generator, **kwargs)
@@ -49,7 +53,6 @@ class PDPTWModEnv(CVRPTWEnv):
             action_mask=Bounded(low=0, high=1, shape=(generator.num_customers * 2 + 1,), dtype=torch.bool),
             previous_action=Unbounded(shape=(1), dtype=torch.int64),
             i=Unbounded(shape=(1), dtype=torch.int64),
-            flexibility=Bounded(low=-30, high=30, shape=(generator.num_customers * 2 + 1,), dtype=torch.float32)
         )
         self.action_spec = Bounded(
             shape=(1,), dtype=torch.int64, low=0, high=generator.num_customers * 2 + 1
@@ -64,11 +67,9 @@ class PDPTWModEnv(CVRPTWEnv):
         demands = td["demand"]
         tws = td["time_windows"]
         travel_time_matrix = td["travel_time_matrix"]
-
+        
         # Get locs if available (for rendering)
         locs = td.get("locs", None)
-
-        flexibility = td["flexibility"]
 
         # 1. Ensure Depot in h3_indices
         if h3_indices.shape[-1] == self.generator.num_customers * 2:
@@ -94,7 +95,7 @@ class PDPTWModEnv(CVRPTWEnv):
         if tws.shape[-2] == self.generator.num_customers * 2:
              depot_tw = torch.stack([
                 torch.zeros(*batch_size, 1, device=device, dtype=tws.dtype),
-                torch.full((*batch_size, 1), 144000.0, device=device, dtype=tws.dtype)
+                torch.full((*batch_size, 1), 144000.0, device=device, dtype=tws.dtype) 
             ], dim=-1)
              tws = torch.cat((depot_tw, tws), -2)
 
@@ -107,7 +108,6 @@ class PDPTWModEnv(CVRPTWEnv):
             "travel_time_matrix": travel_time_matrix,
             "time_windows": tws,
             "demand": demands,
-            "flexibility": flexibility,
             "current_node": torch.zeros(*batch_size, 1, dtype=torch.int64, device=device),
             "current_time": torch.zeros(*batch_size, 1, dtype=torch.float32, device=device),
             "used_capacity": torch.zeros(*batch_size, 1, dtype=torch.float32, device=device),
@@ -118,7 +118,7 @@ class PDPTWModEnv(CVRPTWEnv):
             "previous_action": torch.zeros(*batch_size, 1, dtype=torch.int64, device=device),
             "i": torch.zeros(*batch_size, 1, dtype=torch.int64, device=device),
         }, batch_size=batch_size)
-
+        
         if locs is not None:
             td_reset.set("locs", locs)
 
@@ -173,14 +173,14 @@ class PDPTWModEnv(CVRPTWEnv):
 
         # --- Graph Update ---
         pending_schedule = td["pending_schedule"].clone()
-        pending_count = td["pending_count"].clone()
+#        pending_count = td["pending_count"].clone()
         is_pickup = (action % 2 != 0) & (action != 0)
         
         # Remove Visited
         mask_in_schedule = (pending_schedule == action.unsqueeze(-1))
         pending_schedule[mask_in_schedule] = 0
         is_dropoff = (action % 2 == 0) & (action != 0)
-        pending_count = torch.clamp(pending_count - is_dropoff.long().unsqueeze(-1), min=0)
+#        pending_count = torch.clamp(pending_count - is_dropoff.long().unsqueeze(-1), min=0)
 
         # Insert Partner
         num_nodes = td["h3_indices"].shape[1]
@@ -198,7 +198,9 @@ class PDPTWModEnv(CVRPTWEnv):
         
         capacity = td["vehicle_capacity"].shape[1] if len(td["vehicle_capacity"].shape)>1 else td["vehicle_capacity"][0].item()
         pending_schedule = sorted_sched[:, :int(capacity)]
-        pending_count = torch.clamp(pending_count + is_pickup.long().unsqueeze(-1), max=int(capacity))
+#        pending_count = torch.clamp(pending_count + is_pickup.long().unsqueeze(-1), max=int(capacity))
+        ## TODO: Recalculated the pending_count
+        pending_count = (pending_schedule != 0).sum(dim=1, keepdim=True)
 
         td_out = td.clone()
         td_out.update({
@@ -328,16 +330,17 @@ class PDPTWModEnv(CVRPTWEnv):
         final_mask &= (~is_pickup) | can_serve_existing
 
         # Fallbacks
+        ## TODO: Modified the availability of returning to depot
         schedule_empty = (td["pending_count"] == 0)
-        no_feasible = ~final_mask[..., 1:].any(dim=-1, keepdim=True)
-        final_mask[..., 0] = final_mask[..., 0] | (no_feasible & schedule_empty).squeeze(-1)
-        none_at_all = ~final_mask.any(dim=-1, keepdim=True)
-        ## TODO: Tentatively modify it
+#        no_feasible = ~final_mask[..., 1:].any(dim=-1, keepdim=True)
+#        final_mask[..., 0] = final_mask[..., 0] | (no_feasible & schedule_empty).squeeze(-1)
+#        none_at_all = ~final_mask.any(dim=-1, keepdim=True)
 #        final_mask[..., 0] = final_mask[..., 0] | none_at_all.squeeze(-1)
-        final_mask[..., 0] |= (none_at_all.squeeze(-1) & (schedule_empty.squeeze(-1)))
+        ## TODO: New code are added below
+        final_mask[..., 0] = schedule_empty.squeeze(-1)
+#        final_mask[..., 0] |= (none_at_all.squeeze(-1) & (schedule_empty.squeeze(-1)))
 
         return final_mask
-
 
     def _get_reward(self, td: TensorDict, actions: torch.Tensor) -> torch.Tensor:
         # Calculate total travel time

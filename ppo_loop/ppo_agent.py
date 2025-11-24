@@ -15,9 +15,97 @@ import torch.optim as optim
 from torch.distributions import Categorical
 
 
+class PolicyNetwork(nn.Module):
+    """
+    Policy network (Actor) for PPO.
+
+    Input: State (30, 6) flattened to 180-dimensional vector
+    Output: Action probabilities over discrete actions
+    """
+
+    def __init__(
+        self,
+        state_dim: int = 180,
+        action_dim: int = 16,
+        hidden_dim: int = 256,
+    ):
+        """
+        Args:
+            state_dim: Flattened state dimension (default: 180)
+            action_dim: Number of discrete actions (default: 16)
+            hidden_dim: Hidden layer dimension (default: 256)
+        """
+        super(PolicyNetwork, self).__init__()
+
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, action_dim),
+        )
+
+    def forward(self, state_flat: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Args:
+            state_flat: Flattened state tensor (batch_size, state_dim)
+
+        Returns:
+            action_logits: Action logits (batch_size, action_dim)
+        """
+        return self.network(state_flat)
+
+
+class ValueNetwork(nn.Module):
+    """
+    Value network (Critic) for PPO.
+
+    Input: State (30, 6) flattened to 180-dimensional vector
+    Output: State value estimation
+    """
+
+    def __init__(
+        self,
+        state_dim: int = 180,
+        hidden_dim: int = 256,
+    ):
+        """
+        Args:
+            state_dim: Flattened state dimension (default: 180)
+            hidden_dim: Hidden layer dimension (default: 256)
+        """
+        super(ValueNetwork, self).__init__()
+
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, 1),
+        )
+
+    def forward(self, state_flat: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Args:
+            state_flat: Flattened state tensor (batch_size, state_dim)
+
+        Returns:
+            state_value: State value (batch_size, 1)
+        """
+        return self.network(state_flat)
+
+
 class ActorCritic(nn.Module):
     """
-    Actor-Critic neural network for PPO.
+    Actor-Critic neural network for PPO with separate policy and value networks.
 
     Input: State (30, 6) flattened to 180-dimensional vector
     Actor output: Action probabilities over 16 discrete actions
@@ -38,27 +126,12 @@ class ActorCritic(nn.Module):
         """
         super(ActorCritic, self).__init__()
 
-        # Shared feature extractor
-        self.shared = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-        )
+        # Separate policy network (actor)
+        self.policy_network = PolicyNetwork(state_dim, action_dim, hidden_dim)
 
-        # Actor head (policy)
-        self.actor = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dim // 2, action_dim),
-        )
+        # Separate value network (critic)
+        self.value_network = ValueNetwork(state_dim, hidden_dim)
 
-        # Critic head (value function)
-        self.critic = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dim // 2, 1),
-        )
         self.mask = torch.ones(action_dim)
 
     def forward(self, state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -75,15 +148,12 @@ class ActorCritic(nn.Module):
         # Flatten state: (batch_size, 30, 6) -> (batch_size, 180)
         state_flat = state.reshape(state.shape[0], -1)
 
-        # Shared features
-        features = self.shared(state_flat)
-
-        # Actor: action logits
-        action_logits = self.actor(features)
+        # Policy network: action logits
+        action_logits = self.policy_network(state_flat)
         action_probs = torch.softmax(action_logits, dim=-1)
 
-        # Critic: state value
-        state_value = self.critic(features)
+        # Value network: state value
+        state_value = self.value_network(state_flat)
 
         return action_probs, state_value
     
@@ -276,6 +346,56 @@ class PPOAgent:
 
         return action
 
+    def select_action_batch(
+        self,
+        states: np.ndarray,
+        masks: torch.Tensor = None,
+        epsilon: float = 0.0
+    ) -> np.ndarray:
+        """
+        Select actions for a batch of states (for parallel environments).
+
+        Args:
+            states: State array of shape (batch_size, 30, 6)
+            masks: Action mask tensor of shape (batch_size, action_dim) where 1 = allowed, 0 = masked
+            epsilon: Epsilon for epsilon-greedy masking
+
+        Returns:
+            actions: (batch_size,) array of action indices
+        """
+        batch_size = states.shape[0]
+        state_tensor = torch.FloatTensor(states).to(self.device)  # (batch_size, 30, 6)
+
+        # Move masks to device if provided
+        if masks is not None:
+            masks = masks.to(self.device)
+
+        with torch.no_grad():
+            # Get action probabilities and values for all states
+            action_probs, state_values = self.policy.forward(state_tensor)  # (batch_size, action_dim), (batch_size, 1)
+
+            # Apply masks if provided
+            if masks is not None:
+                # Apply masking for each state in the batch
+                for i in range(batch_size):
+                    action_probs[i] = self.policy.mask_action(
+                        action_probs[i], masks[i], epsilon
+                    )
+
+            # Sample actions
+            dist = Categorical(action_probs)
+            actions = dist.sample()  # (batch_size,)
+            log_probs = dist.log_prob(actions)  # (batch_size,)
+
+        # Store for later update
+        for i in range(batch_size):
+            self.states.append(state_tensor[i])
+            self.actions.append(actions[i].item())
+            self.log_probs.append(log_probs[i])
+            self.values.append(state_values[i].squeeze())
+
+        return actions.cpu().numpy()
+
     def store_reward(self, reward: float, done: bool) -> None:
         """
         Store reward and done flag.
@@ -286,6 +406,18 @@ class PPOAgent:
         """
         self.rewards.append(reward)
         self.dones.append(done)
+
+    def store_rewards_batch(self, rewards: np.ndarray, dones: np.ndarray) -> None:
+        """
+        Store rewards and done flags for a batch of environments.
+
+        Args:
+            rewards: (batch_size,) array of rewards
+            dones: (batch_size,) array of done flags
+        """
+        for reward, done in zip(rewards, dones):
+            self.rewards.append(float(reward))
+            self.dones.append(bool(done))
 
     def update(self, num_epochs: int = 10, batch_size: int = 64) -> dict:
         """
