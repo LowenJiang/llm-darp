@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from rl4co.envs import (
+from inner_loop.rl4co.envs import (
     ATSPEnv,
     CVRPMVCEnv,
     FJSPEnv,
@@ -13,8 +13,8 @@ from rl4co.envs import (
     TSPEnv,
     TSPkoptEnv,
 )
-from rl4co.models.rl import A2C, PPO, REINFORCE
-from rl4co.models.zoo import (
+from inner_loop.rl4co.models.rl import A2C, PPO, REINFORCE
+from inner_loop.rl4co.models.zoo import (
     DACT,
     GLOP,
     MDAM,
@@ -33,8 +33,8 @@ from rl4co.models.zoo import (
     PolyNet,
     SymNCO,
 )
-from rl4co.utils import RL4COTrainer
-from rl4co.utils.meta_trainer import ReptileCallback
+from inner_loop.rl4co.utils import RL4COTrainer
+from inner_loop.rl4co.utils.meta_trainer import ReptileCallback
 
 # Get env variable MAC_OS_GITHUB_RUNNER
 if "MAC_OS_GITHUB_RUNNER" in os.environ:

@@ -1,7 +1,7 @@
 """Test PDPTWEnv with a full step"""
 
 import torch
-from rl4co.envs.routing.pdptw.env import PDPTWEnv
+from inner_loop.rl4co.envs.routing.pdptw.env import PDPTWEnv
 
 try:
     print("Creating PDPTWEnv...")

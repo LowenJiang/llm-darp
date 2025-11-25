@@ -13,10 +13,10 @@ from torchrl.data.replay_buffers import (
     TensorDictReplayBuffer,
 )
 
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl.common.base import RL4COLitModule
-from rl4co.models.rl.common.utils import RewardScaler
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl.common.base import RL4COLitModule
+from inner_loop.rl4co.models.rl.common.utils import RewardScaler
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

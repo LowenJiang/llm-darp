@@ -4,7 +4,7 @@ import torch
 
 from tensordict import TensorDict
 
-from rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.utils.ops import gather_by_index
 
 
 class SHPPMapping(NamedTuple):

@@ -7,12 +7,12 @@ from tensordict import TensorDict
 from torch import Tensor
 from tqdm import trange
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.common.constructive.nonautoregressive.decoder import (
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.common.constructive.nonautoregressive.decoder import (
     NonAutoregressiveDecoder,
 )
-from rl4co.utils.decoding import Sampling
-from rl4co.utils.ops import batchify, get_distance_matrix, unbatchify
+from inner_loop.rl4co.utils.decoding import Sampling
+from inner_loop.rl4co.utils.ops import batchify, get_distance_matrix, unbatchify
 
 
 class AntSystem:

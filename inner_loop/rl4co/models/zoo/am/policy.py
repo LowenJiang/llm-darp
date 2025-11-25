@@ -2,9 +2,9 @@ from typing import Callable
 
 import torch.nn as nn
 
-from rl4co.models.common.constructive.autoregressive.policy import AutoregressivePolicy
-from rl4co.models.zoo.am.decoder import AttentionModelDecoder
-from rl4co.models.zoo.am.encoder import AttentionModelEncoder
+from inner_loop.rl4co.models.common.constructive.autoregressive.policy import AutoregressivePolicy
+from inner_loop.rl4co.models.zoo.am.decoder import AttentionModelDecoder
+from inner_loop.rl4co.models.zoo.am.encoder import AttentionModelEncoder
 
 
 class AttentionModelPolicy(AutoregressivePolicy):

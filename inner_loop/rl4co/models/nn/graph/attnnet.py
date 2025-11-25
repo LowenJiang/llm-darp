@@ -4,11 +4,11 @@ import torch.nn as nn
 
 from torch import Tensor
 
-from rl4co.models.nn.mlp import MLP
-from rl4co.models.nn.moe import MoE
-from rl4co.models.nn.attention import MultiHeadAttention
-from rl4co.models.nn.ops import Normalization, SkipConnection
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.nn.mlp import MLP
+from inner_loop.rl4co.models.nn.moe import MoE
+from inner_loop.rl4co.models.nn.attention import MultiHeadAttention
+from inner_loop.rl4co.models.nn.ops import Normalization, SkipConnection
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

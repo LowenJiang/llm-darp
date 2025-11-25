@@ -2,8 +2,8 @@ from typing import Callable, Optional
 
 import torch.nn as nn
 
-from rl4co.models.zoo.am import AttentionModelPolicy
-from rl4co.models.zoo.ham.encoder import GraphHeterogeneousAttentionEncoder
+from inner_loop.rl4co.models.zoo.am import AttentionModelPolicy
+from inner_loop.rl4co.models.zoo.ham.encoder import GraphHeterogeneousAttentionEncoder
 
 
 class HeterogeneousAttentionModelPolicy(AttentionModelPolicy):

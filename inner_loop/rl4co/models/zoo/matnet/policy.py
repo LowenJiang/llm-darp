@@ -5,16 +5,16 @@ import torch.nn as nn
 
 from tensordict import TensorDict
 
-from rl4co.envs.scheduling.ffsp.env import FFSPEnv
-from rl4co.models.common.constructive.autoregressive import AutoregressivePolicy
-from rl4co.models.zoo.matnet.decoder import (
+from inner_loop.rl4co.envs.scheduling.ffsp.env import FFSPEnv
+from inner_loop.rl4co.models.common.constructive.autoregressive import AutoregressivePolicy
+from inner_loop.rl4co.models.zoo.matnet.decoder import (
     MatNetDecoder,
     MatNetFFSPDecoder,
     MultiStageFFSPDecoder,
 )
-from rl4co.models.zoo.matnet.encoder import MatNetEncoder
-from rl4co.utils.ops import batchify
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.zoo.matnet.encoder import MatNetEncoder
+from inner_loop.rl4co.utils.ops import batchify
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

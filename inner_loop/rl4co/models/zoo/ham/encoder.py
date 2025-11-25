@@ -1,8 +1,8 @@
 import torch.nn as nn
 
-from rl4co.models.nn.env_embeddings import env_init_embedding
-from rl4co.models.nn.graph.attnnet import Normalization, SkipConnection
-from rl4co.models.zoo.ham.attention import HeterogenousMHA
+from inner_loop.rl4co.models.nn.env_embeddings import env_init_embedding
+from inner_loop.rl4co.models.nn.graph.attnnet import Normalization, SkipConnection
+from inner_loop.rl4co.models.zoo.ham.attention import HeterogenousMHA
 
 
 class HeterogeneuousMHALayer(nn.Sequential):

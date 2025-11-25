@@ -8,11 +8,11 @@ import torch
 
 from tensordict import TensorDict
 
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl.reinforce.baselines import REINFORCEBaseline
-from rl4co.models.zoo.deepaco import DeepACO
-from rl4co.models.zoo.gfacs.policy import GFACSPolicy
-from rl4co.utils.ops import unbatchify
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl.reinforce.baselines import REINFORCEBaseline
+from inner_loop.rl4co.models.zoo.deepaco import DeepACO
+from inner_loop.rl4co.models.zoo.gfacs.policy import GFACSPolicy
+from inner_loop.rl4co.utils.ops import unbatchify
 
 
 class GFACS(DeepACO):

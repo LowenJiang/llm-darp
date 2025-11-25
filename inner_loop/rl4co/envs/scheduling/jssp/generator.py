@@ -8,8 +8,8 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch.nn.functional import one_hot
 
-from rl4co.envs.common.utils import Generator
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.utils import Generator
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 from .parser import get_max_ops_from_files, read
 

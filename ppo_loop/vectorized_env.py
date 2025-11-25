@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Tuple, Dict
 import numpy as np
 import torch
-from dvrp_env import DVRPEnv
+from .dvrp_env import DVRPEnv
 from tensordict.tensordict import TensorDict
 
 

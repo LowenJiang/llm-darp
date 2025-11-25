@@ -1,11 +1,11 @@
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary
 from lightning.pytorch.loggers import WandbLogger
 
-from rl4co.envs import CVRPEnv
-from rl4co.models.zoo.am import AttentionModelPolicy
-from rl4co.models.zoo.pomo import POMO
-from rl4co.utils.trainer import RL4COTrainer
-from rl4co.utils.meta_trainer import ReptileCallback
+from inner_loop.rl4co.envs import CVRPEnv
+from inner_loop.rl4co.models.zoo.am import AttentionModelPolicy
+from inner_loop.rl4co.models.zoo.pomo import POMO
+from inner_loop.rl4co.utils.trainer import RL4COTrainer
+from inner_loop.rl4co.utils.meta_trainer import ReptileCallback
 
 def main():
     # Set device

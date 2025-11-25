@@ -3,9 +3,9 @@ import torch
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary
 from lightning.pytorch.loggers import WandbLogger
 
-from rl4co.envs import TSPEnv
-from rl4co.models.zoo import AttentionModel
-from rl4co.utils.trainer import RL4COTrainer
+from inner_loop.rl4co.envs import TSPEnv
+from inner_loop.rl4co.models.zoo import AttentionModel
+from inner_loop.rl4co.utils.trainer import RL4COTrainer
 
 
 def main():

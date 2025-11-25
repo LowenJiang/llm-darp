@@ -4,9 +4,9 @@ import torch
 from tensordict import TensorDict
 from torch.nn.functional import scaled_dot_product_attention
 
-from rl4co.models.nn.attention import scaled_dot_product_attention_simple
-from rl4co.utils.decoding import process_logits
-from rl4co.utils.ops import batchify, unbatchify
+from inner_loop.rl4co.models.nn.attention import scaled_dot_product_attention_simple
+from inner_loop.rl4co.utils.decoding import process_logits
+from inner_loop.rl4co.utils.ops import batchify, unbatchify
 
 
 @pytest.mark.parametrize(

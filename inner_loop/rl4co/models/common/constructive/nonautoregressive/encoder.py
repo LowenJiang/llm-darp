@@ -1,6 +1,6 @@
 import abc
 
-from rl4co.models.common.constructive.base import ConstructiveEncoder
+from inner_loop.rl4co.models.common.constructive.base import ConstructiveEncoder
 
 
 class NonAutoregressiveEncoder(ConstructiveEncoder, metaclass=abc.ABCMeta):

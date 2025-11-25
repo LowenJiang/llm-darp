@@ -6,10 +6,10 @@ from hydra.core.global_hydra import GlobalHydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 
-from rl4co.envs import TSPEnv
-from rl4co.models import AttentionModelPolicy
-from rl4co.tasks.eval import evaluate_policy
-from rl4co.tasks.train import run
+from inner_loop.rl4co.envs import TSPEnv
+from inner_loop.rl4co.models import AttentionModelPolicy
+from inner_loop.rl4co.tasks.eval import evaluate_policy
+from inner_loop.rl4co.tasks.train import run
 
 
 @pytest.fixture(scope="package")

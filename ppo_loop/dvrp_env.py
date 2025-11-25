@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from gymnasium import spaces
 from inner_loop.rl4co.envs.routing import SFGenerator, PDPTWEnv
-from ortools_solver import darp_solver
+from .ortools_solver import darp_solver
 from inner_loop.rl4co.models.zoo import AttentionModel, AttentionModelPolicy
 from tensordict.tensordict import TensorDict
 
@@ -78,7 +78,7 @@ class DVRPEnv(gym.Env):
         depot: Optional[Tuple[float, float]] = None,
         seed: Optional[int] = None,
         patience_factor : int=0.2,
-        model_path : Optional[str] = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/inner_loop/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt"
+        model_path : Optional[str] = "inner_loop/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt" #"/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/inner_loop/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt"
     ):  
         """
         Args:

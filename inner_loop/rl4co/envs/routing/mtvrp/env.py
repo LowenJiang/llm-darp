@@ -5,10 +5,10 @@ import torch
 from tensordict.tensordict import TensorDict
 from torchrl.data import Bounded, Composite, Unbounded
 
-from rl4co.data.utils import load_npz_to_tensordict
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.utils.ops import gather_by_index, get_distance
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.data.utils import load_npz_to_tensordict
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.utils.ops import gather_by_index, get_distance
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 from .generator import MTVRPGenerator
 

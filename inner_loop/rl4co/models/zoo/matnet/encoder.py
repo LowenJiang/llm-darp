@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from rl4co.models.nn.attention import MultiHeadCrossAttention
-from rl4co.models.nn.env_embeddings import env_init_embedding
-from rl4co.models.nn.ops import TransformerFFN
+from inner_loop.rl4co.models.nn.attention import MultiHeadCrossAttention
+from inner_loop.rl4co.models.nn.env_embeddings import env_init_embedding
+from inner_loop.rl4co.models.nn.ops import TransformerFFN
 
 
 class MixedScoresSDPA(nn.Module):

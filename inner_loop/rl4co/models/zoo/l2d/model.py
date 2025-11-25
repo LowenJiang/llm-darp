@@ -1,6 +1,6 @@
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl import REINFORCE, StepwisePPO
-from rl4co.models.rl.reinforce.baselines import REINFORCEBaseline
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl import REINFORCE, StepwisePPO
+from inner_loop.rl4co.models.rl.reinforce.baselines import REINFORCEBaseline
 
 from .policy import L2DPolicy, L2DPolicy4PPO
 

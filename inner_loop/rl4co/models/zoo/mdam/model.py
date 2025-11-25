@@ -4,14 +4,14 @@ import torch
 
 from torch.utils.data import DataLoader
 
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl import REINFORCE
-from rl4co.models.rl.reinforce.baselines import (
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl import REINFORCE
+from inner_loop.rl4co.models.rl.reinforce.baselines import (
     REINFORCEBaseline,
     RolloutBaseline,
     WarmupBaseline,
 )
-from rl4co.models.zoo.mdam.policy import MDAMPolicy
+from inner_loop.rl4co.models.zoo.mdam.policy import MDAMPolicy
 
 
 def rollout(self, model, env, batch_size=64, device="cpu", dataset=None):

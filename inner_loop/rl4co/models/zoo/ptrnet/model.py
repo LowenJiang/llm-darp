@@ -1,7 +1,7 @@
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl import REINFORCE
-from rl4co.models.rl.reinforce.baselines import REINFORCEBaseline
-from rl4co.models.zoo.ptrnet.policy import PointerNetworkPolicy
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl import REINFORCE
+from inner_loop.rl4co.models.rl.reinforce.baselines import REINFORCEBaseline
+from inner_loop.rl4co.models.zoo.ptrnet.policy import PointerNetworkPolicy
 
 
 class PointerNetwork(REINFORCE):

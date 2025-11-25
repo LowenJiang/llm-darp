@@ -8,10 +8,10 @@ import torch.nn.functional as F
 
 from tensordict import TensorDict
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.nn.attention import PointerAttention
-from rl4co.models.nn.env_embeddings import env_context_embedding, env_dynamic_embedding
-from rl4co.utils.decoding import decode_logprobs, get_log_likelihood
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.nn.attention import PointerAttention
+from inner_loop.rl4co.models.nn.env_embeddings import env_context_embedding, env_dynamic_embedding
+from inner_loop.rl4co.utils.decoding import decode_logprobs, get_log_likelihood
 
 
 @dataclass

@@ -1,4 +1,4 @@
-from rl4co.models.common.constructive.base import ConstructivePolicy
+from inner_loop.rl4co.models.common.constructive.base import ConstructivePolicy
 
 from .decoder import AutoregressiveDecoder
 from .encoder import AutoregressiveEncoder

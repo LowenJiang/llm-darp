@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from rl4co.utils.decoding import decode_logprobs
-from rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.utils.decoding import decode_logprobs
+from inner_loop.rl4co.utils.ops import gather_by_index
 
 
 class SimpleAttention(nn.Module):

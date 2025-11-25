@@ -5,12 +5,12 @@ import torch.nn as nn
 
 from torch import Tensor
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.nn.attention import PolyNetAttention
-from rl4co.models.nn.env_embeddings import env_context_embedding, env_dynamic_embedding
-from rl4co.models.nn.env_embeddings.dynamic import StaticEmbedding
-from rl4co.models.zoo.am.decoder import AttentionModelDecoder
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.nn.attention import PolyNetAttention
+from inner_loop.rl4co.models.nn.env_embeddings import env_context_embedding, env_dynamic_embedding
+from inner_loop.rl4co.models.nn.env_embeddings.dynamic import StaticEmbedding
+from inner_loop.rl4co.models.zoo.am.decoder import AttentionModelDecoder
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

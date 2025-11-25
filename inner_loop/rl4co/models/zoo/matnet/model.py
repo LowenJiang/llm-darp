@@ -1,9 +1,9 @@
 import torch.nn as nn
 
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.zoo.matnet.policy import MatNetPolicy, MultiStageFFSPPolicy
-from rl4co.models.zoo.pomo import POMO
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.zoo.matnet.policy import MatNetPolicy, MultiStageFFSPPolicy
+from inner_loop.rl4co.models.zoo.pomo import POMO
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

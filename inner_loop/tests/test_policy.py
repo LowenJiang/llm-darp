@@ -1,8 +1,8 @@
 import pytest
 
-from rl4co.models import AttentionModelPolicy, N2SPolicy, PointerNetworkPolicy
-from rl4co.utils.ops import select_start_nodes
-from rl4co.utils.test_utils import generate_env_data
+from inner_loop.rl4co.models import AttentionModelPolicy, N2SPolicy, PointerNetworkPolicy
+from inner_loop.rl4co.utils.ops import select_start_nodes
+from inner_loop.rl4co.utils.test_utils import generate_env_data
 
 
 # Main autorergressive policy: rollout over multiple envs since it is the base

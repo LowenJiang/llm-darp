@@ -9,10 +9,10 @@ import torch.nn as nn
 from lightning import LightningModule
 from torch.utils.data import DataLoader
 
-from rl4co.data.generate_data import generate_default_datasets
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.utils.optim_helpers import create_optimizer, create_scheduler
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.data.generate_data import generate_default_datasets
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.utils.optim_helpers import create_optimizer, create_scheduler
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

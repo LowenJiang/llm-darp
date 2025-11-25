@@ -6,9 +6,9 @@ import torch.nn.functional as F
 
 from einops import rearrange
 
-from rl4co.models.nn.attention import MultiHeadAttention
-from rl4co.models.nn.env_embeddings import env_init_embedding
-from rl4co.models.nn.ops import Normalization, TransformerFFN
+from inner_loop.rl4co.models.nn.attention import MultiHeadAttention
+from inner_loop.rl4co.models.nn.env_embeddings import env_init_embedding
+from inner_loop.rl4co.models.nn.ops import Normalization, TransformerFFN
 
 
 def apply_weights_and_combine(dots, v, tanh_clipping=0):

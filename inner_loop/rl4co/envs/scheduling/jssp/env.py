@@ -4,8 +4,8 @@ from einops import einsum, reduce
 from tensordict import TensorDict
 from torch._tensor import Tensor
 
-from rl4co.envs.scheduling.fjsp.env import FJSPEnv
-from rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.envs.scheduling.fjsp.env import FJSPEnv
+from inner_loop.rl4co.utils.ops import gather_by_index
 
 from .generator import JSSPFileGenerator, JSSPGenerator
 

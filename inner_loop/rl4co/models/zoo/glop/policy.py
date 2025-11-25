@@ -6,19 +6,19 @@ import torch
 from einops import rearrange
 from tensordict import TensorDict
 
-from rl4co.envs import RL4COEnvBase, get_env
-from rl4co.models.common.constructive.nonautoregressive import (
+from inner_loop.rl4co.envs import RL4COEnvBase, get_env
+from inner_loop.rl4co.models.common.constructive.nonautoregressive import (
     NonAutoregressiveDecoder,
     NonAutoregressiveEncoder,
     NonAutoregressivePolicy,
 )
-from rl4co.models.nn.env_embeddings.edge import VRPPolarEdgeEmbedding
-from rl4co.models.nn.env_embeddings.init import VRPPolarInitEmbedding
-from rl4co.models.rl.common.base import RL4COLitModule
-from rl4co.models.zoo.glop.adapter import adapter_map
-from rl4co.models.zoo.nargnn.encoder import NARGNNEncoder
-from rl4co.utils.ops import batchify, select_start_nodes_by_distance
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.nn.env_embeddings.edge import VRPPolarEdgeEmbedding
+from inner_loop.rl4co.models.nn.env_embeddings.init import VRPPolarInitEmbedding
+from inner_loop.rl4co.models.rl.common.base import RL4COLitModule
+from inner_loop.rl4co.models.zoo.glop.adapter import adapter_map
+from inner_loop.rl4co.models.zoo.nargnn.encoder import NARGNNEncoder
+from inner_loop.rl4co.utils.ops import batchify, select_start_nodes_by_distance
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 try:
     import random_insertion as insertion

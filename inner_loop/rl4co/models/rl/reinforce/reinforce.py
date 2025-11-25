@@ -8,12 +8,12 @@ from lightning.pytorch.core.saving import _load_from_checkpoint
 from tensordict import TensorDict
 from typing_extensions import Self
 
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl.common.base import RL4COLitModule
-from rl4co.models.rl.common.utils import RewardScaler
-from rl4co.models.rl.reinforce.baselines import REINFORCEBaseline, get_reinforce_baseline
-from rl4co.utils.lightning import get_lightning_device
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl.common.base import RL4COLitModule
+from inner_loop.rl4co.models.rl.common.utils import RewardScaler
+from inner_loop.rl4co.models.rl.reinforce.baselines import REINFORCEBaseline, get_reinforce_baseline
+from inner_loop.rl4co.utils.lightning import get_lightning_device
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

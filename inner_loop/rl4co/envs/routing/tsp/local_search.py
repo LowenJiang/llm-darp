@@ -6,8 +6,8 @@ from numba import set_num_threads
 import torch
 from tensordict.tensordict import TensorDict
 
-from rl4co.utils.ops import get_distance_matrix
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.utils.ops import get_distance_matrix
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

@@ -1,3 +1,3 @@
-from rl4co.models.common.constructive.autoregressive.decoder import AutoregressiveDecoder
-from rl4co.models.common.constructive.autoregressive.encoder import AutoregressiveEncoder
-from rl4co.models.common.constructive.autoregressive.policy import AutoregressivePolicy
+from inner_loop.rl4co.models.common.constructive.autoregressive.decoder import AutoregressiveDecoder
+from inner_loop.rl4co.models.common.constructive.autoregressive.encoder import AutoregressiveEncoder
+from inner_loop.rl4co.models.common.constructive.autoregressive.policy import AutoregressivePolicy

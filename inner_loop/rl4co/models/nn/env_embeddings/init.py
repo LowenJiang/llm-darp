@@ -3,8 +3,8 @@ import torch.nn as nn
 
 from tensordict.tensordict import TensorDict
 
-from rl4co.models.nn.ops import PositionalEncoding
-from rl4co.utils.ops import batched_scatter_sum, cartesian_to_polar, gather_by_index
+from inner_loop.rl4co.models.nn.ops import PositionalEncoding
+from inner_loop.rl4co.utils.ops import batched_scatter_sum, cartesian_to_polar, gather_by_index
 
 
 def env_init_embedding(env_name: str, config: dict) -> nn.Module:

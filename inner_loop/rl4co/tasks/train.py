@@ -10,7 +10,7 @@ from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
 from rl4co import utils
-from rl4co.utils import RL4COTrainer
+from inner_loop.rl4co.utils import RL4COTrainer
 
 pyrootutils.setup_root(__file__, indicator=".gitignore", pythonpath=True)
 

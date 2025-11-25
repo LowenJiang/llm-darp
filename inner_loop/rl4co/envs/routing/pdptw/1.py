@@ -3,9 +3,9 @@ import torch
 from tensordict.tensordict import TensorDict
 from torchrl.data import Unbounded, Bounded, Composite
 
-from rl4co.envs.routing.cvrp.env import CVRPEnv
-from rl4co.envs.routing.cvrptw.env import CVRPTWEnv
-from rl4co.utils.ops import gather_by_index, get_geo_distance, get_geod_tour_length
+from inner_loop.rl4co.envs.routing.cvrp.env import CVRPEnv
+from inner_loop.rl4co.envs.routing.cvrptw.env import CVRPTWEnv
+from inner_loop.rl4co.utils.ops import gather_by_index, get_geo_distance, get_geod_tour_length
 from .generator import PDPTWGenerator
 from .sf_generator import SFGenerator
 from .render import render
