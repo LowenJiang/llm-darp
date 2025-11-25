@@ -393,7 +393,7 @@ def train(
             # Note: accepted rate is averaged across the episode in the info
 
         # Perform PPO update after each epoch (with data from num_envs episodes)
-        train_stats = agent.update(num_epochs=10, batch_size=64)
+        train_stats = agent.update(num_value_epochs=50, num_policy_epochs=10, batch_size=64)
 
         # Update embedding model every K steps
         if total_steps % steps_per_embedding_update == 0 and len(online_data) > 0:
