@@ -16,10 +16,10 @@ import numpy as np
 import torch
 import pandas as pd
 
-from ppo_agent import PPOAgent
-from dvrp_env import DVRPEnv
-from vectorized_env import VectorizedDVRPEnv
-from embedding import EmbeddingFFN, TravelerDataset, OnlineTravelerDataset, likelihood_loss, flexibility_personalities, n_flexibilities
+from ppo_loop.ppo_agent import PPOAgent
+from ppo_loop.dvrp_env import DVRPEnv
+from ppo_loop.vectorized_env import VectorizedDVRPEnv
+from ppo_loop.embedding import EmbeddingFFN, TravelerDataset, OnlineTravelerDataset, likelihood_loss, flexibility_personalities, n_flexibilities
 from collections import deque
 
 import wandb
@@ -418,7 +418,8 @@ def train(
                 predicted_flexibility = torch.argmax(pred_proba, dim=1)
 
             # Recompute action masks (VECTORIZED!)
-            action_masks = compute_masks_from_flexibility(predicted_flexibility, action_dim)
+            action_masks = compute_masks(customer_ids, predicted_flexibility)
+#            action_masks = compute_masks_from_flexibility(predicted_flexibility, action_dim)
 
             print(f"  Updated masks based on predicted flexibility types")
             print(f"  Flexibility distribution: {torch.bincount(predicted_flexibility, minlength=n_flexibilities).tolist()}")

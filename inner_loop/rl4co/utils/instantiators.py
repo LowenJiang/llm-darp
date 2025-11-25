@@ -4,7 +4,7 @@ from lightning import Callback
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
-from rl4co.utils import pylogger
+from inner_loop.rl4co.utils import pylogger
 
 log = pylogger.get_pylogger(__name__)
 

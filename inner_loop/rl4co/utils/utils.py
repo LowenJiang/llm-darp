@@ -18,7 +18,7 @@ from lightning.pytorch.trainer.connectors.accelerator_connector import (
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from omegaconf import DictConfig, OmegaConf
 
-from rl4co.utils import pylogger, rich_utils
+from inner_loop.rl4co.utils import pylogger, rich_utils
 
 log = pylogger.get_pylogger(__name__)
 

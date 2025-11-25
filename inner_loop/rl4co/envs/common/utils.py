@@ -7,7 +7,7 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch.distributions import Exponential, Normal, Poisson, Uniform
 
-from rl4co.envs.common.distribution_utils import (
+from inner_loop.rl4co.envs.common.distribution_utils import (
     Cluster,
     Gaussian_Mixture,
     Mix_Distribution,

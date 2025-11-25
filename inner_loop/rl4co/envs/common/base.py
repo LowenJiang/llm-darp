@@ -8,10 +8,10 @@ import torch
 from tensordict.tensordict import TensorDict
 from torchrl.envs import EnvBase
 
-from rl4co.data.dataset import TensorDictDataset
-from rl4co.data.utils import load_npz_to_tensordict
-from rl4co.utils.ops import get_num_starts, select_start_nodes
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.data.dataset import TensorDictDataset
+from inner_loop.rl4co.data.utils import load_npz_to_tensordict
+from inner_loop.rl4co.utils.ops import get_num_starts, select_start_nodes
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 
