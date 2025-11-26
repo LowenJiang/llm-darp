@@ -159,20 +159,20 @@ class ActorCritic(nn.Module):
     
     def mask_action(self, action_probs, mask, eps=0):
         """
-        Apply action mask with epsilon-greedy forced exploration.
+        Apply action mask with epsilon-greedy exploration.
 
         Args:
             action_probs: Original action probabilities
             mask: Action mask (1 = allowed/unmasked, 0 = masked/forbidden)
-            eps: Epsilon for forced exploration into masked actions
-                 - With prob eps: uniform random over masked actions (mask=0)
-                 - With prob 1-eps: sample from unmasked actions (mask=1) according to logits
+            eps: Epsilon for epsilon-greedy exploration
+                 - With prob eps: uniform random over ALL actions
+                 - With prob 1-eps: sample from unmasked actions (mask=1) according to policy
 
         Returns:
             Combined action probabilities
         """
+        num_actions = len(action_probs)
         unmasked_count = mask.sum()
-        masked_count = (1 - mask).sum()
 
         # Compute probabilities for unmasked actions (according to policy)
         if unmasked_count > 0:
@@ -184,18 +184,14 @@ class ActorCritic(nn.Module):
                 # Fallback to uniform over unmasked actions
                 unmasked_probs = mask / unmasked_count
         else:
-            # No unmasked actions available, use original probs
-            unmasked_probs = action_probs
+            # No unmasked actions available, fall back to uniform over all
+            unmasked_probs = torch.ones_like(action_probs) / num_actions
 
-        # Compute uniform probabilities for masked actions (forced exploration)
-        if masked_count > 0:
-            masked_probs = (1 - mask) / masked_count
-        else:
-            # No masked actions, just use unmasked probs
-            masked_probs = torch.zeros_like(action_probs)
+        # Uniform probabilities over ALL actions for exploration
+        uniform_probs = torch.ones_like(action_probs) / num_actions
 
-        # Combine: eps * uniform_over_masked + (1-eps) * policy_over_unmasked
-        return eps * masked_probs + (1 - eps) * unmasked_probs
+        # Combine: eps * uniform_over_all + (1-eps) * policy_over_unmasked
+        return eps * uniform_probs + (1 - eps) * unmasked_probs
 
     def act(
         self,
@@ -274,7 +270,7 @@ class PPOAgent:
         gae_lambda: float = 0.95,
         clip_epsilon: float = 0.2,
         value_coef: float = 0.5,
-        entropy_coef: float = 0.01,
+        entropy_coef: float = 4e-4,
         max_grad_norm: float = 0.5,
         device: str = "cpu",
     ):

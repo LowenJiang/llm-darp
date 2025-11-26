@@ -164,14 +164,23 @@ class SFGenerator(Generator):
         locs = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
         time_windows = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
         demand = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
-        # Flexibility tensor - single value per node (pickup nodes use flexibility_pickup_earlier, dropoff nodes use flexibility_dropoff_later)
-        flexibility = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
         # User ID tensor - tracks which traveler each node belongs to
         user_id = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
+        # Trip metadata - store as list of dicts for each batch instance
+        # Each dict maps traveler_id -> trip metadata
+        trip_metadata_batch = []
 
         for instance_idx in range(flat_batch):
+            trip_metadata = {}  # Maps traveler_id -> metadata dict
             for cust_idx, traveler_id in enumerate(self._traveler_ids):
                 trip = self._sample_trip(traveler_id)
+                # Store trip metadata for this traveler
+                trip_metadata[traveler_id] = {
+                    "flexibility": trip["flexibility"],
+                    "trip_purpose": trip["trip_purpose"],
+                    "departure_location": trip["departure_location"],
+                    "arrival_location": trip["arrival_location"],
+                }
                 pickup_window = self._shift_window(
                     trip["pickup_tw"],
                     direction="earlier",
@@ -199,18 +208,16 @@ class SFGenerator(Generator):
                 demand[instance_idx, pickup_idx] = self.demand_per_customer
                 demand[instance_idx, dropoff_idx] = -self.demand_per_customer
 
-                # Store flexibility values - each node gets its relevant flexibility value
-                flexibility[instance_idx, pickup_idx] = float(trip["flexibility_pickup_earlier"])
-                flexibility[instance_idx, dropoff_idx] = float(trip["flexibility_dropoff_later"])
-
                 # Store user_id (traveler_id) for both pickup and dropoff nodes
                 user_id[instance_idx, pickup_idx] = traveler_id
                 user_id[instance_idx, dropoff_idx] = traveler_id
-                
+
+            # Store trip metadata for this batch instance
+            trip_metadata_batch.append(trip_metadata)
 
         if self.shuffle_pairs and self.num_customers > 1:
-            h3_indices, time_windows, demand, locs, flexibility, user_id = self._shuffle_pairs(
-                h3_indices, time_windows, demand, locs, flexibility, user_id
+            h3_indices, time_windows, demand, locs, user_id = self._shuffle_pairs(
+                h3_indices, time_windows, demand, locs, user_id
             )
 
         # Add depot time window
@@ -227,13 +234,13 @@ class SFGenerator(Generator):
         depot_locs = torch.tensor(depot_gps, dtype=torch.float32).expand(flat_batch, 1, 2)
         locs = torch.cat([depot_locs, locs], dim=1)
 
-        # Add depot flexibility value (0 for depot - no perturbation needed)
-        depot_flexibility = torch.zeros(flat_batch, 1, dtype=torch.float32)
-        flexibility = torch.cat([depot_flexibility, flexibility], dim=1)
-
         # Add depot user_id (0 for depot)
         depot_user_id = torch.zeros(flat_batch, 1, dtype=torch.long)
         user_id = torch.cat([depot_user_id, user_id], dim=1)
+
+        # Add depot demand (0 for depot)
+        depot_demand = torch.zeros(flat_batch, 1, dtype=torch.float32)
+        demand = torch.cat([depot_demand, demand], dim=1)
 
         capacity = torch.full((flat_batch,), float(self.vehicle_capacity), dtype=torch.float32)
 
@@ -241,9 +248,8 @@ class SFGenerator(Generator):
         h3_indices = h3_indices.view(*batch_shape, num_nodes + 1)
         locs = locs.view(*batch_shape, num_nodes + 1, 2)
         time_windows = time_windows.view(*batch_shape, num_nodes + 1, 2)
-        demand = demand.view(*batch_shape, num_nodes)
+        demand = demand.view(*batch_shape, num_nodes + 1)
         capacity = capacity.view(*batch_shape)
-        flexibility = flexibility.view(*batch_shape, num_nodes + 1)
         user_id = user_id.view(*batch_shape, num_nodes + 1) # Note: user_id [0] corresponds to depot
 
         # Expand travel time matrix to batch size
@@ -259,7 +265,7 @@ class SFGenerator(Generator):
                 "capacity": capacity,
                 "time_windows": time_windows,
                 "demand": demand,
-                "flexibility": flexibility,
+                "trip_metadata": trip_metadata_batch,  # List of dicts mapping traveler_id -> metadata
             },
             batch_size=batch_shape,
         )
@@ -297,7 +303,11 @@ class SFGenerator(Generator):
             raise FileNotFoundError(f"CSV file not found at {self.csv_path}")
 
         df = pd.read_csv(self.csv_path)
-        required_columns = {"traveler_id", "origin_h3", "destination_h3", "departure_time_window", "arrival_time_window", "flexibility_pickup_earlier", "flexibility_dropoff_later"}
+        required_columns = {
+            "traveler_id", "origin_h3", "destination_h3",
+            "departure_time_window", "arrival_time_window",
+            "flexibility", "trip_purpose", "departure_location", "arrival_location"
+        }
         missing_cols = required_columns - set(df.columns)
         if missing_cols:
             raise ValueError(f"Missing columns {missing_cols} in {self.csv_path}")
@@ -338,9 +348,11 @@ class SFGenerator(Generator):
                     if destination_h3 not in self._h3_to_gps:
                         self._h3_to_gps[destination_h3] = destination_gps
 
-                    # Parse flexibility values (stored separately for pickup and dropoff nodes)
-                    flexibility_pickup_earlier = int(row["flexibility_pickup_earlier"])
-                    flexibility_dropoff_later = int(row["flexibility_dropoff_later"])
+                    # Parse trip metadata
+                    flexibility = str(row["flexibility"]).strip()
+                    trip_purpose = str(row["trip_purpose"]).strip()
+                    departure_location = str(row["departure_location"]).strip()
+                    arrival_location = str(row["arrival_location"]).strip()
 
                 except (TypeError, ValueError) as e:
                     log.warning(f"Error parsing trip: {e}")
@@ -354,8 +366,10 @@ class SFGenerator(Generator):
                         "dropoff_tw": dropoff_tw,
                         "origin_gps": origin_gps,
                         "destination_gps": destination_gps,
-                        "flexibility_pickup_earlier": flexibility_pickup_earlier,
-                        "flexibility_dropoff_later": flexibility_dropoff_later,
+                        "flexibility": flexibility,
+                        "trip_purpose": trip_purpose,
+                        "departure_location": departure_location,
+                        "arrival_location": arrival_location,
                     }
                 )
 
@@ -372,6 +386,7 @@ class SFGenerator(Generator):
         if len(trips) == 1:
             return trips[0]
 
+        # Randomly sample a trip; which includes all triptype information
         idx = self._randint(len(trips))
         return trips[idx]
 
@@ -381,15 +396,13 @@ class SFGenerator(Generator):
         time_windows: torch.Tensor,
         demand: torch.Tensor,
         locs: torch.Tensor,
-        flexibility: torch.Tensor,
         user_id: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         num_instances = h3_indices.shape[0]
         randomized_h3_indices = torch.zeros_like(h3_indices)
         randomized_time_windows = torch.zeros_like(time_windows)
         randomized_demand = torch.zeros_like(demand)
         randomized_locs = torch.zeros_like(locs)
-        randomized_flexibility = torch.zeros_like(flexibility)
         randomized_user_id = torch.zeros_like(user_id)
 
         for instance_idx in range(num_instances):
@@ -410,13 +423,10 @@ class SFGenerator(Generator):
                 randomized_locs[instance_idx, dst_pickup] = locs[instance_idx, src_pickup]
                 randomized_locs[instance_idx, dst_dropoff] = locs[instance_idx, src_dropoff]
 
-                randomized_flexibility[instance_idx, dst_pickup] = flexibility[instance_idx, src_pickup]
-                randomized_flexibility[instance_idx, dst_dropoff] = flexibility[instance_idx, src_dropoff]
-
                 randomized_user_id[instance_idx, dst_pickup] = user_id[instance_idx, src_pickup]
                 randomized_user_id[instance_idx, dst_dropoff] = user_id[instance_idx, src_dropoff]
 
-        return randomized_h3_indices, randomized_time_windows, randomized_demand, randomized_locs, randomized_flexibility, randomized_user_id
+        return randomized_h3_indices, randomized_time_windows, randomized_demand, randomized_locs, randomized_user_id
 
     def _sample_perturbation_step(self) -> int:
         if self.perturbation < 10:

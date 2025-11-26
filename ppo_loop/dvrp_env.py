@@ -17,6 +17,7 @@ sys.path.append("/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git")
 
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 import torch
 from gymnasium import spaces
 from inner_loop.rl4co.envs.routing import SFGenerator, PDPTWEnv
@@ -67,7 +68,7 @@ class DVRPEnv(gym.Env):
     ]
 
     # Fields that need to be sliced (node-indexed fields)
-    SLICE_FIELDS = {"h3_indices", "time_windows", "demand", "locs", "action_mask", "visited", "flexibility"}
+    SLICE_FIELDS = {"h3_indices", "time_windows", "demand", "locs", "action_mask", "visited"}
 
     def __init__(
         self,
@@ -78,7 +79,8 @@ class DVRPEnv(gym.Env):
         depot: Optional[Tuple[float, float]] = None,
         seed: Optional[int] = None,
         patience_factor : int=0.2,
-        model_path : Optional[str] = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/inner_loop/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt"
+        model_path : Optional[str] = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/inner_loop/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt",
+        traveler_decisions_path: Optional[str] = None
     ):  
         """
         Args:
@@ -134,6 +136,13 @@ class DVRPEnv(gym.Env):
             self.policy = model.policy.to('cpu')
         else:
             self.policy = None
+
+        # Load traveler decisions CSV for acceptance lookup
+        self.traveler_decisions_path = traveler_decisions_path
+        if traveler_decisions_path is not None:
+            self.traveler_decisions_df = pd.read_csv(traveler_decisions_path)
+        else:
+            self.traveler_decisions_df = None
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[dict] = None
@@ -251,19 +260,44 @@ class DVRPEnv(gym.Env):
         # Decode action to perturbation
         pickup_shift, dropoff_shift = self.ACTION_SPACE_MAP[action]
 
-        # Determine if user accepts the perturbation based on flexibility constraints
-        # Get flexibility values from the request
-        # After slicing, flexibility shape is [batch, 2] where:
-        #   index 0 = pickup flexibility (from original index 2*i+1)
-        #   index 1 = dropoff flexibility (from original index 2*i+2)
-        flexibility = new_request["flexibility"][0].cpu().numpy()  # [2]
-        flexibility_pickup_earlier = flexibility[0]
-        flexibility_dropoff_later = flexibility[1]
+        # Get traveler_id for the current request
+        pickup_idx = 2 * self.current_step + 1
+        traveler_id = self.pending_requests["user_id"][0, pickup_idx].item()
 
-        # User accepts if the perturbation is within their flexibility bounds
-        # pickup_shift is negative (earlier), so we use abs()
-        # dropoff_shift is positive (later), so we compare directly
-        accepted = (abs(pickup_shift) <= flexibility_pickup_earlier) and (dropoff_shift <= flexibility_dropoff_later)
+        # Get trip metadata from pending_requests
+        # trip_metadata is stored as a list (not a tensor), so access it differently
+        if "trip_metadata" in self.pending_requests.keys():
+            # Use direct attribute access to avoid TensorDict indexing issues
+            trip_metadata_list = self.pending_requests["trip_metadata"]
+            # trip_metadata_list is a list of dicts, get the first one (batch index 0)
+            if isinstance(trip_metadata_list, list) and len(trip_metadata_list) > 0:
+                trip_metadata = trip_metadata_list[0]
+            else:
+                trip_metadata = trip_metadata_list
+
+            if traveler_id in trip_metadata:
+                metadata = trip_metadata[traveler_id]
+                flexibility = metadata["flexibility"]
+                trip_purpose = metadata["trip_purpose"]
+                departure_location = metadata["departure_location"]
+                arrival_location = metadata["arrival_location"]
+
+                # Look up acceptance decision
+                accepted = self._get_acceptance_decision(
+                    traveler_id=traveler_id,
+                    flexibility=flexibility,
+                    trip_purpose=trip_purpose,
+                    departure_location=departure_location,
+                    arrival_location=arrival_location,
+                    pickup_shift=pickup_shift,
+                    dropoff_shift=dropoff_shift
+                )
+            else:
+                # Fallback to random acceptance if traveler_id not in metadata
+                accepted = np.random.random() < self.acceptance_rate
+        else:
+            # Fallback to random acceptance if no trip metadata available
+            accepted = np.random.random() < self.acceptance_rate
 
         if accepted:
             # Apply perturbation to time windows
@@ -479,6 +513,72 @@ class DVRPEnv(gym.Env):
 
         return perturbed
 
+    def _get_acceptance_decision(
+        self,
+        traveler_id: int,
+        flexibility: str,
+        trip_purpose: str,
+        departure_location: str,
+        arrival_location: str,
+        pickup_shift: int,
+        dropoff_shift: int
+    ) -> bool:
+        """
+        Look up the acceptance decision from traveler_decisions_augmented.csv.
+
+        Args:
+            traveler_id: ID of the traveler
+            flexibility: Flexibility type string (e.g., "flexible for both early pickup and late dropoff")
+            trip_purpose: Purpose of the trip
+            departure_location: Departure location name
+            arrival_location: Arrival location name
+            pickup_shift: Pickup shift in minutes (negative = earlier)
+            dropoff_shift: Dropoff shift in minutes (positive = later)
+
+        Returns:
+            True if accepted, False if rejected
+        """
+        if self.traveler_decisions_df is None:
+            # Fallback to random acceptance if CSV not provided
+            return np.random.random() < self.acceptance_rate
+
+        # Convert shifts to absolute values for matching
+        pickup_shift_abs = abs(pickup_shift)
+        dropoff_shift_abs = abs(dropoff_shift)
+
+        # Find matching row
+        mask = (
+            (self.traveler_decisions_df["traveler_id"] == traveler_id) &
+            (self.traveler_decisions_df["flexibility"] == flexibility) &
+            (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
+            (self.traveler_decisions_df["departure_location"] == departure_location) &
+            (self.traveler_decisions_df["arrival_location"] == arrival_location) &
+            (self.traveler_decisions_df["pickup_shift_min"] == pickup_shift_abs) &
+            (self.traveler_decisions_df["dropoff_shift_min"] == dropoff_shift_abs)
+        )
+
+        matching_rows = self.traveler_decisions_df[mask]
+
+        if len(matching_rows) == 0:
+            print(f"WARNING: No matching decision found for traveler {traveler_id}, "
+                  f"flexibility='{flexibility}', trip_purpose='{trip_purpose}', "
+                  f"departure='{departure_location}', arrival='{arrival_location}', "
+                  f"pickup_shift={pickup_shift}, dropoff_shift={dropoff_shift}")
+            # Fallback to random acceptance
+            return np.random.random() < self.acceptance_rate
+
+        # Get the first matching row
+        row = matching_rows.iloc[0]
+
+        # The acceptance decision is stored in a column named after the flexibility type
+        # Column name should match the flexibility string
+        if flexibility not in row.index:
+            print(f"WARNING: Flexibility column '{flexibility}' not found in CSV")
+            return np.random.random() < self.acceptance_rate
+
+        decision = row[flexibility]
+        return decision == "accept"
+
     def get_current_user_id(self) -> int:
         """Get the user_id of the current incoming request."""
         if "user_id" in self.pending_requests.keys():
@@ -501,7 +601,8 @@ def test_env():
     print("=" * 50)
 
     # Create environment with small number of customers for testing
-    env = DVRPEnv(num_customers=5, seed=42)
+    decisions_path = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"
+    env = DVRPEnv(num_customers=5, seed=42, traveler_decisions_path=decisions_path)
 
     print(f"Observation space: {env.observation_space}")
     print(f"Action space: {env.action_space}")

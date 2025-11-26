@@ -36,76 +36,6 @@ except FileNotFoundError:
     df_decisions = None
     n_travelers = 30  # Default
 
-class OnlineTravelerDataset(torch.utils.data.Dataset):
-    """
-    Custom dataset for online updates.
-    It calculates the 'ind_matrix' (consistency) on the fly without
-    needing to hack column names or overwrite data.
-    """
-    def __init__(self, df_online, flexibility_personalities, action_space_map=None):
-        self.num_samples = len(df_online)
-        # Convert mapped IDs to tensor
-        self.entity_ids = torch.LongTensor(df_online['traveler_id'].values)
-
-        # Default action space map if not provided
-        if action_space_map is None:
-            action_space_map = [
-                (-30, 0), (-30, 10), (-30, 20), (-30, 30),
-                (-20, 0), (-20, 10), (-20, 20), (-20, 30),
-                (-10, 0), (-10, 10), (-10, 20), (-10, 30),
-                (0, 0), (0, 10), (0, 20), (0, 30),
-            ]
-
-        # Pre-compute the consistency matrix (ind_matrix)
-        # Shape: (N_samples, N_personalities)
-        decision_matrix = []
-
-        for idx, row in df_online.iterrows():
-            row_consistencies = []
-
-            # What actually happened?
-            actual = "accept" if row['accepted'] else "reject"
-
-            # What was the move?
-            action = row['action']
-            pickup_shift, dropoff_shift = action_space_map[action]
-            early_shift = abs(pickup_shift)
-            late_shift = dropoff_shift
-
-            # Check consistency for ALL 4 personalities
-            for flex_idx, _ in enumerate(flexibility_personalities):
-                # 1. Determine theoretical behavior
-                if flex_idx == 0:   # Late Flex
-                    would_accept = (early_shift == 0)
-                elif flex_idx == 1: # Early Flex
-                    would_accept = (late_shift == 0)
-                elif flex_idx == 2: # Inflexible
-                    would_accept = (early_shift == 0 and late_shift == 0)
-                else:               # Both Flex
-                    would_accept = True
-
-                theoretical = "accept" if would_accept else "reject"
-
-                # 2. Compare with reality
-                # If theoretical matches actual, we put 1.0 (consistent)
-                # If not, we put 0.0 (inconsistent)
-                is_consistent = 1.0 if theoretical == actual else 0.0
-                row_consistencies.append(is_consistent)
-
-            decision_matrix.append(row_consistencies)
-
-        self.ind_matrix = torch.FloatTensor(decision_matrix)
-
-    def __len__(self):
-        return self.num_samples
-
-    def __getitem__(self, idx):
-        # We only need entity_ids and ind_matrix for the likelihood_loss
-        # We return dummies for the other values expected by the training loop if needed,
-        # or just unpack correctly in the loop.
-        return self.entity_ids[idx], torch.zeros(1), self.ind_matrix[idx], torch.zeros(1)
-
-
 class TravelerDataset(Dataset):
     def __init__(self, df_decisions = None):
         self.num_samples = df_decisions.shape[0]
@@ -130,6 +60,223 @@ class TravelerDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.entity_ids[idx], self.decisions[idx], self.ind_matrix[idx,:], self.decision_matrix[idx,:]
+
+
+class OnlineTravelerDataset(Dataset):
+    """
+    Dataset for online learning from (customer_id, action, accepted) observations.
+
+    Does not require ground-truth flexibility labels. Instead, computes which flexibility
+    types would be consistent with each observed (action, accepted) pair.
+    """
+    def __init__(self, df_online, flexibility_personalities, action_space_map):
+        """
+        Args:
+            df_online: DataFrame with columns ['traveler_id', 'action', 'accepted']
+                      (or 'customer_id' which will be converted to 0-indexed 'traveler_id')
+                      Note: customer_id/traveler_id can be 1-indexed (will be converted to 0-indexed)
+            flexibility_personalities: List of flexibility type descriptions (length L)
+            action_space_map: List of (early_shift, late_shift) tuples for each action
+        """
+        df_online = df_online.copy()
+
+        # Handle both 'customer_id' and 'traveler_id' column names
+        if 'customer_id' in df_online.columns:
+            # Convert customer_id (1-indexed) to traveler_id (0-indexed)
+            # This matches TravelerDataset behavior
+            df_online['traveler_id'] = df_online['customer_id'] - 1
+        elif 'traveler_id' in df_online.columns:
+            # Check if already 0-indexed or needs conversion
+            min_id = df_online['traveler_id'].min()
+            if min_id >= 1:
+                # Appears to be 1-indexed, convert to 0-indexed
+                df_online['traveler_id'] = df_online['traveler_id'] - 1
+
+        self.num_samples = df_online.shape[0]
+        self.num_entities = len(df_online["traveler_id"].unique())
+
+        # Entity IDs (0-indexed for embedding layer)
+        self.entity_ids = torch.from_numpy(np.array(df_online["traveler_id"])).long()
+
+        # Observed decisions (1 = accepted, 0 = rejected)
+        self.decisions = torch.from_numpy(np.array(df_online["accepted"].astype(int)))
+
+        # Compute indicator matrix: ind_matrix[i, l] = 1 if flexibility type l
+        # would make the same decision as observed for sample i
+        self.ind_matrix = self._compute_indicator_matrix(
+            df_online["action"].values,
+            df_online["accepted"].values,
+            flexibility_personalities,
+            action_space_map
+        )
+
+        # Decision matrix: what each flexibility type would decide for each action
+        # decision_matrix[i, l] = 1 if flexibility type l would accept action i
+        self.decision_matrix = self._compute_decision_matrix(
+            df_online["action"].values,
+            flexibility_personalities,
+            action_space_map
+        )
+
+    def _would_accept_action(self, action_idx, flex_type_idx, action_space_map):
+        """
+        Determine if a flexibility type would accept a given action.
+
+        Flexibility types:
+            0: flexible for late dropoff, inflexible for early pickup
+            1: flexible for early pickup, inflexible for late dropoff
+            2: inflexible for any schedule changes
+            3: flexible for both early pickup and late dropoff
+        """
+        early_shift, late_shift = action_space_map[action_idx]
+        early_shift = abs(early_shift)  # Convert to positive value
+
+        if flex_type_idx == 0:  # Flexible late dropoff, inflexible early pickup
+            return early_shift == 0
+        elif flex_type_idx == 1:  # Flexible early pickup, inflexible late dropoff
+            return late_shift == 0
+        elif flex_type_idx == 2:  # Inflexible for any changes
+            return early_shift == 0 and late_shift == 0
+        elif flex_type_idx == 3:  # Flexible for both
+            return True
+        else:
+            raise ValueError(f"Unknown flexibility type index: {flex_type_idx}")
+
+    def _compute_indicator_matrix(self, actions, accepted, flexibility_personalities, action_space_map):
+        """
+        Compute indicator matrix where ind_matrix[i, l] = 1 if flexibility type l
+        would make the same decision as observed for sample i.
+        """
+        n_samples = len(actions)
+        n_flex_types = len(flexibility_personalities)
+        ind_matrix = torch.zeros((n_samples, n_flex_types), dtype=torch.float32)
+
+        for i in range(n_samples):
+            action_idx = actions[i]
+            observed_decision = accepted[i]  # True/False or 1/0
+
+            for l in range(n_flex_types):
+                # What would this flexibility type decide?
+                flex_would_accept = self._would_accept_action(action_idx, l, action_space_map)
+
+                # Indicator is 1 if both made the same decision
+                ind_matrix[i, l] = float(flex_would_accept == observed_decision)
+
+        return ind_matrix
+
+    def _compute_decision_matrix(self, actions, flexibility_personalities, action_space_map):
+        """
+        Compute decision matrix where decision_matrix[i, l] = 1 if flexibility type l
+        would accept action i.
+        """
+        n_samples = len(actions)
+        n_flex_types = len(flexibility_personalities)
+        decision_matrix = torch.zeros((n_samples, n_flex_types), dtype=torch.float32)
+
+        for i in range(n_samples):
+            action_idx = actions[i]
+
+            for l in range(n_flex_types):
+                decision_matrix[i, l] = float(
+                    self._would_accept_action(action_idx, l, action_space_map)
+                )
+
+        return decision_matrix
+
+    def __len__(self):
+        return self.num_samples
+
+    def __getitem__(self, idx):
+        return self.entity_ids[idx], self.decisions[idx], self.ind_matrix[idx,:], self.decision_matrix[idx,:]
+
+
+def update_embedding_model(embedding_model, online_data, flexibility_personalities, action_space_map,
+                           num_epochs=50, batch_size=64, lr=1e-3):
+    """
+    Update embedding model using online data to learn customer flexibility preferences.
+
+    Args:
+        embedding_model: EmbeddingFFN model to update
+        online_data: List of dicts with keys: customer_id, action, accepted
+        flexibility_personalities: List of flexibility type descriptions
+        action_space_map: List of (early_shift, late_shift) tuples for each action
+        num_epochs: Number of training epochs
+        batch_size: Batch size for training
+        lr: Learning rate
+
+    Returns:
+        Updated embedding model
+    """
+    # Data quality checks
+    if len(online_data) < batch_size:
+        print(f"  [Embedding Update] Insufficient data: {len(online_data)} < {batch_size}. Skipping update.")
+        return embedding_model
+
+    df_online = pd.DataFrame(online_data)
+
+    # Check per-customer data availability
+    customer_counts = df_online['customer_id'].value_counts()
+    min_samples_per_customer = 3
+    valid_customers = customer_counts[customer_counts >= min_samples_per_customer]
+
+    if len(valid_customers) < 2:
+        print(f"  [Embedding Update] Too few customers with sufficient data: {len(valid_customers)}. Skipping update.")
+        return embedding_model
+
+    # Filter to only include customers with enough samples
+    df_online = df_online[df_online['customer_id'].isin(valid_customers.index)]
+
+    # Check action diversity
+    action_counts = df_online['action'].value_counts()
+    if len(action_counts) < 3:
+        print(f"  [Embedding Update] Low action diversity: {len(action_counts)} unique actions. Skipping update.")
+        return embedding_model
+
+    unique_customers = sorted(df_online['customer_id'].unique())
+
+    print(f"  [Embedding Update] Training on {len(df_online)} samples from {len(unique_customers)} customers")
+    print(f"  [Embedding Update] Action distribution: {action_counts.head(5).to_dict()}")
+
+    try:
+        # Use OnlineTravelerDataset which calculates consistency matrix correctly
+        # OnlineTravelerDataset will handle customer_id (1-indexed) -> traveler_id (0-indexed) conversion
+        dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+        optimizer = torch.optim.Adam(embedding_model.parameters(), lr=lr)
+
+        embedding_model.train()
+
+        for epoch in range(num_epochs):
+            epoch_loss = 0.0
+            for entity_ids, _, ind_matrix, _ in dataloader:
+                optimizer.zero_grad()
+                pred_proba = embedding_model(entity_ids)
+                beta_matrix = embedding_model.get_embed()
+                loss = likelihood_loss(beta_matrix, pred_proba, ind_matrix)
+                loss.backward()
+                optimizer.step()
+                epoch_loss += loss.item()
+
+            if epoch == 0 or epoch == num_epochs - 1:
+                print(f"    Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss/len(dataloader):.4f}")
+
+        embedding_model.eval()
+
+        # Log predictions for tracked customers
+        with torch.no_grad():
+            tracked_ids = torch.LongTensor([cid - 1 for cid in unique_customers[:5]])
+            pred_proba = embedding_model(tracked_ids)
+            predicted_types = torch.argmax(pred_proba, dim=1)
+            print(f"  [Embedding Update] Sample predictions for customers {unique_customers[:5]}: {predicted_types.tolist()}")
+
+    except Exception as e:
+        print(f"  [Embedding Update] Error: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return embedding_model
+
 
 class EmbeddingFFN(nn.Module):
     def __init__(self, num_entities, embed_dim, hidden_dim, output_dim):

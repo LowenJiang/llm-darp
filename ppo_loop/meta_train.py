@@ -19,7 +19,10 @@ import pandas as pd
 from ppo_agent import PPOAgent
 from dvrp_env import DVRPEnv
 from vectorized_env import VectorizedDVRPEnv
-from embedding import EmbeddingFFN, TravelerDataset, OnlineTravelerDataset, likelihood_loss, flexibility_personalities, n_flexibilities
+from embedding import (
+    EmbeddingFFN, flexibility_personalities, n_flexibilities,
+    update_embedding_model
+)
 from collections import deque
 
 import wandb
@@ -107,97 +110,6 @@ def compute_masks_from_flexibility(predicted_flexibility: torch.Tensor, action_d
 
     return masks
 
-def update_embedding_model(embedding_model, online_data, num_epochs=50, batch_size=64, lr=1e-3):
-    """
-    Update embedding model using online data to learn customer flexibility preferences.
-
-    Args:
-        embedding_model: EmbeddingFFN model to update
-        online_data: List of dicts with keys: customer_id, action, accepted
-        num_epochs: Number of training epochs
-        batch_size: Batch size for training
-        lr: Learning rate
-
-    Returns:
-        Updated embedding model
-    """
-
-    # Data quality checks
-    if len(online_data) < batch_size:
-        print(f"  [Embedding Update] Insufficient data: {len(online_data)} < {batch_size}. Skipping update.")
-        return embedding_model
-
-    df_online = pd.DataFrame(online_data)
-
-    # Check per-customer data availability
-    customer_counts = df_online['customer_id'].value_counts()
-    min_samples_per_customer = 3
-    valid_customers = customer_counts[customer_counts >= min_samples_per_customer]
-
-    if len(valid_customers) < 2:
-        print(f"  [Embedding Update] Too few customers with sufficient data: {len(valid_customers)}. Skipping update.")
-        return embedding_model
-
-    # Filter to only include customers with enough samples
-    df_online = df_online[df_online['customer_id'].isin(valid_customers.index)]
-
-    # Check action diversity
-    action_counts = df_online['action'].value_counts()
-    if len(action_counts) < 3:
-        print(f"  [Embedding Update] Low action diversity: {len(action_counts)} unique actions. Skipping update.")
-        return embedding_model
-
-    # Map customer_ids to 0-indexed embedding slots
-    # customer_id from environment (1-indexed) -> embedding index (0-indexed)
-    # Use customer_id - 1 as the embedding index to maintain consistent mapping
-    df_online['traveler_id'] = df_online['customer_id'] - 1
-    unique_customers = sorted(df_online['customer_id'].unique())
-
-    print(f"  [Embedding Update] Training on {len(df_online)} samples from {len(unique_customers)} customers")
-    print(f"  [Embedding Update] Action distribution: {action_counts.head(5).to_dict()}")
-
-    try:
-        # Use OnlineTravelerDataset which calculates consistency matrix correctly
-        dataset = OnlineTravelerDataset(df_online, flexibility_personalities, ACTION_SPACE_MAP)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-        optimizer = torch.optim.Adam(embedding_model.parameters(), lr=lr)
-
-        embedding_model.train()
-        total_loss = 0.0
-        num_batches = 0
-
-        for epoch in range(num_epochs):
-            epoch_loss = 0.0
-            for entity_ids, _, ind_matrix, _ in dataloader:
-                optimizer.zero_grad()
-                pred_proba = embedding_model(entity_ids)
-                beta_matrix = embedding_model.get_embed()
-                loss = likelihood_loss(beta_matrix, pred_proba, ind_matrix)
-                loss.backward()
-                optimizer.step()
-                epoch_loss += loss.item()
-                num_batches += 1
-
-            if epoch == 0 or epoch == num_epochs - 1:
-                print(f"    Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss/len(dataloader):.4f}")
-
-        embedding_model.eval()
-
-        # Log predictions for tracked customers
-        with torch.no_grad():
-            tracked_ids = torch.LongTensor([cid - 1 for cid in unique_customers[:5]])
-            pred_proba = embedding_model(tracked_ids)
-            predicted_types = torch.argmax(pred_proba, dim=1)
-            print(f"  [Embedding Update] Sample predictions for customers {unique_customers[:5]}: {predicted_types.tolist()}")
-
-    except Exception as e:
-        print(f"  [Embedding Update] Error: {e}")
-        import traceback
-        traceback.print_exc()
-
-    return embedding_model
-
 
 def train(
     num_episodes: int = 30,
@@ -261,16 +173,11 @@ def train(
         lr=3e-4,
         gamma=0.99,
         gae_lambda=0.95,
-        clip_epsilon=0.2,
+        clip_epsilon=0.1,
         value_coef=0.5,
         entropy_coef=0.05,
         device=device,
     )
-
-    # Initialize action masks (num_customers x action_dim)
-    # Mask = 1 means action is allowed, 0 means masked
-    # Start with all ones (all actions allowed for all users initially)
-    action_masks = torch.ones(num_customers, action_dim)
 
     # Initialize embedding model for learning customer preferences
     embedding_model = EmbeddingFFN(
@@ -342,6 +249,10 @@ def train(
         epoch_episode_accepted = []
         epoch_episode_failed = []
 
+        # Initialize per-environment accumulators
+        env_rewards = np.zeros(num_envs)  # Accumulate rewards per environment
+        env_accepted_count = np.zeros(num_envs)  # Count accepted requests per environment
+
         # Compute current epsilon (linear decay based on epoch)
         epsilon = initial_epsilon - (initial_epsilon - final_epsilon) * (epoch - 1) / max(num_epochs - 1, 1)
 
@@ -350,27 +261,37 @@ def train(
             # Get user IDs for current request across all environments
             user_ids = vec_env.get_current_user_ids()  # (num_envs,)
 
-            # Get masks for all users (batch indexing)
-            # user_ids are 1-indexed, so subtract 1 for 0-indexed action_masks
-            batch_masks = action_masks[user_ids - 1]  # (num_envs, action_dim)
+            # Predict flexibility and compute masks based on embeddings
+            with torch.no_grad():
+                # user_ids are 1-indexed from env, convert to 0-indexed for embedding
+                user_embedding_ids = torch.LongTensor(user_ids) - 1
+                pred_proba = embedding_model(user_embedding_ids)
+                predicted_flexibility = torch.argmax(pred_proba, dim=1)
+                masks = compute_masks_from_flexibility(predicted_flexibility, action_dim=action_dim)
 
-            # Select actions for all environments in parallel
+            # Select actions for all environments in parallel with masks
             actions = agent.select_action_batch(
                 states,
-                masks=batch_masks,
+                masks=masks,
                 epsilon=epsilon
             )  # (num_envs,)
 
             # Step all environments in parallel (BATCHED NEURAL ORACLE!)
+
             next_states, rewards, dones, truncs, step_infos = vec_env.step(actions)
 
-            # Collect online data from all environments
+            # Collect online data from all environments and accumulate statistics
             for i in range(num_envs):
+                accepted = step_infos[i].get('accepted', False)
                 online_data.append({
                     'customer_id': user_ids[i],
                     'action': actions[i],
-                    'accepted': step_infos[i].get('accepted', False)
+                    'accepted': accepted
                 })
+                # Accumulate statistics
+                env_rewards[i] += rewards[i]
+                if accepted:
+                    env_accepted_count[i] += 1
 
             # Store rewards for all environments
             agent.store_rewards_batch(rewards, dones | truncs)
@@ -382,15 +303,14 @@ def train(
         # Collect episode statistics from all environments
         for i in range(num_envs):
             info = step_infos[i]
-            # Calculate episode reward (sum of all rewards for this env)
-            # Note: we don't track per-env rewards separately in this implementation
-            # Instead we use the final cost as a proxy
             cost = info.get('current_cost', float('inf'))
             failed = info.get('solver_failed', False)
 
+            # Store episode statistics
+            epoch_episode_rewards.append(env_rewards[i])
             epoch_episode_costs.append(cost if not failed else float('inf'))
             epoch_episode_failed.append(1 if failed else 0)
-            # Note: accepted rate is averaged across the episode in the info
+            epoch_episode_accepted.append(env_accepted_count[i] / num_customers)  # Acceptance rate
 
         # Perform PPO update after each epoch (with data from num_envs episodes)
         train_stats = agent.update(num_epochs=10, batch_size=64)
@@ -406,41 +326,50 @@ def train(
             embedding_model = update_embedding_model(
                 embedding_model,
                 online_data_list,
+                flexibility_personalities,
+                ACTION_SPACE_MAP,
                 num_epochs=50,
                 batch_size=min(64, len(online_data_list)),
                 lr=1e-3
             )
 
-            # Predict flexibility types for all customers
+            
             with torch.no_grad():
                 customer_ids = torch.arange(num_customers)
                 pred_proba = embedding_model(customer_ids)
                 predicted_flexibility = torch.argmax(pred_proba, dim=1)
 
-            # Recompute action masks (VECTORIZED!)
-            action_masks = compute_masks_from_flexibility(predicted_flexibility, action_dim)
-
-            print(f"  Updated masks based on predicted flexibility types")
+            print(f"  Embedding model updated (masking enabled)")
             print(f"  Flexibility distribution: {torch.bincount(predicted_flexibility, minlength=n_flexibilities).tolist()}")
 
         # Aggregate epoch statistics
+        avg_reward = np.mean(epoch_episode_rewards)
         avg_cost = np.mean([c for c in epoch_episode_costs if not np.isinf(c)]) if any(not np.isinf(c) for c in epoch_episode_costs) else float('inf')
+        avg_accepted_rate = np.mean(epoch_episode_accepted)
         failure_rate = np.mean(epoch_episode_failed)
 
         # Store epoch statistics
+        epoch_rewards.append(avg_reward)
         epoch_costs.append(avg_cost)
+        epoch_accepted_rates.append(avg_accepted_rate)
         epoch_failures.append(failure_rate)
 
         # Logging
         if epoch % log_interval == 0:
+            recent_rewards = epoch_rewards[-log_interval:]
             recent_costs = [c for c in epoch_costs[-log_interval:] if not np.isinf(c)]
+            recent_accepted_rates = epoch_accepted_rates[-log_interval:]
             recent_failures = epoch_failures[-log_interval:]
 
+            avg_recent_reward = np.mean(recent_rewards)
             avg_recent_cost = np.mean(recent_costs) if recent_costs else float("inf")
+            avg_recent_accepted_rate = np.mean(recent_accepted_rates)
             avg_failure_rate = np.mean(recent_failures)
 
             print(f"\n[Epoch {epoch}/{num_epochs}] (Episodes {epoch * num_envs}/{num_episodes})")
+            print(f"  Avg Reward: {avg_recent_reward:.2f}")
             print(f"  Avg Cost: {avg_recent_cost:.2f} km")
+            print(f"  Avg Accepted Rate: {avg_recent_accepted_rate * 100:.1f}%")
             print(f"  Failure Rate: {avg_failure_rate * 100:.1f}%")
             print(f"  Policy Loss: {train_stats.get('policy_loss', 0):.4f}")
             print(f"  Value Loss: {train_stats.get('value_loss', 0):.4f}")
@@ -453,7 +382,9 @@ def train(
                 "epoch": epoch,
                 "total_episodes": epoch * num_envs,
                 "total_steps": total_steps,
+                "avg_reward": avg_recent_reward,
                 "avg_cost": avg_recent_cost,
+                "avg_accepted_rate": avg_recent_accepted_rate,
                 "failure_rate": avg_failure_rate,
                 "epsilon": epsilon,
                 "policy_loss": train_stats.get('policy_loss', 0),
@@ -482,14 +413,17 @@ def train(
     print(f"  Total Epochs: {num_epochs}")
     print(f"  Total Episodes: {num_epochs * num_envs}")
     print(f"  Total Steps: {total_steps}")
+    print(f"  Avg Reward (final epoch): {epoch_rewards[-1] if epoch_rewards else 0:.2f}")
+    print(f"  Avg Reward (all epochs): {np.mean(epoch_rewards):.2f}")
     print(f"  Avg Cost (final epoch): {epoch_costs[-1] if epoch_costs else 0:.2f} km")
     print(f"  Avg Cost (all epochs): {np.mean(valid_costs):.2f} km" if valid_costs else "  No valid costs")
+    print(f"  Avg Accepted Rate (all epochs): {np.mean(epoch_accepted_rates) * 100:.1f}%")
     print(f"  Solver Failure Rate: {np.mean(epoch_failures) * 100:.1f}%")
 
     # Clean up
     vec_env.close()
 
-    return agent, epoch_costs, epoch_failures
+    return agent, epoch_rewards, epoch_costs, epoch_accepted_rates, epoch_failures
 
 
 def evaluate(
@@ -651,7 +585,7 @@ def main():
     args = parser.parse_args()
 
     # Train
-    agent, costs, failures = train(
+    agent, rewards, costs, accepted_rates, failures = train(
         num_episodes=args.episodes,
         num_customers=args.customers,
         num_envs=args.num_envs,

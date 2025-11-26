@@ -92,13 +92,42 @@ class VectorizedDVRPEnv:
             # Decode action to perturbation
             pickup_shift, dropoff_shift = env.ACTION_SPACE_MAP[action]
 
-            # Check acceptance based on flexibility
-            flexibility = new_request["flexibility"][0].cpu().numpy()  # [2]
-            flexibility_pickup_earlier = flexibility[0]
-            flexibility_dropoff_later = flexibility[1]
+            # Get traveler_id for the current request
+            pickup_idx = 2 * env.current_step + 1
+            traveler_id = env.pending_requests["user_id"][0, pickup_idx].item()
 
-            accepted = (abs(pickup_shift) <= flexibility_pickup_earlier) and \
-                      (dropoff_shift <= flexibility_dropoff_later)
+            # Check acceptance based on trip metadata lookup
+            accepted = False
+            if "trip_metadata" in env.pending_requests.keys():
+                trip_metadata_list = env.pending_requests["trip_metadata"]
+                if isinstance(trip_metadata_list, list) and len(trip_metadata_list) > 0:
+                    trip_metadata = trip_metadata_list[0]
+                else:
+                    trip_metadata = trip_metadata_list
+
+                if traveler_id in trip_metadata:
+                    metadata = trip_metadata[traveler_id]
+                    flexibility = metadata["flexibility"]
+                    trip_purpose = metadata["trip_purpose"]
+                    departure_location = metadata["departure_location"]
+                    arrival_location = metadata["arrival_location"]
+
+                    # Look up acceptance decision
+                    accepted = env._get_acceptance_decision(
+                        traveler_id=traveler_id,
+                        flexibility=flexibility,
+                        trip_purpose=trip_purpose,
+                        departure_location=departure_location,
+                        arrival_location=arrival_location,
+                        pickup_shift=pickup_shift,
+                        dropoff_shift=dropoff_shift
+                    )
+                else:
+                    # Fallback to random acceptance if traveler_id not in metadata
+                    accepted = np.random.random() < env.acceptance_rate
+            else:
+                # Fallback to random acceptance if no trip metadata available
+                accepted = np.random.random() < env.acceptance_rate
 
             if accepted:
                 perturbed_request = env._apply_perturbation(
@@ -237,11 +266,13 @@ def test_vectorized_env():
     # Create vectorized environment with 4 envs for testing
     num_envs = 4
     num_customers = 5
+    decisions_path = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"
 
     vec_env = VectorizedDVRPEnv(
         num_envs=num_envs,
         num_customers=num_customers,
-        seed=42
+        seed=42,
+        traveler_decisions_path=decisions_path
     )
 
     print(f"Created {num_envs} parallel environments")

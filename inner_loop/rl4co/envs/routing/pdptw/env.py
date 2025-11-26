@@ -58,45 +58,23 @@ class PDPTWEnv(CVRPTWEnv):
         self.done_spec = Unbounded(shape=(1,), dtype=torch.bool)
 
     def _reset(self, td: Optional[TensorDict] = None, batch_size: Optional[list] = None) -> TensorDict:
+        """
+        td: Created by calling reset(batchsize) function, 
+         .generator returns a tensordict
+         This creates a problem instance based on outputs of SFGEnerator;
+         By problem instance: It has dynamic fields that are set to zero. 
+         Static fields (i.e. locations, distance matrix) are taken from SFGenerator. 
+        """
+
         device = td.device
         
+        # Static fields
         h3_indices = td["h3_indices"]
         demands = td["demand"]
         tws = td["time_windows"]
         travel_time_matrix = td["travel_time_matrix"]
-
-        # Get locs if available (for rendering)
-        locs = td.get("locs", None)
-
-        flexibility = td["flexibility"]
-
-        # 1. Ensure Depot in h3_indices
-        if h3_indices.shape[-1] == self.generator.num_customers * 2:
-            # Assume depot h3 index provided in generator or can be inferred (usually included by generator)
-            # If missing, we fallback to generator's default.
-            depot_idx = torch.full((*batch_size, 1), self.generator.depot_h3_idx, device=device, dtype=h3_indices.dtype)
-            h3_indices = torch.cat((depot_idx, h3_indices), -1)
-        
-        # 2. Ensure Depot in Locs (if present)
-        if locs is not None and locs.shape[-2] == self.generator.num_customers * 2:
-            # We try to get depot GPS from generator if available
-            depot_gps = getattr(self.generator, "_h3_to_gps", {}).get(
-                getattr(self.generator, "depot_h3", None), (37.7833, -122.4167)
-            )
-            depot_locs = torch.tensor(depot_gps, device=device, dtype=locs.dtype).expand(*batch_size, 1, 2)
-            locs = torch.cat([depot_locs, locs], dim=-2)
-
-        # 3. Ensure Depot in Demand
-        if demands.shape[-1] == self.generator.num_customers * 2:
-            demands = torch.cat((torch.zeros(*batch_size, 1, device=device, dtype=demands.dtype), demands), -1)
-
-        # 3. Ensure Depot in Time Windows
-        if tws.shape[-2] == self.generator.num_customers * 2:
-             depot_tw = torch.stack([
-                torch.zeros(*batch_size, 1, device=device, dtype=tws.dtype),
-                torch.full((*batch_size, 1), 144000.0, device=device, dtype=tws.dtype)
-            ], dim=-1)
-             tws = torch.cat((depot_tw, tws), -2)
+        locs = td["locs"]
+        flexibility = td["flexibility"] #! Should you add flexibility?
 
         capacity_limit = self.generator.vehicle_capacity
         pending_schedule = torch.zeros((*batch_size, capacity_limit), dtype=torch.int64, device=device)
@@ -221,6 +199,7 @@ class PDPTWEnv(CVRPTWEnv):
         td_out.set("done", standard_done | double_depot)
         td_out.set("action_mask", self.get_action_mask(td_out))
         return td_out
+
 
     def get_action_mask(self, td: TensorDict) -> torch.Tensor:
         batch_size = td["h3_indices"].shape[0]
