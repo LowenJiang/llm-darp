@@ -274,7 +274,7 @@ class PPOAgent:
         gae_lambda: float = 0.95,
         clip_epsilon: float = 0.2,
         value_coef: float = 0.5,
-        entropy_coef: float = 4e-4,
+        entropy_coef: float = 0.01,
         max_grad_norm: float = 0.5,
         device: str = "cpu",
     ):
@@ -419,109 +419,238 @@ class PPOAgent:
             self.rewards.append(float(reward))
             self.dones.append(bool(done))
 
-    def update(self, num_epochs: int = 10, batch_size: int = 64) -> dict:
-        """
-        Update policy using PPO algorithm.
+#    def update(self, num_epochs: int = 10, batch_size: int = 64) -> dict:
+#        """
+#        Update policy using PPO algorithm.
+#
+#        Args:
+#            num_epochs: Number of PPO epochs
+#            batch_size: Mini-batch size
+#
+#        Returns:
+#            Dictionary with training statistics
+#        """
+#        if len(self.states) == 0:
+#            return {}
+#
+#        # Ensure buffers are aligned
+#        assert len(self.states) == len(self.rewards), \
+#            f"Mismatch: {len(self.states)} states vs {len(self.rewards)} rewards"
+#        assert len(self.actions) == len(self.rewards), \
+#            f"Mismatch: {len(self.actions)} actions vs {len(self.rewards)} rewards"
+#        assert len(self.values) == len(self.rewards), \
+#            f"Mismatch: {len(self.values)} values vs {len(self.rewards)} rewards"
+#
+#        # Convert lists to tensors
+#        states = torch.stack(self.states).to(self.device)
+#        actions = torch.LongTensor(self.actions).to(self.device)
+#        old_log_probs = torch.stack(self.log_probs).to(self.device)
+#        rewards = torch.FloatTensor(self.rewards).to(self.device)
+#        values = torch.stack(self.values).to(self.device)
+#        dones = torch.FloatTensor(self.dones).to(self.device)
+#
+#        # Compute advantages using GAE
+#        advantages, returns = self._compute_gae(rewards, values, dones)
+#
+#        # Normalize advantages
+#        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+#
+#        # PPO update for multiple epochs
+#        total_policy_loss = 0.0
+#        total_value_loss = 0.0
+#        total_entropy = 0.0
+#        num_updates = 0
+#
+#        for _ in range(num_epochs):
+#            # Generate random mini-batches
+#            num_samples = len(states)
+#            indices = np.arange(num_samples)
+#            np.random.shuffle(indices)
+#
+#            for start in range(0, num_samples, batch_size):
+#                end = min(start + batch_size, num_samples)
+#                batch_indices = indices[start:end]
+#
+#                batch_states = states[batch_indices]
+#                batch_actions = actions[batch_indices]
+#                batch_old_log_probs = old_log_probs[batch_indices]
+#                batch_advantages = advantages[batch_indices]
+#                batch_returns = returns[batch_indices]
+#
+#                # Evaluate actions
+#                log_probs, state_values, entropy = self.policy.evaluate(
+#                    batch_states, batch_actions
+#                )
+#
+#                # Compute ratio for PPO
+#                ratio = torch.exp(log_probs - batch_old_log_probs)
+#
+#                # Clipped surrogate objective
+#                surr1 = ratio * batch_advantages
+#                surr2 = (
+#                    torch.clamp(ratio, 1 - self.clip_epsilon, 1 + self.clip_epsilon)
+#                    * batch_advantages
+#                )
+#                policy_loss = -torch.min(surr1, surr2).mean()
+#
+#                # Value loss
+#                value_loss = nn.MSELoss()(state_values, batch_returns)
+#
+#                # Entropy bonus
+#                entropy_loss = -entropy.mean()
+#
+#                # Total loss
+#                loss = (
+#                    policy_loss
+#                    + self.value_coef * value_loss
+#                    + self.entropy_coef * entropy_loss
+#                )
+#
+#                # Gradient descent
+#                self.optimizer.zero_grad()
+#                loss.backward()
+#                nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+#                self.optimizer.step()
+#
+#                # Track statistics
+#                total_policy_loss += policy_loss.item()
+#                total_value_loss += value_loss.item()
+#                total_entropy += entropy.mean().item()
+#                num_updates += 1
+#
+#        # Clear buffer
+#        self.clear_buffer()
+#
+#        # Return statistics
+#        return {
+#            "policy_loss": total_policy_loss / num_updates,
+#            "value_loss": total_value_loss / num_updates,
+#            "entropy": total_entropy / num_updates,
+#        }
 
-        Args:
-            num_epochs: Number of PPO epochs
-            batch_size: Mini-batch size
-
-        Returns:
-            Dictionary with training statistics
+    def update(self, num_value_epochs=40, num_policy_epochs=10, batch_size=64) -> dict:
         """
+        Update PPO agent:
+            1. Train value function to convergence
+            2. Compute advantages using updated value function
+            3. Train policy using PPO objective
+        """
+
         if len(self.states) == 0:
             return {}
 
-        # Ensure buffers are aligned
-        assert len(self.states) == len(self.rewards), \
-            f"Mismatch: {len(self.states)} states vs {len(self.rewards)} rewards"
-        assert len(self.actions) == len(self.rewards), \
-            f"Mismatch: {len(self.actions)} actions vs {len(self.rewards)} rewards"
-        assert len(self.values) == len(self.rewards), \
-            f"Mismatch: {len(self.values)} values vs {len(self.rewards)} rewards"
-
-        # Convert lists to tensors
+        # ========================================
+        # Convert buffers to tensors
+        # ========================================
         states = torch.stack(self.states).to(self.device)
         actions = torch.LongTensor(self.actions).to(self.device)
         old_log_probs = torch.stack(self.log_probs).to(self.device)
         rewards = torch.FloatTensor(self.rewards).to(self.device)
-        values = torch.stack(self.values).to(self.device)
+        old_values = torch.stack(self.values).to(self.device)
         dones = torch.FloatTensor(self.dones).to(self.device)
 
-        # Compute advantages using GAE
-        advantages, returns = self._compute_gae(rewards, values, dones)
+        num_samples = len(states)
 
-        # Normalize advantages
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-        # PPO update for multiple epochs
-        total_policy_loss = 0.0
+        # ========================================
+        # 1. TRAIN VALUE FUNCTION ONLY
+        # ========================================
+        # Create dedicated value optimizer
+        value_params = list(self.policy.value_network.parameters())
+        value_optimizer = optim.Adam(value_params, lr=self.optimizer.param_groups[0]['lr'])
         total_value_loss = 0.0
-        total_entropy = 0.0
-        num_updates = 0
 
-        for _ in range(num_epochs):
-            # Generate random mini-batches
-            num_samples = len(states)
-            indices = np.arange(num_samples)
-            np.random.shuffle(indices)
+        for _ in range(num_value_epochs):
+            idx = np.random.permutation(num_samples)
 
             for start in range(0, num_samples, batch_size):
                 end = min(start + batch_size, num_samples)
-                batch_indices = indices[start:end]
+                batch_idx = idx[start:end]
 
-                batch_states = states[batch_indices]
-                batch_actions = actions[batch_indices]
-                batch_old_log_probs = old_log_probs[batch_indices]
-                batch_advantages = advantages[batch_indices]
-                batch_returns = returns[batch_indices]
+                batch_states = states[batch_idx]
+                batch_rewards = rewards[batch_idx]
+                batch_dones = dones[batch_idx]
+                batch_old_values = old_values[batch_idx]
 
-                # Evaluate actions
-                log_probs, state_values, entropy = self.policy.evaluate(
-                    batch_states, batch_actions
-                )
+                # Compute updated values
+                with torch.no_grad():
+                    _, new_values = self.policy.forward(batch_states)
 
-                # Compute ratio for PPO
-                ratio = torch.exp(log_probs - batch_old_log_probs)
+                # Compute new returns using updated values (bootstrapped)
+                _, batch_returns = self._compute_gae(batch_rewards, new_values.squeeze(), batch_dones)
 
-                # Clipped surrogate objective
-                surr1 = ratio * batch_advantages
-                surr2 = (
-                    torch.clamp(ratio, 1 - self.clip_epsilon, 1 + self.clip_epsilon)
-                    * batch_advantages
-                )
-                policy_loss = -torch.min(surr1, surr2).mean()
+                # Forward again for gradient
+                _, predicted_values = self.policy.forward(batch_states)
 
                 # Value loss
-                value_loss = nn.MSELoss()(state_values, batch_returns)
+                value_loss = nn.MSELoss()(predicted_values.squeeze(), batch_returns)
+                total_value_loss += value_loss.item()
 
-                # Entropy bonus
+                value_optimizer.zero_grad()
+                value_loss.backward()
+                nn.utils.clip_grad_norm_(value_params, self.max_grad_norm)
+                value_optimizer.step()
+
+        # ========================================
+        # 2. COMPUTE ADVANTAGES USING NEW VALUE FUNCTION
+        # ========================================
+        with torch.no_grad():
+            _, updated_values = self.policy.forward(states)
+            updated_values = updated_values.squeeze()
+
+        advantages, returns = self._compute_gae(rewards, updated_values, dones)
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+        # ========================================
+        # 3. UPDATE POLICY VIA PPO CLIPPED OBJECTIVE
+        # ========================================
+        policy_params = list(self.policy.policy_network.parameters())
+        policy_optimizer = optim.Adam(policy_params, lr=self.optimizer.param_groups[0]['lr'])
+
+        total_policy_loss = 0
+        total_entropy = 0
+        num_updates = 0
+
+        for _ in range(num_policy_epochs):
+            idx = np.random.permutation(num_samples)
+
+            for start in range(0, num_samples, batch_size):
+                end = min(start + batch_size, num_samples)
+                batch_idx = idx[start:end]
+
+                batch_states = states[batch_idx]
+                batch_actions = actions[batch_idx]
+                batch_advantages = advantages[batch_idx]
+                batch_old_log_probs = old_log_probs[batch_idx]
+
+                # Evaluate with current policy
+                log_probs, _, entropy = self.policy.evaluate(batch_states, batch_actions)
+
+                # PPO ratio
+                ratio = torch.exp(log_probs - batch_old_log_probs)
+
+                # PPO clipped objective
+                surr1 = ratio * batch_advantages
+                surr2 = torch.clamp(ratio, 1 - self.clip_epsilon, 1 + self.clip_epsilon) * batch_advantages
+
+                policy_loss = -torch.min(surr1, surr2).mean()
                 entropy_loss = -entropy.mean()
 
-                # Total loss
-                loss = (
-                    policy_loss
-                    + self.value_coef * value_loss
-                    + self.entropy_coef * entropy_loss
-                )
+                loss = policy_loss + self.entropy_coef * entropy_loss
 
-                # Gradient descent
-                self.optimizer.zero_grad()
+                policy_optimizer.zero_grad()
                 loss.backward()
-                nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-                self.optimizer.step()
+                nn.utils.clip_grad_norm_(policy_params, self.max_grad_norm)
+                policy_optimizer.step()
 
-                # Track statistics
                 total_policy_loss += policy_loss.item()
-                total_value_loss += value_loss.item()
                 total_entropy += entropy.mean().item()
                 num_updates += 1
 
-        # Clear buffer
+        # ========================================
+        # Clear buffer and return logs
+        # ========================================
         self.clear_buffer()
 
-        # Return statistics
         return {
             "policy_loss": total_policy_loss / num_updates,
             "value_loss": total_value_loss / num_updates,
@@ -620,7 +749,7 @@ def test_agent():
 
     # Update
     print("\nPerforming PPO update...")
-    stats = agent.update(num_epochs=5, batch_size=4)
+    stats = agent.update(num_value_epochs=50, num_policy_epochs=10, batch_size=4)
     print(f"Training stats: {stats}")
 
 
