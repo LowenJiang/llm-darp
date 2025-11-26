@@ -5,7 +5,7 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.utils.ops import gather_by_index
 
 
 class SkipConnection(nn.Module):

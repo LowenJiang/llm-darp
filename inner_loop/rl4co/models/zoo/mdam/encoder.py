@@ -3,12 +3,12 @@ from typing import Callable, Optional
 import torch
 import torch.nn as nn
 
-from rl4co.models.nn.graph.attnnet import (
+from inner_loop.rl4co.models.nn.graph.attnnet import (
     MultiHeadAttentionLayer,
     Normalization,
     SkipConnection,
 )
-from rl4co.models.zoo.mdam.mha import MultiHeadAttentionMDAM
+from inner_loop.rl4co.models.zoo.mdam.mha import MultiHeadAttentionMDAM
 
 
 class MDAMGraphAttentionEncoder(nn.Module):

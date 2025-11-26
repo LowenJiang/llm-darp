@@ -2,9 +2,9 @@ import torch
 
 from tensordict.tensordict import TensorDict
 
-from rl4co.envs.routing.cvrp.env import CVRPEnv
-from rl4co.utils.ops import gather_by_index
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.routing.cvrp.env import CVRPEnv
+from inner_loop.rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

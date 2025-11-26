@@ -7,7 +7,7 @@ import torch
 from tensordict import TensorDict
 from torch import Size, Tensor
 
-from rl4co.envs.scheduling.fjsp import INIT_FINISH
+from inner_loop.rl4co.envs.scheduling.fjsp import INIT_FINISH
 
 logger = logging.getLogger(__name__)
 

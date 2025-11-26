@@ -5,7 +5,7 @@ from typing import Any, Optional
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from torch.utils.data import Dataset
 
-from rl4co.models.rl.common.base import RL4COLitModule
+from inner_loop.rl4co.models.rl.common.base import RL4COLitModule
 
 
 class TransductiveModel(RL4COLitModule, metaclass=abc.ABCMeta):

@@ -7,14 +7,14 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co.envs import RL4COEnvBase, get_env
-from rl4co.utils.decoding import (
+from inner_loop.rl4co.envs import RL4COEnvBase, get_env
+from inner_loop.rl4co.utils.decoding import (
     DecodingStrategy,
     get_decoding_strategy,
     get_log_likelihood,
 )
-from rl4co.utils.ops import calculate_entropy
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.utils.ops import calculate_entropy
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

@@ -5,8 +5,8 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch.distributions import Uniform # Here is for the random distributions
 
-from rl4co.envs.common.utils import Generator, get_sampler
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.utils import Generator, get_sampler
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

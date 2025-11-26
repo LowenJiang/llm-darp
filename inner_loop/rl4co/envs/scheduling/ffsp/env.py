@@ -8,8 +8,8 @@ import torch
 from tensordict.tensordict import TensorDict
 from torchrl.data import Bounded, Composite, Unbounded
 
-from rl4co.data.dataset import FastTdDataset
-from rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.data.dataset import FastTdDataset
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
 
 from .generator import FFSPGenerator
 

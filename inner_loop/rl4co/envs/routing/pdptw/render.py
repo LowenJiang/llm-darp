@@ -5,7 +5,7 @@ import torch
 from matplotlib import cm, colormaps
 from matplotlib.lines import Line2D
 
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

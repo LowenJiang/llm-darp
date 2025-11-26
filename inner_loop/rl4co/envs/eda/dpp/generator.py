@@ -9,9 +9,9 @@ from robust_downloader import download
 from torch.distributions import Uniform
 from tensordict.tensordict import TensorDict
 
-from rl4co.data.utils import load_npz_to_tensordict
-from rl4co.utils.pylogger import get_pylogger
-from rl4co.envs.common.utils import get_sampler, Generator
+from inner_loop.rl4co.data.utils import load_npz_to_tensordict
+from inner_loop.rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.utils import get_sampler, Generator
 
 log = get_pylogger(__name__)
 

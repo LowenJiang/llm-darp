@@ -1,6 +1,6 @@
 import abc
 
-from rl4co.models.common.constructive.base import ConstructiveDecoder
+from inner_loop.rl4co.models.common.constructive.base import ConstructiveDecoder
 
 
 class AutoregressiveDecoder(ConstructiveDecoder, metaclass=abc.ABCMeta):

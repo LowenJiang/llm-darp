@@ -4,9 +4,9 @@ import torch
 
 from tensordict import TensorDict
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.utils.decoding import decode_logprobs, process_logits
-from rl4co.utils.ops import batchify, unbatchify
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.utils.decoding import decode_logprobs, process_logits
+from inner_loop.rl4co.utils.ops import batchify, unbatchify
 
 
 def forward_pointer_attn_eas_lay(self, query, key, value, logit_key, mask):

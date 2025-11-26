@@ -1,10 +1,10 @@
 import torch.nn as nn
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.common.constructive.autoregressive.policy import AutoregressivePolicy
-from rl4co.models.zoo.am.encoder import AttentionModelEncoder
-from rl4co.models.zoo.matnet.encoder import MatNetEncoder
-from rl4co.models.zoo.polynet.decoder import PolyNetDecoder
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.common.constructive.autoregressive.policy import AutoregressivePolicy
+from inner_loop.rl4co.models.zoo.am.encoder import AttentionModelEncoder
+from inner_loop.rl4co.models.zoo.matnet.encoder import MatNetEncoder
+from inner_loop.rl4co.models.zoo.polynet.decoder import PolyNetDecoder
 
 
 class PolyNetPolicy(AutoregressivePolicy):

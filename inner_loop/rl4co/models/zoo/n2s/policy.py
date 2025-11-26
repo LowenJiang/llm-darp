@@ -3,15 +3,15 @@ import torch.nn as nn
 
 from tensordict import TensorDict
 
-from rl4co.envs import RL4COEnvBase, get_env
-from rl4co.models.common.improvement.base import ImprovementPolicy
-from rl4co.models.zoo.n2s.decoder import (
+from inner_loop.rl4co.envs import RL4COEnvBase, get_env
+from inner_loop.rl4co.models.common.improvement.base import ImprovementPolicy
+from inner_loop.rl4co.models.zoo.n2s.decoder import (
     NodePairReinsertionDecoder,
     NodePairRemovalDecoder,
 )
-from rl4co.models.zoo.n2s.encoder import N2SEncoder
-from rl4co.utils.decoding import DecodingStrategy, get_decoding_strategy
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.zoo.n2s.encoder import N2SEncoder
+from inner_loop.rl4co.utils.decoding import DecodingStrategy, get_decoding_strategy
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

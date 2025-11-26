@@ -2,7 +2,7 @@ from typing import Optional
 from tensordict import TensorDict
 import torch.nn as nn
 
-from rl4co.models.zoo.nargnn.encoder import NARGNNEncoder
+from inner_loop.rl4co.models.zoo.nargnn.encoder import NARGNNEncoder
 
 
 class GFACSEncoder(NARGNNEncoder):

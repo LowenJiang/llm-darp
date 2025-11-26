@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from einops import einsum
 from torch import Tensor
 
-from rl4co.models.nn.env_embeddings import env_init_embedding
-from rl4co.models.nn.ops import TransformerFFN
+from inner_loop.rl4co.models.nn.env_embeddings import env_init_embedding
+from inner_loop.rl4co.models.nn.ops import TransformerFFN
 
 
 class HetGNNLayer(nn.Module):

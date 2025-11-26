@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from tensordict import TensorDict
 
-from rl4co.utils.ops import batched_scatter_sum, gather_by_index
+from inner_loop.rl4co.utils.ops import batched_scatter_sum, gather_by_index
 
 
 def env_context_embedding(env_name: str, config: dict) -> nn.Module:

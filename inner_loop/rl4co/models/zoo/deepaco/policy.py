@@ -4,16 +4,16 @@ from typing import Optional, Type, Union
 from tensordict import TensorDict
 import torch
 
-from rl4co.envs import RL4COEnvBase, get_env
-from rl4co.models.common.constructive.nonautoregressive import (
+from inner_loop.rl4co.envs import RL4COEnvBase, get_env
+from inner_loop.rl4co.models.common.constructive.nonautoregressive import (
     NonAutoregressiveEncoder,
     NonAutoregressivePolicy,
 )
-from rl4co.models.zoo.deepaco.antsystem import AntSystem
-from rl4co.models.zoo.nargnn.encoder import NARGNNEncoder
-from rl4co.utils.decoding import modify_logits_for_top_k_filtering, modify_logits_for_top_p_filtering
-from rl4co.utils.ops import batchify, unbatchify
-from rl4co.utils.utils import merge_with_defaults
+from inner_loop.rl4co.models.zoo.deepaco.antsystem import AntSystem
+from inner_loop.rl4co.models.zoo.nargnn.encoder import NARGNNEncoder
+from inner_loop.rl4co.utils.decoding import modify_logits_for_top_k_filtering, modify_logits_for_top_p_filtering
+from inner_loop.rl4co.utils.ops import batchify, unbatchify
+from inner_loop.rl4co.utils.utils import merge_with_defaults
 
 
 class DeepACOPolicy(NonAutoregressivePolicy):

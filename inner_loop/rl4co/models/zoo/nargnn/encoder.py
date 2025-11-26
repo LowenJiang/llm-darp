@@ -6,9 +6,9 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co.models.common.constructive.nonautoregressive import NonAutoregressiveEncoder
-from rl4co.models.nn.env_embeddings import env_edge_embedding, env_init_embedding
-from rl4co.models.nn.graph.gnn import GNNEncoder
+from inner_loop.rl4co.models.common.constructive.nonautoregressive import NonAutoregressiveEncoder
+from inner_loop.rl4co.models.nn.env_embeddings import env_edge_embedding, env_init_embedding
+from inner_loop.rl4co.models.nn.graph.gnn import GNNEncoder
 
 try:
     from torch_geometric.data import Batch

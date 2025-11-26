@@ -1,6 +1,6 @@
-from rl4co.models.nn.env_embeddings.init import JSSPInitEmbedding
-from rl4co.models.nn.graph.gcn import GCNEncoder
-from rl4co.utils.ops import adj_to_pyg_edge_index
+from inner_loop.rl4co.models.nn.env_embeddings.init import JSSPInitEmbedding
+from inner_loop.rl4co.models.nn.graph.gcn import GCNEncoder
+from inner_loop.rl4co.utils.ops import adj_to_pyg_edge_index
 
 
 class GCN4JSSP(GCNEncoder):

@@ -7,10 +7,10 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.nn.env_embeddings import env_init_embedding
-from rl4co.models.nn.pos_embeddings import pos_init_embedding
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.nn.env_embeddings import env_init_embedding
+from inner_loop.rl4co.models.nn.pos_embeddings import pos_init_embedding
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

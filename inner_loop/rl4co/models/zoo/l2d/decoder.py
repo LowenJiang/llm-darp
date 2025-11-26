@@ -9,14 +9,14 @@ from einops import einsum, rearrange
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co.models.common.constructive.autoregressive import AutoregressiveDecoder
-from rl4co.models.nn.attention import PointerAttention
-from rl4co.models.nn.env_embeddings.context import SchedulingContext
-from rl4co.models.nn.env_embeddings.dynamic import JSSPDynamicEmbedding
-from rl4co.models.nn.graph.hgnn import HetGNNEncoder
-from rl4co.models.nn.mlp import MLP
-from rl4co.models.zoo.am.decoder import AttentionModelDecoder, PrecomputedCache
-from rl4co.utils.ops import batchify, gather_by_index
+from inner_loop.rl4co.models.common.constructive.autoregressive import AutoregressiveDecoder
+from inner_loop.rl4co.models.nn.attention import PointerAttention
+from inner_loop.rl4co.models.nn.env_embeddings.context import SchedulingContext
+from inner_loop.rl4co.models.nn.env_embeddings.dynamic import JSSPDynamicEmbedding
+from inner_loop.rl4co.models.nn.graph.hgnn import HetGNNEncoder
+from inner_loop.rl4co.models.nn.mlp import MLP
+from inner_loop.rl4co.models.zoo.am.decoder import AttentionModelDecoder, PrecomputedCache
+from inner_loop.rl4co.utils.ops import batchify, gather_by_index
 
 from .encoder import GCN4JSSP
 

@@ -1,10 +1,10 @@
 import torch.nn as nn
 
-from rl4co.envs.common.base import RL4COEnvBase
-from rl4co.models.rl.common.critic import CriticNetwork, create_critic_from_actor
-from rl4co.models.rl.reinforce.baselines import CriticBaseline
-from rl4co.models.rl.reinforce.reinforce import REINFORCE
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.models.rl.common.critic import CriticNetwork, create_critic_from_actor
+from inner_loop.rl4co.models.rl.reinforce.baselines import CriticBaseline
+from inner_loop.rl4co.models.rl.reinforce.reinforce import REINFORCE
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

@@ -266,9 +266,12 @@ def train(
                 # user_ids are 1-indexed from env, convert to 0-indexed for embedding
                 user_embedding_ids = torch.LongTensor(user_ids) - 1
                 pred_proba = embedding_model(user_embedding_ids)
-                predicted_flexibility = torch.argmax(pred_proba, dim=1)
-                masks = compute_masks_from_flexibility(predicted_flexibility, action_dim=action_dim)
-
+                predicted_flexibilities = torch.argmax(pred_proba, dim=1)
+                ## TODO: Change it
+#                masks = compute_masks_from_flexibility(predicted_flexibility, action_dim=action_dim)
+                masks = vec_env.get_masks(user_ids, predicted_flexibilities)
+                masks = torch.tensor(masks)
+                
             # Select actions for all environments in parallel with masks
             actions = agent.select_action_batch(
                 states,

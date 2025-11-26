@@ -4,7 +4,7 @@ import torch
 
 from matplotlib import colormaps
 
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

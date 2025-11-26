@@ -1,5 +1,5 @@
 from typing import Optional
-from rl4co.models.common.constructive.base import ConstructivePolicy
+from inner_loop.rl4co.models.common.constructive.base import ConstructivePolicy
 
 from .decoder import NonAutoregressiveDecoder
 from .encoder import NonAutoregressiveEncoder

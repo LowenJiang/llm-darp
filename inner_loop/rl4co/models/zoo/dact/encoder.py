@@ -8,9 +8,9 @@ import torch.nn.functional as F
 
 from torch import Tensor
 
-from rl4co.models.common import ImprovementEncoder
-from rl4co.models.nn.ops import AdaptiveSequential, Normalization
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.common import ImprovementEncoder
+from inner_loop.rl4co.models.nn.ops import AdaptiveSequential, Normalization
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

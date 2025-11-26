@@ -5,9 +5,9 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch.distributions import Uniform
 
-from rl4co.envs.common.utils import Generator, get_sampler
-from rl4co.utils.ops import get_distance
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs.common.utils import Generator, get_sampler
+from inner_loop.rl4co.utils.ops import get_distance
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

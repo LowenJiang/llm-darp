@@ -5,8 +5,8 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch.distributions import Uniform
 
-from rl4co.envs.routing.cvrp.generator import CVRPGenerator
-from rl4co.utils.ops import get_distance
+from inner_loop.rl4co.envs.routing.cvrp.generator import CVRPGenerator
+from inner_loop.rl4co.utils.ops import get_distance
 
 
 class CVRPTWGenerator(CVRPGenerator):

@@ -1,12 +1,12 @@
 import torch.nn as nn
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.nn.graph.attnnet import MultiHeadAttentionLayer
-from rl4co.models.rl import n_step_PPO
-from rl4co.models.rl.common.critic import CriticNetwork
-from rl4co.models.zoo.n2s.decoder import CriticDecoder
-from rl4co.models.zoo.n2s.policy import N2SPolicy
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.nn.graph.attnnet import MultiHeadAttentionLayer
+from inner_loop.rl4co.models.rl import n_step_PPO
+from inner_loop.rl4co.models.rl.common.critic import CriticNetwork
+from inner_loop.rl4co.models.zoo.n2s.decoder import CriticDecoder
+from inner_loop.rl4co.models.zoo.n2s.policy import N2SPolicy
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

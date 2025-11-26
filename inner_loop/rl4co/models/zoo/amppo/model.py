@@ -2,11 +2,11 @@ import copy
 
 import torch.nn as nn
 
-from rl4co.envs import RL4COEnvBase
-from rl4co.models.rl import PPO
-from rl4co.models.rl.common.critic import CriticNetwork
-from rl4co.models.zoo.am.policy import AttentionModelPolicy
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs import RL4COEnvBase
+from inner_loop.rl4co.models.rl import PPO
+from inner_loop.rl4co.models.rl.common.critic import CriticNetwork
+from inner_loop.rl4co.models.zoo.am.policy import AttentionModelPolicy
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

@@ -8,10 +8,10 @@ import torch
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from torch.utils.data import Dataset
 
-from rl4co.data.transforms import StateAugmentation
-from rl4co.models.common.transductive import TransductiveModel
-from rl4co.utils.ops import batchify, unbatchify
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.data.transforms import StateAugmentation
+from inner_loop.rl4co.models.common.transductive import TransductiveModel
+from inner_loop.rl4co.utils.ops import batchify, unbatchify
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

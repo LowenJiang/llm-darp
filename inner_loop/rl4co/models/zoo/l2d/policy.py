@@ -5,19 +5,19 @@ import torch.nn as nn
 
 from torch.distributions import Categorical
 
-from rl4co.models.common.constructive.autoregressive import (
+from inner_loop.rl4co.models.common.constructive.autoregressive import (
     AutoregressiveDecoder,
     AutoregressiveEncoder,
     AutoregressivePolicy,
 )
-from rl4co.models.common.constructive.base import NoEncoder
-from rl4co.models.nn.env_embeddings.init import FJSPMatNetInitEmbedding
-from rl4co.models.nn.graph.hgnn import HetGNNEncoder
-from rl4co.models.nn.mlp import MLP
-from rl4co.models.zoo.matnet.matnet_w_sa import Encoder
-from rl4co.utils.decoding import DecodingStrategy, process_logits
-from rl4co.utils.ops import gather_by_index
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.common.constructive.base import NoEncoder
+from inner_loop.rl4co.models.nn.env_embeddings.init import FJSPMatNetInitEmbedding
+from inner_loop.rl4co.models.nn.graph.hgnn import HetGNNEncoder
+from inner_loop.rl4co.models.nn.mlp import MLP
+from inner_loop.rl4co.models.zoo.matnet.matnet_w_sa import Encoder
+from inner_loop.rl4co.utils.decoding import DecodingStrategy, process_logits
+from inner_loop.rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 from .decoder import L2DAttnActor, L2DDecoder
 from .encoder import GCN4JSSP

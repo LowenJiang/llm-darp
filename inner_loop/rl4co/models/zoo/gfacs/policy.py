@@ -3,19 +3,19 @@ from typing import Optional, Type, Union
 from tensordict import TensorDict
 import torch
 
-from rl4co.envs import RL4COEnvBase, get_env
-from rl4co.models.zoo.deepaco import DeepACOPolicy
-from rl4co.models.zoo.deepaco.antsystem import AntSystem
-from rl4co.models.zoo.gfacs.encoder import GFACSEncoder
-from rl4co.utils.decoding import (
+from inner_loop.rl4co.envs import RL4COEnvBase, get_env
+from inner_loop.rl4co.models.zoo.deepaco import DeepACOPolicy
+from inner_loop.rl4co.models.zoo.deepaco.antsystem import AntSystem
+from inner_loop.rl4co.models.zoo.gfacs.encoder import GFACSEncoder
+from inner_loop.rl4co.utils.decoding import (
     DecodingStrategy,
     get_decoding_strategy,
     get_log_likelihood,
     modify_logits_for_top_k_filtering,
     modify_logits_for_top_p_filtering
 )
-from rl4co.utils.ops import batchify, unbatchify
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.utils.ops import batchify, unbatchify
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 
 log = get_pylogger(__name__)

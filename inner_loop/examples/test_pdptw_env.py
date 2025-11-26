@@ -1,7 +1,7 @@
 """Test script for PDPTWEnv initialization"""
 
 import traceback
-from rl4co.envs.routing.pdptw.env import PDPTWEnv
+from inner_loop.rl4co.envs.routing.pdptw.env import PDPTWEnv
 
 try:
     print("Creating PDPTWEnv...")

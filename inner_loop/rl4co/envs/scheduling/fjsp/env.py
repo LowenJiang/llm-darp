@@ -4,8 +4,8 @@ from einops import rearrange, reduce
 from tensordict.tensordict import TensorDict
 from torchrl.data import Bounded, Composite, Unbounded
 
-from rl4co.envs.common.base import RL4COEnvBase as EnvBase
-from rl4co.utils.ops import gather_by_index, sample_n_random_actions
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase as EnvBase
+from inner_loop.rl4co.utils.ops import gather_by_index, sample_n_random_actions
 
 from . import INIT_FINISH, NO_OP_ID
 from .generator import FJSPFileGenerator, FJSPGenerator

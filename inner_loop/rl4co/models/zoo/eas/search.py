@@ -9,13 +9,13 @@ from lightning.pytorch.utilities.types import STEP_OUTPUT
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
-from rl4co.data.transforms import StateAugmentation
-from rl4co.models.common.transductive import TransductiveModel
-from rl4co.models.zoo.eas.decoder import forward_eas, forward_pointer_attn_eas_lay
-from rl4co.models.zoo.eas.nn import EASLayerNet
-from rl4co.utils.decoding import get_log_likelihood
-from rl4co.utils.ops import batchify, gather_by_index, unbatchify
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.data.transforms import StateAugmentation
+from inner_loop.rl4co.models.common.transductive import TransductiveModel
+from inner_loop.rl4co.models.zoo.eas.decoder import forward_eas, forward_pointer_attn_eas_lay
+from inner_loop.rl4co.models.zoo.eas.nn import EASLayerNet
+from inner_loop.rl4co.utils.decoding import get_log_likelihood
+from inner_loop.rl4co.utils.ops import batchify, gather_by_index, unbatchify
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

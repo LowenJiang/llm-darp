@@ -6,7 +6,7 @@ import torch
 
 from tensordict import TensorDict
 
-from rl4co.envs import (
+from inner_loop.rl4co.envs import (
     ATSPEnv,
     CVRPEnv,
     CVRPMVCEnv,
@@ -31,7 +31,7 @@ from rl4co.envs import (
     SVRPEnv,
     TSPEnv,
 )
-from rl4co.utils.decoding import random_policy, rollout
+from inner_loop.rl4co.utils.decoding import random_policy, rollout
 
 # Switch to non-GUI backend for testing
 plt.switch_backend("Agg")
@@ -149,7 +149,7 @@ def test_flp_mcp(env_cls, batch_size=2):
 def test_scheduling_dataloader():
     from tempfile import TemporaryDirectory
 
-    from rl4co.envs.scheduling.fjsp.parser import write
+    from inner_loop.rl4co.envs.scheduling.fjsp.parser import write
 
     write_env = FJSPEnv()
 

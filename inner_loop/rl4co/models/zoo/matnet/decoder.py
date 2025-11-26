@@ -7,10 +7,10 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co.models.nn.env_embeddings.context import FFSPContext
-from rl4co.models.zoo.am.decoder import AttentionModelDecoder
-from rl4co.utils.decoding import decode_logprobs, process_logits
-from rl4co.utils.ops import gather_by_index
+from inner_loop.rl4co.models.nn.env_embeddings.context import FFSPContext
+from inner_loop.rl4co.models.zoo.am.decoder import AttentionModelDecoder
+from inner_loop.rl4co.utils.decoding import decode_logprobs, process_logits
+from inner_loop.rl4co.utils.ops import gather_by_index
 
 
 @dataclass

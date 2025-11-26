@@ -4,8 +4,8 @@ import torch
 
 from tensordict import TensorDict
 
-from rl4co.models.common.constructive.base import ConstructiveDecoder
-from rl4co.utils.ops import batchify
+from inner_loop.rl4co.models.common.constructive.base import ConstructiveDecoder
+from inner_loop.rl4co.utils.ops import batchify
 
 
 @lru_cache(10)

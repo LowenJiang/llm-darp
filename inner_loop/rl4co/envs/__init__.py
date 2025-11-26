@@ -1,14 +1,14 @@
 # Base environment
-from rl4co.envs.common.base import RL4COEnvBase
+from inner_loop.rl4co.envs.common.base import RL4COEnvBase
 
 # EDA
-from rl4co.envs.eda import DPPEnv, MDPPEnv
+from inner_loop.rl4co.envs.eda import DPPEnv, MDPPEnv
 
 # Graph
-from rl4co.envs.graph import FLPEnv, MCPEnv
+from inner_loop.rl4co.envs.graph import FLPEnv, MCPEnv
 
 # Routing
-from rl4co.envs.routing import (
+from inner_loop.rl4co.envs.routing import (
     ATSPEnv,
     CVRPEnv,
     CVRPMVCEnv,
@@ -32,7 +32,7 @@ from rl4co.envs.routing import (
 )
 
 # Scheduling
-from rl4co.envs.scheduling import FFSPEnv, FJSPEnv, JSSPEnv, SMTWTPEnv
+from inner_loop.rl4co.envs.scheduling import FFSPEnv, FJSPEnv, JSSPEnv, SMTWTPEnv
 
 # Register environments
 ENV_REGISTRY = {

@@ -3,10 +3,10 @@ import math
 import torch
 import torch.nn as nn
 
-from rl4co.models.zoo.ptrnet.decoder import Decoder
-from rl4co.models.zoo.ptrnet.encoder import Encoder
-from rl4co.utils.decoding import get_log_likelihood
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.zoo.ptrnet.decoder import Decoder
+from inner_loop.rl4co.models.zoo.ptrnet.encoder import Encoder
+from inner_loop.rl4co.utils.decoding import get_log_likelihood
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

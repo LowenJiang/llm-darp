@@ -3,8 +3,8 @@ import torch.nn as nn
 
 from torch import Tensor
 
-from rl4co.models.common.improvement.base import ImprovementDecoder
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.common.improvement.base import ImprovementDecoder
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

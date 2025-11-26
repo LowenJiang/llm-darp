@@ -6,13 +6,13 @@ import torch
 from tensordict.tensordict import TensorDict
 from torchrl.data import Bounded, Composite, Unbounded
 
-from rl4co.data.utils import (
+from inner_loop.rl4co.data.utils import (
     load_npz_to_tensordict,
     load_solomon_instance,
     load_solomon_solution,
 )
-from rl4co.envs.routing.cvrp.env import CVRPEnv
-from rl4co.utils.ops import gather_by_index, get_distance
+from inner_loop.rl4co.envs.routing.cvrp.env import CVRPEnv
+from inner_loop.rl4co.utils.ops import gather_by_index, get_distance
 
 from ..cvrp.generator import CVRPGenerator
 from .generator import CVRPTWGenerator

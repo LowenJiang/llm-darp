@@ -6,10 +6,10 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co.models.common.improvement.base import ImprovementDecoder
-from rl4co.models.nn.attention import MultiHeadCompat
-from rl4co.models.nn.mlp import MLP
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.models.common.improvement.base import ImprovementDecoder
+from inner_loop.rl4co.models.nn.attention import MultiHeadCompat
+from inner_loop.rl4co.models.nn.mlp import MLP
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

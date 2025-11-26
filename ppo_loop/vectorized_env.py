@@ -64,6 +64,15 @@ class VectorizedDVRPEnv:
             infos.append(info)
 
         return np.stack(states, axis=0), infos
+    
+    def get_masks(self, traveler_ids, predicted_flex_indices):
+        masks = []
+        for i, env in enumerate(self.envs):
+            traveler_id = traveler_ids[i]
+            predicted_flex_index = predicted_flex_indices[i]
+            mask = env.get_mask(traveler_id, predicted_flex_index)
+            masks.append(mask)
+        return masks
 
     def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
         """

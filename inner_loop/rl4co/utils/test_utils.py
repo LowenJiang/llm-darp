@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 
-from rl4co.envs import (
+from inner_loop.rl4co.envs import (
     CVRPEnv,
     CVRPTWEnv,
     DPPEnv,

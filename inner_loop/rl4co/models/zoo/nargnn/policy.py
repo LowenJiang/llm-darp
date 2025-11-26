@@ -2,12 +2,12 @@ from typing import Optional
 
 import torch.nn as nn
 
-from rl4co.models.common.constructive.nonautoregressive import (
+from inner_loop.rl4co.models.common.constructive.nonautoregressive import (
     NonAutoregressiveDecoder,
     NonAutoregressiveEncoder,
     NonAutoregressivePolicy,
 )
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 from .encoder import NARGNNEncoder
 

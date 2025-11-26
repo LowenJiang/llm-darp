@@ -1,11 +1,11 @@
 from tensordict import TensorDict
 
-from rl4co.envs import RL4COEnvBase, get_env
-from rl4co.models.common.constructive.autoregressive import AutoregressivePolicy
-from rl4co.models.nn.env_embeddings import env_init_embedding
-from rl4co.models.zoo.mdam.decoder import MDAMDecoder
-from rl4co.models.zoo.mdam.encoder import MDAMGraphAttentionEncoder
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.envs import RL4COEnvBase, get_env
+from inner_loop.rl4co.models.common.constructive.autoregressive import AutoregressivePolicy
+from inner_loop.rl4co.models.nn.env_embeddings import env_init_embedding
+from inner_loop.rl4co.models.zoo.mdam.decoder import MDAMDecoder
+from inner_loop.rl4co.models.zoo.mdam.encoder import MDAMGraphAttentionEncoder
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

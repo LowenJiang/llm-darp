@@ -5,8 +5,8 @@ import sys
 
 import numpy as np
 
-from rl4co.data.utils import check_extension
-from rl4co.utils.pylogger import get_pylogger
+from inner_loop.rl4co.data.utils import check_extension
+from inner_loop.rl4co.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

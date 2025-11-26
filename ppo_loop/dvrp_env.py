@@ -143,6 +143,8 @@ class DVRPEnv(gym.Env):
             self.traveler_decisions_df = pd.read_csv(traveler_decisions_path)
         else:
             self.traveler_decisions_df = None
+        self.df_mask = self._compute_mask_all_flexs()
+        self.current_request_masks = None
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[dict] = None
@@ -239,6 +241,25 @@ class DVRPEnv(gym.Env):
                     sliced_td[key] = tensor[:, indices]
 
         return sliced_td
+    
+    def _get_meta_data_single_traveler(self, traveler_id):
+        # Use direct attribute access to avoid TensorDict indexing issues
+        trip_metadata_list = self.pending_requests["trip_metadata"]
+        # trip_metadata_list is a list of dicts, get the first one (batch index 0)
+        if isinstance(trip_metadata_list, list) and len(trip_metadata_list) > 0:
+            trip_metadata = trip_metadata_list[0]
+        else:
+            trip_metadata = trip_metadata_list
+        metadata = trip_metadata[traveler_id]
+        return metadata
+    
+    def get_mask(self, traveler_id, predicted_flex_index):
+        metadata = self._get_meta_data_single_traveler(traveler_id)
+        trip_purpose = metadata["trip_purpose"]
+        departure_location = metadata["departure_location"]
+        arrival_location = metadata["arrival_location"]
+        mask = self._get_mask_from_flex(traveler_id, trip_purpose, departure_location, arrival_location, predicted_flex_index)
+        return mask
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, dict]:
         """
@@ -512,6 +533,49 @@ class DVRPEnv(gym.Env):
         perturbed["time_windows"] = tw
 
         return perturbed
+    
+    def _compute_mask_single_flex(self, index_cols, action_cols, flexibility):
+        # Convert decision to 0/1
+        df = self.traveler_decisions_df[index_cols + action_cols + [flexibility]].copy()
+        df["indicator"] = (df[flexibility] == "accept").astype(int)
+        # Pivot to wide form (each proposed_time_shift → one column)
+        wide = df.pivot_table(
+            index=index_cols,
+            columns=action_cols,
+            values="indicator",
+            fill_value=0
+        )
+        # Ensure columns are sorted by shift value
+        wide = wide.sort_index(axis=1)
+        # Convert each row into a vector (list of ints)
+        wide[flexibility] = wide.apply(lambda row: row.values.tolist(), axis=1)
+        # Keep only the vector column
+        result = wide[[flexibility]].reset_index()
+        result.columns.name = None
+        return result
+    
+    def _compute_mask_all_flexs(self):
+        index_cols = ["traveler_id", "trip_purpose", "departure_location", "arrival_location"]
+        action_cols = ["pickup_shift_min", "dropoff_shift_min"]
+        df_mask = None
+        for i, flexibility in enumerate(["flexible for both early pickup and late dropoff", "flexible for early pickup, but inflexible for late dropoff", "flexible for late dropoff, but inflexible for early pickup", "inflexible for any schedule changes"]):
+            result = self._compute_mask_single_flex(index_cols, action_cols, flexibility)
+            result = result.rename(columns = {flexibility: i})
+            if df_mask is None:
+                df_mask = result
+            else:
+                df_mask = df_mask.merge(result, on = index_cols)
+        return df_mask
+    
+    def _get_mask_from_flex(self, traveler_id, trip_purpose, departure_location, arrival_location, predicted_flex_index):
+        selection = (
+            (self.df_mask["traveler_id"] == traveler_id) &
+            (self.df_mask["trip_purpose"] == trip_purpose) &
+            (self.df_mask["departure_location"] == departure_location) &
+            (self.df_mask["arrival_location"] == arrival_location)
+        )
+        mask = df_mask[selection][predicted_flex_index]
+        return mask
 
     def _get_acceptance_decision(
         self,
@@ -549,7 +613,7 @@ class DVRPEnv(gym.Env):
         # Find matching row
         mask = (
             (self.traveler_decisions_df["traveler_id"] == traveler_id) &
-            (self.traveler_decisions_df["flexibility"] == flexibility) &
+#            (self.traveler_decisions_df["flexibility"] == flexibility) &
             (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
             (self.traveler_decisions_df["departure_location"] == departure_location) &
             (self.traveler_decisions_df["arrival_location"] == arrival_location) &
@@ -559,22 +623,24 @@ class DVRPEnv(gym.Env):
 
         matching_rows = self.traveler_decisions_df[mask]
 
-        if len(matching_rows) == 0:
-            print(f"WARNING: No matching decision found for traveler {traveler_id}, "
-                  f"flexibility='{flexibility}', trip_purpose='{trip_purpose}', "
-                  f"departure='{departure_location}', arrival='{arrival_location}', "
-                  f"pickup_shift={pickup_shift}, dropoff_shift={dropoff_shift}")
-            # Fallback to random acceptance
-            return np.random.random() < self.acceptance_rate
+        ## TODO: Note that this should never happen
+#        if len(matching_rows) == 0:
+#            print(f"WARNING: No matching decision found for traveler {traveler_id}, "
+#                  f"flexibility='{flexibility}', trip_purpose='{trip_purpose}', "
+#                  f"departure='{departure_location}', arrival='{arrival_location}', "
+#                  f"pickup_shift={pickup_shift}, dropoff_shift={dropoff_shift}")
+#            # Fallback to random acceptance
+#            return np.random.random() < self.acceptance_rate
 
         # Get the first matching row
         row = matching_rows.iloc[0]
 
+        ## TODO: Note that this should never happen
         # The acceptance decision is stored in a column named after the flexibility type
         # Column name should match the flexibility string
-        if flexibility not in row.index:
-            print(f"WARNING: Flexibility column '{flexibility}' not found in CSV")
-            return np.random.random() < self.acceptance_rate
+#        if flexibility not in row.index:
+#            print(f"WARNING: Flexibility column '{flexibility}' not found in CSV")
+#            return np.random.random() < self.acceptance_rate
 
         decision = row[flexibility]
         return decision == "accept"
