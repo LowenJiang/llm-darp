@@ -13,16 +13,19 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Tuple
 
 import sys
-sys.path.append("/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git")
+from pathlib import Path
+
+# Add parent directory to sys.path to import rl4co
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import gymnasium as gym
 import numpy as np
 import pandas as pd
 import torch
 from gymnasium import spaces
-from inner_loop.rl4co.envs.routing import SFGenerator, PDPTWEnv
+from rl4co.envs.routing import SFGenerator, PDPTWEnv
 from ortools_solver import darp_solver
-from inner_loop.rl4co.models.zoo import AttentionModel, AttentionModelPolicy
+from rl4co.models.zoo import AttentionModel, AttentionModelPolicy
 from tensordict.tensordict import TensorDict
 
 
@@ -79,8 +82,9 @@ class DVRPEnv(gym.Env):
         depot: Optional[Tuple[float, float]] = None,
         seed: Optional[int] = None,
         patience_factor : int=0.2,
-        model_path : Optional[str] = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/inner_loop/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt",
-        traveler_decisions_path: Optional[str] = None
+        model_path : Optional[str] = '/home/jiangwolin/rl4co git/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt',
+        traveler_decisions_path: Optional[str] = None,
+        device: str = 'cpu'
     ):  
         """
         Args:
@@ -99,6 +103,7 @@ class DVRPEnv(gym.Env):
         self.solver_time_limit = solver_time_limit
         self.acceptance_rate = acceptance_rate
         self.seed_val = seed
+        self.device = device
 
         # Initialize data generator
         self.data_generator = PDPTWEnv(generator_params={
@@ -128,12 +133,15 @@ class DVRPEnv(gym.Env):
         if model_path is not None:
             env = PDPTWEnv()
             torch.serialization.add_safe_globals([PDPTWEnv])
+            # Always load checkpoint to CPU first to avoid RNG state issues
             ckpt = torch.load(model_path, map_location='cpu', weights_only=False)
             state = ckpt["state_dict"]
 
             model = AttentionModel(env=PDPTWEnv)
             model.load_state_dict(state, strict=False)
-            self.policy = model.policy.to('cpu')
+            # Then move the model to the desired device
+            self.policy = model.policy.to(self.device)
+            self.policy.eval()  # Set to evaluation mode
         else:
             self.policy = None
 
@@ -353,7 +361,9 @@ class DVRPEnv(gym.Env):
         else:
             # Use trained policy model
             with torch.no_grad():
-                out = self.policy(self.current_requests, phase='test', decode_type="greedy", return_actions=True)
+                # Move current_requests to the same device as the policy
+                current_requests_on_device = self.current_requests.to(self.device)
+                out = self.policy(current_requests_on_device, phase='test', decode_type="greedy", return_actions=True)
                 # Extract cost from policy output (reward is negative cost)
                 new_cost = -out["reward"].item()
 
@@ -700,7 +710,7 @@ def test_env():
     print("=" * 50)
 
     # Create environment with small number of customers for testing
-    decisions_path = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"
+    decisions_path = Path(__file__).parent / "traveler_decisions_augmented.csv"
     env = DVRPEnv(num_customers=5, seed=42, traveler_decisions_path=decisions_path)
 
     print(f"Observation space: {env.observation_space}")

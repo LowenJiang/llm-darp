@@ -1,6 +1,7 @@
 import re
 import os
 from ast import literal_eval
+from pathlib import Path
 import math
 import json
 import itertools
@@ -69,7 +70,7 @@ class OnlineTravelerDataset(Dataset):
     Uses CSV ground truth to determine which flexibility types would make the same decision.
     """
     def __init__(self, df_online, flexibility_personalities, action_space_map,
-                 csv_path="/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"):
+                 csv_path=None):
         """
         Args:
             df_online: DataFrame with columns ['traveler_id', 'action', 'accepted',
@@ -80,6 +81,10 @@ class OnlineTravelerDataset(Dataset):
             csv_path: Path to CSV with ground truth acceptance decisions
         """
         df_online = df_online.copy()
+
+        # Set default csv_path if not provided
+        if csv_path is None:
+            csv_path = Path(__file__).parent / "traveler_decisions_augmented.csv"
 
         # Load CSV ground truth
         try:

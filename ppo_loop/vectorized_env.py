@@ -8,6 +8,7 @@ This provides significant speedup compared to sequential execution.
 from __future__ import annotations
 
 from typing import List, Tuple, Dict
+from pathlib import Path
 import numpy as np
 import torch
 from dvrp_env import DVRPEnv
@@ -238,6 +239,10 @@ class VectorizedDVRPEnv:
         # Each TensorDict has batch_size=[1], concatenate to batch_size=[num_envs]
         batched_td = torch.cat(requests_batch, dim=0)  # batch_size=[num_envs]
 
+        # Move batch to the same device as the policy
+        device = next(self.policy.parameters()).device
+        batched_td = batched_td.to(device)
+
         # Single batched forward pass through neural oracle
         with torch.no_grad():
             out = self.policy(
@@ -277,7 +282,7 @@ def test_vectorized_env():
     # Create vectorized environment with 4 envs for testing
     num_envs = 4
     num_customers = 5
-    decisions_path = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"
+    decisions_path = Path(__file__).parent / "traveler_decisions_augmented.csv"
 
     vec_env = VectorizedDVRPEnv(
         num_envs=num_envs,

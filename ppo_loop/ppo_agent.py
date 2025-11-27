@@ -27,7 +27,7 @@ class PolicyNetwork(nn.Module):
         self,
         state_dim: int = 180,
         action_dim: int = 16,
-        hidden_dim: int = 256,
+        hidden_dim: int = 512,
     ):
         """
         Args:
@@ -71,7 +71,7 @@ class ValueNetwork(nn.Module):
     def __init__(
         self,
         state_dim: int = 180,
-        hidden_dim: int = 256,
+        hidden_dim: int = 512,
     ):
         """
         Args:

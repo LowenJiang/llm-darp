@@ -118,8 +118,10 @@ def train(
     save_dir: str = "./checkpoints",
     save_interval: int = 100,
     log_interval: int = 10,
+    policy_update_interval: int = 1,
     device: str = "cpu",
     seed: int = 42,
+    resume_path: str = None,
 ):
     """
     Train PPO agent on DVRP environment with parallel rollouts and per-user learning.
@@ -141,8 +143,10 @@ def train(
         save_dir: Directory to save checkpoints
         save_interval: Save model every N epochs (1 epoch = num_envs episodes)
         log_interval: Log statistics every N epochs
+        policy_update_interval: Update policy every N epochs (default: 1, i.e., every epoch)
         device: Device to run on ('cpu' or 'cuda')
         seed: Random seed
+        resume_path: Path to checkpoint to resume training from (optional)
     """
     # Create save directory
     save_path = Path(save_dir)
@@ -156,7 +160,8 @@ def train(
     num_epochs = max(1, num_episodes // num_envs)
 
     # Create vectorized environment (num_envs parallel environments)
-    traveler_decisions_path = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"
+    # Use relative path to traveler_decisions_augmented.csv
+    traveler_decisions_path = Path(__file__).parent / "traveler_decisions_augmented.csv"
     vec_env = VectorizedDVRPEnv(
         num_envs=num_envs,
         num_customers=num_customers,
@@ -164,6 +169,18 @@ def train(
         solver_time_limit=1,
         seed=seed,
         traveler_decisions_path=traveler_decisions_path,
+        device=device,
+    )
+
+    # Create baseline environment for comparison (no negotiation = always action 12)
+    baseline_vec_env = VectorizedDVRPEnv(
+        num_envs=num_envs,
+        num_customers=num_customers,
+        max_vehicles=5,
+        solver_time_limit=1,
+        seed=seed,  # Same seed for fair comparison
+        traveler_decisions_path=traveler_decisions_path,
+        device=device,
     )
 
     # Create PPO agent
@@ -180,6 +197,23 @@ def train(
         entropy_coef=0.05,
         device=device,
     )
+
+    # Load checkpoint if resuming
+    start_epoch = 1
+    if resume_path is not None:
+        print(f"Loading checkpoint from {resume_path}...")
+        agent.load(resume_path)
+
+        # Extract epoch number from checkpoint filename
+        # Expected format: ppo_agent_ep<number>.pt
+        import re
+        match = re.search(r'ep(\d+)', Path(resume_path).stem)
+        if match:
+            total_episodes_done = int(match.group(1))
+            start_epoch = (total_episodes_done // num_envs) + 1
+            print(f"Resuming from episode {total_episodes_done} (epoch {start_epoch})")
+        else:
+            print("Could not extract epoch from filename, starting from epoch 1")
 
     # Initialize embedding model for learning customer preferences
     embedding_model = EmbeddingFFN(
@@ -219,6 +253,7 @@ def train(
             "initial_epsilon": initial_epsilon,
             "final_epsilon": final_epsilon,
             "embedding_update_freq": steps_per_embedding_update,
+            "policy_update_interval": policy_update_interval,
         }
     )
 
@@ -231,6 +266,7 @@ def train(
     print(f"Customers per episode: {num_customers}")
     print(f"Device: {device}")
     print(f"Save directory: {save_path}")
+    print(f"Policy update interval: every {policy_update_interval} epoch(s)")
     print(f"Embedding update frequency: every {steps_per_embedding_update} steps")
     print("=" * 80)
 
@@ -239,17 +275,20 @@ def train(
     epoch_costs = []
     epoch_accepted_rates = []
     epoch_failures = []
+    epoch_improvements = []  # Track percentage improvement vs baseline
 
     # Training loop (parallel episodes)
-    for epoch in range(1, num_epochs + 1):
-        # Reset all environments
+    for epoch in range(start_epoch, num_epochs + 1):
+        # Reset all environments (both agent and baseline)
         states, infos = vec_env.reset()  # (num_envs, num_customers, 6)
+        baseline_states, _ = baseline_vec_env.reset()  # Reset baseline with same seed
 
         # Track statistics for this epoch (num_envs episodes)
         epoch_episode_rewards = []
         epoch_episode_costs = []
         epoch_episode_accepted = []
         epoch_episode_failed = []
+        epoch_episode_improvements = []  # Per-episode average improvement vs baseline
 
         # Initialize per-environment accumulators
         env_rewards = np.zeros(num_envs)  # Accumulate rewards per environment
@@ -282,8 +321,11 @@ def train(
             )  # (num_envs,)
 
             # Step all environments in parallel (BATCHED NEURAL ORACLE!)
-
             next_states, rewards, dones, truncs, step_infos = vec_env.step(actions)
+
+            # Step baseline environments with no-shift action (action 12 = (0, 0))
+            baseline_actions = np.full(num_envs, 12, dtype=np.int64)  # All take action 12
+            baseline_next_states, _, baseline_dones, baseline_truncs, baseline_step_infos = baseline_vec_env.step(baseline_actions)
 
             # Collect online data from all environments and accumulate statistics
             for i in range(num_envs):
@@ -327,23 +369,37 @@ def train(
         # Collect episode statistics from all environments
         for i in range(num_envs):
             info = step_infos[i]
-            cost = info.get('current_cost', float('inf'))
+            baseline_info = baseline_step_infos[i]
+
+            agent_cost = info.get('current_cost', float('inf'))
+            baseline_cost = baseline_info.get('current_cost', float('inf'))
             failed = info.get('solver_failed', False)
 
             # Store episode statistics
             epoch_episode_rewards.append(env_rewards[i])
-            epoch_episode_costs.append(cost if not failed else float('inf'))
+            epoch_episode_costs.append(agent_cost if not failed else float('inf'))
             epoch_episode_failed.append(1 if failed else 0)
             epoch_episode_accepted.append(env_accepted_count[i] / num_customers)  # Acceptance rate
 
-        # Perform PPO update after each epoch (with data from num_envs episodes)
-        train_stats = agent.update(
-            num_value_epochs=50,
-            num_policy_epochs=10,
-            batch_size=64,
-            num_envs=num_envs,
-            num_steps=num_customers
-        )
+            # Calculate percentage improvement based on FINAL routing costs
+            if (not np.isinf(agent_cost) and not np.isinf(baseline_cost) and
+                baseline_cost > 0 and not failed):
+                improvement_pct = ((baseline_cost - agent_cost) / baseline_cost) * 100
+            else:
+                improvement_pct = 0.0
+            epoch_episode_improvements.append(improvement_pct)
+
+        # Perform PPO update every N epochs (accumulates data across epochs)
+        train_stats = {}
+        if epoch % policy_update_interval == 0:
+            train_stats = agent.update(
+                num_value_epochs=40,
+                num_policy_epochs=10,
+                batch_size=64,
+                num_envs=num_envs,
+                num_steps=num_customers
+            )
+            print(f"\n[Policy Updated at Epoch {epoch}] Buffer had {num_envs * num_customers * policy_update_interval} samples")
 
         # Update embedding model every K steps
         if total_steps % steps_per_embedding_update == 0 and len(online_data) > 0:
@@ -377,12 +433,14 @@ def train(
         avg_cost = np.mean([c for c in epoch_episode_costs if not np.isinf(c)]) if any(not np.isinf(c) for c in epoch_episode_costs) else float('inf')
         avg_accepted_rate = np.mean(epoch_episode_accepted)
         failure_rate = np.mean(epoch_episode_failed)
+        avg_improvement = np.mean(epoch_episode_improvements)
 
         # Store epoch statistics
         epoch_rewards.append(avg_reward)
         epoch_costs.append(avg_cost)
         epoch_accepted_rates.append(avg_accepted_rate)
         epoch_failures.append(failure_rate)
+        epoch_improvements.append(avg_improvement)
 
         # Logging
         if epoch % log_interval == 0:
@@ -390,16 +448,19 @@ def train(
             recent_costs = [c for c in epoch_costs[-log_interval:] if not np.isinf(c)]
             recent_accepted_rates = epoch_accepted_rates[-log_interval:]
             recent_failures = epoch_failures[-log_interval:]
+            recent_improvements = epoch_improvements[-log_interval:]
 
             avg_recent_reward = np.mean(recent_rewards)
             avg_recent_cost = np.mean(recent_costs) if recent_costs else float("inf")
             avg_recent_accepted_rate = np.mean(recent_accepted_rates)
             avg_failure_rate = np.mean(recent_failures)
+            avg_recent_improvement = np.mean(recent_improvements)
 
             print(f"\n[Epoch {epoch}/{num_epochs}] (Episodes {epoch * num_envs}/{num_episodes})")
             print(f"  Avg Reward: {avg_recent_reward:.2f}")
             print(f"  Avg Cost: {avg_recent_cost:.2f} km")
             print(f"  Avg Accepted Rate: {avg_recent_accepted_rate * 100:.1f}%")
+            print(f"  Avg Improvement vs No Negotiation: {avg_recent_improvement:.2f}%")
             print(f"  Failure Rate: {avg_failure_rate * 100:.1f}%")
             print(f"  Policy Loss: {train_stats.get('policy_loss', 0):.4f}")
             print(f"  Value Loss: {train_stats.get('value_loss', 0):.4f}")
@@ -415,6 +476,7 @@ def train(
                 "avg_reward": avg_recent_reward,
                 "avg_cost": avg_recent_cost,
                 "avg_accepted_rate": avg_recent_accepted_rate,
+                "avg_improvement_pct": avg_recent_improvement,
                 "failure_rate": avg_failure_rate,
                 "policy_loss": train_stats.get('policy_loss', 0),
                 "value_loss": train_stats.get('value_loss', 0),
@@ -447,10 +509,12 @@ def train(
     print(f"  Avg Cost (final epoch): {epoch_costs[-1] if epoch_costs else 0:.2f} km")
     print(f"  Avg Cost (all epochs): {np.mean(valid_costs):.2f} km" if valid_costs else "  No valid costs")
     print(f"  Avg Accepted Rate (all epochs): {np.mean(epoch_accepted_rates) * 100:.1f}%")
+    print(f"  Avg Improvement vs No Negotiation (all epochs): {np.mean(epoch_improvements):.2f}%")
     print(f"  Solver Failure Rate: {np.mean(epoch_failures) * 100:.1f}%")
 
     # Clean up
     vec_env.close()
+    baseline_vec_env.close()
 
     return agent, epoch_rewards, epoch_costs, epoch_accepted_rates, epoch_failures
 
@@ -593,11 +657,17 @@ def main():
     parser.add_argument(
         "--save-interval",
         type=int,
-        default=10,
+        default=100,
         help="Save model every N epochs (1 epoch = num_envs episodes)",
     )
     parser.add_argument(
         "--log-interval", type=int, default=1, help="Log stats every N epochs"
+    )
+    parser.add_argument(
+        "--policy-update-interval",
+        type=int,
+        default=1,
+        help="Update policy every N epochs (default: 1, i.e., every epoch)",
     )
     parser.add_argument(
         "--device",
@@ -610,6 +680,12 @@ def main():
     parser.add_argument(
         "--eval", action="store_true", help="Run evaluation after training"
     )
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        help="Path to checkpoint to resume training from (e.g., ./checkpoints/ppo_agent_ep6400.pt)"
+    )
 
     args = parser.parse_args()
 
@@ -621,8 +697,10 @@ def main():
         save_dir=args.save_dir,
         save_interval=args.save_interval,
         log_interval=args.log_interval,
+        policy_update_interval=args.policy_update_interval,
         device=args.device,
         seed=args.seed,
+        resume_path=args.resume,
     )
 
     # Evaluate
