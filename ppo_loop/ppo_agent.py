@@ -345,56 +345,118 @@ class PPOAgent:
         self.values.append(value)
 
         return action
-
+    
     def select_action_batch(
-        self,
-        states: np.ndarray,
-        masks: torch.Tensor = None,
-        epsilon: float = 0.0
-    ) -> np.ndarray:
-        """
-        Select actions for a batch of states (for parallel environments).
+            self,
+            states: np.ndarray,
+            masks: torch.Tensor = None,
+            epsilon: float = 0.0
+        ) -> np.ndarray:
+            """
+            Select actions for a batch of states (Vectorized).
+            Robust against policy-mask disagreement and numerical instability.
+            """
+            batch_size = states.shape[0]
+            
+            # 1. Convert State to Tensor
+            state_tensor = torch.FloatTensor(states).to(self.device)
 
-        Args:
-            states: State array of shape (batch_size, 30, 6)
-            masks: Action mask tensor of shape (batch_size, action_dim) where 1 = allowed, 0 = masked
-            epsilon: Epsilon for epsilon-greedy masking
-
-        Returns:
-            actions: (batch_size,) array of action indices
-        """
-        batch_size = states.shape[0]
-        state_tensor = torch.FloatTensor(states).to(self.device)  # (batch_size, 30, 6)
-
-        # Move masks to device if provided
-        if masks is not None:
-            masks = masks.to(self.device)
-
-        with torch.no_grad():
-            # Get action probabilities and values for all states
-            action_probs, state_values = self.policy.forward(state_tensor)  # (batch_size, action_dim), (batch_size, 1)
-
-            # Apply masks if provided
+            # 2. Handle Masks (Ensure Tensor on Device)
             if masks is not None:
-                # Apply masking for each state in the batch
-                for i in range(batch_size):
-                    action_probs[i] = self.policy.mask_action(
-                        action_probs[i], masks[i], epsilon
-                    )
+                if not isinstance(masks, torch.Tensor):
+                    masks = torch.tensor(masks, dtype=torch.float32)
+                masks = masks.to(self.device)
 
-            # Sample actions
-            dist = Categorical(action_probs)
-            actions = dist.sample()  # (batch_size,)
-            log_probs = dist.log_prob(actions)  # (batch_size,)
+            with torch.no_grad():
+                # Get raw probabilities from policy
+                # Check for NaNs in input state to prevent immediate crash
+                if torch.isnan(state_tensor).any():
+                    state_tensor = torch.nan_to_num(state_tensor, 0.0)
+                
+                action_probs, state_values = self.policy.forward(state_tensor)
+                
+                # Safety: Handle NaNs from network output (exploding gradients)
+                if torch.isnan(action_probs).any():
+                    # Fallback to uniform distribution if network breaks
+                    action_probs = torch.ones_like(action_probs) / action_probs.shape[1]
 
-        # Store for later update
-        for i in range(batch_size):
-            self.states.append(state_tensor[i])
-            self.actions.append(actions[i].item())
-            self.log_probs.append(log_probs[i])
-            self.values.append(state_values[i].squeeze())
+                # 3. VECTORIZED MASKING
+                if masks is not None:
+                    # A. Apply Mask: Multiply probabilities by 0 or 1
+                    masked_probs = action_probs * masks
+                    
+                    # B. Check for degenerate cases (Sum approx 0)
+                    sum_probs = masked_probs.sum(dim=1, keepdim=True)
+                    
+                    # Identify rows where policy assigns 0 prob to all valid actions
+                    # OR where mask is all zeros
+                    problematic_rows = (sum_probs < 1e-8)
+                    
+                    if problematic_rows.any():
+                        # Calculate count of valid actions per row
+                        valid_counts = masks.sum(dim=1, keepdim=True)
+                        
+                        # Case 1: Mask is all zeros (Invalid State). Force allow all.
+                        mask_is_empty = (valid_counts < 1e-8)
+                        if mask_is_empty.any():
+                            # Update mask to all 1s for these specific rows
+                            masks = masks.clone() # Clone to avoid in-place error if leaf
+                            masks[mask_is_empty.squeeze()] = 1.0
+                            valid_counts[mask_is_empty.squeeze()] = masks.shape[1]
+                        
+                        # Case 2: Policy Disagreement.
+                        # Create a uniform distribution over VALID actions for problematic rows
+                        fallback_probs = masks / (valid_counts + 1e-8)
+                        
+                        # Replace masked_probs with fallback_probs where sum was ~0
+                        masked_probs = torch.where(problematic_rows, fallback_probs, masked_probs)
+                        
+                        # Recompute sum for normalization
+                        sum_probs = masked_probs.sum(dim=1, keepdim=True)
 
-        return actions.cpu().numpy()
+                    # Normalize to sum to 1
+                    action_probs = masked_probs / (sum_probs + 1e-8)
+                    
+                    # C. Vectorized Epsilon-Greedy Logic
+                    if epsilon > 0:
+                        # Create a uniform distribution over VALID actions only
+                        valid_counts = masks.sum(dim=1, keepdim=True)
+                        uniform_probs = masks / (valid_counts + 1e-8)
+                        
+                        # Mix: (1 - epsilon) * Policy + epsilon * Random
+                        action_probs = (1 - epsilon) * action_probs + epsilon * uniform_probs
+
+                # Final Safety: Clamp to remove 0s or negatives (numerical errors)
+                # Categorical requires > 0 and sum=1 (implied, but good to be safe)
+                action_probs = torch.clamp(action_probs, min=1e-8)
+                action_probs = action_probs / action_probs.sum(dim=1, keepdim=True)
+
+                # 4. Sample Actions
+                try:
+                    dist = torch.distributions.Categorical(probs=action_probs)
+                    actions = dist.sample() # Returns shape (batch_size,)
+                    log_probs = dist.log_prob(actions)
+                except RuntimeError as e:
+                    print(f"[ERROR] Categorical sampling failed: {e}")
+                    print(f"  Max Prob: {action_probs.max()}, Min Prob: {action_probs.min()}")
+                    print(f"  NaNs: {torch.isnan(action_probs).any()}")
+                    # Emergency fallback: always pick action 0
+                    actions = torch.zeros(batch_size, device=self.device, dtype=torch.long)
+                    log_probs = torch.zeros(batch_size, device=self.device)
+
+            # 5. Store data
+            state_cpu = state_tensor.cpu()
+            actions_cpu = actions.cpu()
+            log_probs_cpu = log_probs.cpu()
+            values_cpu = state_values.squeeze().cpu()
+            
+            for i in range(batch_size):
+                self.states.append(state_cpu[i])
+                self.actions.append(actions_cpu[i].item())
+                self.log_probs.append(log_probs_cpu[i])
+                self.values.append(values_cpu[i])
+
+            return actions.cpu().numpy()
 
     def store_reward(self, reward: float, done: bool) -> None:
         """
@@ -528,12 +590,23 @@ class PPOAgent:
 #            "entropy": total_entropy / num_updates,
 #        }
 
-    def update(self, num_value_epochs=40, num_policy_epochs=10, batch_size=64) -> dict:
+    def update(self, num_value_epochs=40, num_policy_epochs=10, batch_size=64,
+               num_envs=None, num_steps=None) -> dict:
         """
         Update PPO agent:
             1. Train value function to convergence
             2. Compute advantages using updated value function
             3. Train policy using PPO objective
+
+        Args:
+            num_value_epochs: Number of epochs to train value network
+            num_policy_epochs: Number of epochs to train policy network
+            batch_size: Mini-batch size for updates
+            num_envs: Number of parallel environments (for parallel GAE)
+            num_steps: Number of steps per episode (for parallel GAE)
+
+        Returns:
+            Dictionary with training statistics
         """
 
         if len(self.states) == 0:
@@ -597,7 +670,14 @@ class PPOAgent:
             _, updated_values = self.policy.forward(states)
             updated_values = updated_values.squeeze()
 
-        advantages, returns = self._compute_gae(rewards, updated_values, dones)
+        # Use parallel GAE if num_envs and num_steps are provided
+        if num_envs is not None and num_steps is not None:
+            advantages, returns = self._compute_gae_parallel(
+                rewards, updated_values, dones, num_envs, num_steps
+            )
+        else:
+            advantages, returns = self._compute_gae(rewards, updated_values, dones)
+
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         # ========================================
@@ -690,6 +770,84 @@ class PPOAgent:
             )
 
         # Returns = advantages + values
+        returns = advantages + values
+
+        return advantages, returns
+
+    def _compute_gae_parallel(
+        self,
+        rewards: torch.Tensor,
+        values: torch.Tensor,
+        dones: torch.Tensor,
+        num_envs: int,
+        num_steps: int
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute Generalized Advantage Estimation (GAE) for parallel environments.
+
+        This method correctly handles the interleaved buffer structure from parallel
+        environments by reshaping the data so each environment's trajectory is contiguous,
+        computing GAE separately for each environment, then flattening back.
+
+        Args:
+            rewards: Rewards tensor, shape (num_envs * num_steps,) - interleaved
+            values: State values tensor, shape (num_envs * num_steps,) - interleaved
+            dones: Done flags tensor, shape (num_envs * num_steps,) - interleaved
+            num_envs: Number of parallel environments
+            num_steps: Number of steps per episode
+
+        Returns:
+            advantages: GAE advantages, shape (num_envs * num_steps,)
+            returns: Discounted returns, shape (num_envs * num_steps,)
+        """
+        total_samples = len(rewards)
+
+        # Verify buffer size matches expected
+        if total_samples != num_envs * num_steps:
+            print(f"WARNING: Buffer size mismatch. Expected {num_envs * num_steps}, got {total_samples}")
+            print(f"  Falling back to sequential GAE (may be incorrect!)")
+            return self._compute_gae(rewards, values, dones)
+
+        # Reshape from interleaved to (num_envs, num_steps)
+        # Current layout: [env0_t0, env1_t0, env2_t0, ..., env0_t1, env1_t1, ...]
+        # After reshape: [[env0_t0, env0_t1, env0_t2, ...],
+        #                 [env1_t0, env1_t1, env1_t2, ...],
+        #                 ...]
+
+        # First reshape to (num_steps, num_envs), then transpose to (num_envs, num_steps)
+        rewards_2d = rewards.reshape(num_steps, num_envs).T  # (num_envs, num_steps)
+        values_2d = values.reshape(num_steps, num_envs).T
+        dones_2d = dones.reshape(num_steps, num_envs).T
+
+        # Compute GAE for each environment separately
+        advantages_2d = torch.zeros_like(rewards_2d)
+
+        for env_idx in range(num_envs):
+            last_advantage = 0.0
+
+            for t in reversed(range(num_steps)):
+                # Check if this is a terminal state
+                if t == num_steps - 1 or dones_2d[env_idx, t]:
+                    next_value = 0.0  # Terminal state
+                else:
+                    next_value = values_2d[env_idx, t + 1]  # Same env, next step
+
+                # TD error: δ_t = r_t + γ*V(s_{t+1}) - V(s_t)
+                delta = (
+                    rewards_2d[env_idx, t]
+                    + self.gamma * next_value * (1 - dones_2d[env_idx, t])
+                    - values_2d[env_idx, t]
+                )
+
+                # GAE: A_t = δ_t + γλ*A_{t+1}
+                advantages_2d[env_idx, t] = last_advantage = (
+                    delta
+                    + self.gamma * self.gae_lambda * (1 - dones_2d[env_idx, t]) * last_advantage
+                )
+
+        # Flatten back to original interleaved format
+        # (num_envs, num_steps) → transpose → (num_steps, num_envs) → reshape → (num_envs * num_steps,)
+        advantages = advantages_2d.T.reshape(-1)
         returns = advantages + values
 
         return advantages, returns

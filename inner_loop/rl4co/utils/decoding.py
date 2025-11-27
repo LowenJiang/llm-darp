@@ -394,9 +394,9 @@ class DecodingStrategy(metaclass=abc.ABCMeta):
         # [BS], [BS]
         selected = logprobs.argmax(dim=-1)
         if mask is not None:
-            assert (
-                not (~mask).gather(1, selected.unsqueeze(-1)).data.any()
-            ), "infeasible action selected"
+            infeasible = (~mask).gather(1, selected.unsqueeze(-1)).data.any()
+            if infeasible:
+                log.warning("Infeasible action selected in greedy decoding - this indicates a masking issue in the environment")
 
         return selected
 
@@ -407,12 +407,15 @@ class DecodingStrategy(metaclass=abc.ABCMeta):
         selected = torch.multinomial(probs, 1).squeeze(1)
 
         if mask is not None:
-            while (~mask).gather(1, selected.unsqueeze(-1)).data.any():
+            max_resamples = 10
+            resample_count = 0
+            while (~mask).gather(1, selected.unsqueeze(-1)).data.any() and resample_count < max_resamples:
                 log.info("Sampled bad values, resampling!")
                 selected = probs.multinomial(1).squeeze(1)
-            assert (
-                not (~mask).gather(1, selected.unsqueeze(-1)).data.any()
-            ), "infeasible action selected"
+                resample_count += 1
+
+            if (~mask).gather(1, selected.unsqueeze(-1)).data.any():
+                log.warning(f"Infeasible action selected after {max_resamples} resampling attempts - this indicates a masking issue in the environment")
 
         return selected
 

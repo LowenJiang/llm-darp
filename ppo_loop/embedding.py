@@ -66,19 +66,28 @@ class OnlineTravelerDataset(Dataset):
     """
     Dataset for online learning from (customer_id, action, accepted) observations.
 
-    Does not require ground-truth flexibility labels. Instead, computes which flexibility
-    types would be consistent with each observed (action, accepted) pair.
+    Uses CSV ground truth to determine which flexibility types would make the same decision.
     """
-    def __init__(self, df_online, flexibility_personalities, action_space_map):
+    def __init__(self, df_online, flexibility_personalities, action_space_map,
+                 csv_path="/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"):
         """
         Args:
-            df_online: DataFrame with columns ['traveler_id', 'action', 'accepted']
-                      (or 'customer_id' which will be converted to 0-indexed 'traveler_id')
-                      Note: customer_id/traveler_id can be 1-indexed (will be converted to 0-indexed)
+            df_online: DataFrame with columns ['traveler_id', 'action', 'accepted',
+                      'trip_purpose', 'departure_location', 'arrival_location',
+                      'departure_time_window', 'arrival_time_window']
             flexibility_personalities: List of flexibility type descriptions (length L)
             action_space_map: List of (early_shift, late_shift) tuples for each action
+            csv_path: Path to CSV with ground truth acceptance decisions
         """
         df_online = df_online.copy()
+
+        # Load CSV ground truth
+        try:
+            self.csv_df = pd.read_csv(csv_path)
+        except Exception as e:
+            print(f"  [WARNING] Could not load CSV from {csv_path}: {e}")
+            print(f"  [WARNING] Falling back to hard-coded rules")
+            self.csv_df = None
 
         # Handle both 'customer_id' and 'traveler_id' column names
         if 'customer_id' in df_online.columns:
@@ -95,6 +104,9 @@ class OnlineTravelerDataset(Dataset):
         self.num_samples = df_online.shape[0]
         self.num_entities = len(df_online["traveler_id"].unique())
 
+        # Store df_online for CSV lookup
+        self.df_online = df_online
+
         # Entity IDs (0-indexed for embedding layer)
         self.entity_ids = torch.from_numpy(np.array(df_online["traveler_id"])).long()
 
@@ -104,6 +116,7 @@ class OnlineTravelerDataset(Dataset):
         # Compute indicator matrix: ind_matrix[i, l] = 1 if flexibility type l
         # would make the same decision as observed for sample i
         self.ind_matrix = self._compute_indicator_matrix(
+            df_online,
             df_online["action"].values,
             df_online["accepted"].values,
             flexibility_personalities,
@@ -113,14 +126,78 @@ class OnlineTravelerDataset(Dataset):
         # Decision matrix: what each flexibility type would decide for each action
         # decision_matrix[i, l] = 1 if flexibility type l would accept action i
         self.decision_matrix = self._compute_decision_matrix(
+            df_online,
             df_online["action"].values,
             flexibility_personalities,
             action_space_map
         )
 
-    def _would_accept_action(self, action_idx, flex_type_idx, action_space_map):
+    def _would_accept_action_csv(self, sample_row, flex_type_idx, action_idx,
+                                   action_space_map, flexibility_personalities):
         """
-        Determine if a flexibility type would accept a given action.
+        Look up from CSV what a flexibility type would decide for this action.
+
+        Args:
+            sample_row: Row from df_online with trip context
+            flex_type_idx: Index of flexibility type (0-3)
+            action_idx: Action index
+            action_space_map: List of (pickup_shift, dropoff_shift) tuples
+            flexibility_personalities: List of flexibility type strings
+
+        Returns:
+            True if this flexibility type would accept, False otherwise
+        """
+        if self.csv_df is None:
+            # Fallback to hard-coded rules if CSV not available
+            return self._would_accept_action_hardcoded(action_idx, flex_type_idx, action_space_map)
+
+        # Get trip context from sample
+        traveler_id = sample_row.get('traveler_id', sample_row.get('customer_id'))
+        trip_purpose = sample_row.get('trip_purpose')
+        departure_location = sample_row.get('departure_location')
+        arrival_location = sample_row.get('arrival_location')
+        departure_tw = sample_row.get('departure_time_window')
+        arrival_tw = sample_row.get('arrival_time_window')
+
+        # Get action details
+        pickup_shift, dropoff_shift = action_space_map[action_idx]
+        pickup_shift_abs = abs(pickup_shift)
+        dropoff_shift_abs = abs(dropoff_shift)
+
+        # Check if we have required context
+        if any(v is None for v in [trip_purpose, departure_location, arrival_location,
+                                     departure_tw, arrival_tw]):
+            # Missing context, fall back to hard rules
+            return self._would_accept_action_hardcoded(action_idx, flex_type_idx, action_space_map)
+
+        # Look up in CSV
+        mask = (
+            (self.csv_df['traveler_id'] == traveler_id) &
+            (self.csv_df['trip_purpose'] == trip_purpose) &
+            (self.csv_df['departure_location'] == departure_location) &
+            (self.csv_df['arrival_location'] == arrival_location) &
+            (self.csv_df['departure_time_window'] == departure_tw) &
+            (self.csv_df['arrival_time_window'] == arrival_tw) &
+            (self.csv_df['pickup_shift_min'] == pickup_shift_abs) &
+            (self.csv_df['dropoff_shift_min'] == dropoff_shift_abs)
+        )
+
+        matching_rows = self.csv_df[mask]
+
+        if len(matching_rows) == 0:
+            # No match in CSV, fall back to hard rules
+            return self._would_accept_action_hardcoded(action_idx, flex_type_idx, action_space_map)
+
+        # Get the flexibility type column name
+        flex_column = flexibility_personalities[flex_type_idx]
+
+        # Get decision from CSV
+        decision = matching_rows.iloc[0][flex_column]
+        return decision == "accept"
+
+    def _would_accept_action_hardcoded(self, action_idx, flex_type_idx, action_space_map):
+        """
+        Fallback hard-coded rules (for when CSV lookup fails).
 
         Flexibility types:
             0: flexible for late dropoff, inflexible for early pickup
@@ -142,10 +219,12 @@ class OnlineTravelerDataset(Dataset):
         else:
             raise ValueError(f"Unknown flexibility type index: {flex_type_idx}")
 
-    def _compute_indicator_matrix(self, actions, accepted, flexibility_personalities, action_space_map):
+    def _compute_indicator_matrix(self, df_online, actions, accepted, flexibility_personalities, action_space_map):
         """
         Compute indicator matrix where ind_matrix[i, l] = 1 if flexibility type l
         would make the same decision as observed for sample i.
+
+        Uses CSV lookup to determine what each flexibility type would decide.
         """
         n_samples = len(actions)
         n_flex_types = len(flexibility_personalities)
@@ -154,20 +233,25 @@ class OnlineTravelerDataset(Dataset):
         for i in range(n_samples):
             action_idx = actions[i]
             observed_decision = accepted[i]  # True/False or 1/0
+            sample_row = df_online.iloc[i]
 
             for l in range(n_flex_types):
-                # What would this flexibility type decide?
-                flex_would_accept = self._would_accept_action(action_idx, l, action_space_map)
+                # What would this flexibility type decide? (CSV lookup)
+                flex_would_accept = self._would_accept_action_csv(
+                    sample_row, l, action_idx, action_space_map, flexibility_personalities
+                )
 
                 # Indicator is 1 if both made the same decision
                 ind_matrix[i, l] = float(flex_would_accept == observed_decision)
 
         return ind_matrix
 
-    def _compute_decision_matrix(self, actions, flexibility_personalities, action_space_map):
+    def _compute_decision_matrix(self, df_online, actions, flexibility_personalities, action_space_map):
         """
         Compute decision matrix where decision_matrix[i, l] = 1 if flexibility type l
         would accept action i.
+
+        Uses CSV lookup to determine what each flexibility type would decide.
         """
         n_samples = len(actions)
         n_flex_types = len(flexibility_personalities)
@@ -175,10 +259,13 @@ class OnlineTravelerDataset(Dataset):
 
         for i in range(n_samples):
             action_idx = actions[i]
+            sample_row = df_online.iloc[i]
 
             for l in range(n_flex_types):
                 decision_matrix[i, l] = float(
-                    self._would_accept_action(action_idx, l, action_space_map)
+                    self._would_accept_action_csv(
+                        sample_row, l, action_idx, action_space_map, flexibility_personalities
+                    )
                 )
 
         return decision_matrix
@@ -241,6 +328,32 @@ def update_embedding_model(embedding_model, online_data, flexibility_personaliti
         # Use OnlineTravelerDataset which calculates consistency matrix correctly
         # OnlineTravelerDataset will handle customer_id (1-indexed) -> traveler_id (0-indexed) conversion
         dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+
+        # Diagnostics: Check indicator matrix quality
+        sample_ind_matrix = dataset.ind_matrix[:min(100, len(dataset))]
+        ind_mean_per_flex = sample_ind_matrix.mean(dim=0)
+        print(f"  [Embedding Update] Indicator matrix mean per flexibility type: {ind_mean_per_flex.tolist()}")
+
+        # Check if CSV lookup was used
+        if dataset.csv_df is not None:
+            print(f"  [Embedding Update] Using CSV ground truth for indicator matrix (not hard rules!)")
+        else:
+            print(f"  [WARNING] CSV not loaded, using hard-coded rules (may be incorrect!)")
+
+        # Check for degenerate cases
+        all_zeros_samples = (sample_ind_matrix.sum(dim=1) == 0).sum().item()
+        if all_zeros_samples > 0:
+            print(f"  [WARNING] {all_zeros_samples} samples have all-zero indicator (no flexibility agrees)")
+
+        # Check if any flexibility type is never consistent (always 0 in ind_matrix)
+        full_ind_matrix = dataset.ind_matrix
+        ind_sum_per_flex = full_ind_matrix.sum(dim=0)
+        for flex_idx, total in enumerate(ind_sum_per_flex.tolist()):
+            if total == 0:
+                print(f"  [WARNING] Flexibility type {flex_idx} is NEVER consistent with observed data!")
+            elif total < len(dataset) * 0.01:  # Less than 1% consistency
+                print(f"  [WARNING] Flexibility type {flex_idx} is rarely consistent ({total}/{len(dataset)} = {100*total/len(dataset):.1f}%)")
+
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
         optimizer = torch.optim.Adam(embedding_model.parameters(), lr=lr)
@@ -249,17 +362,33 @@ def update_embedding_model(embedding_model, online_data, flexibility_personaliti
 
         for epoch in range(num_epochs):
             epoch_loss = 0.0
+            num_nan_batches = 0
+
             for entity_ids, _, ind_matrix, _ in dataloader:
                 optimizer.zero_grad()
                 pred_proba = embedding_model(entity_ids)
                 beta_matrix = embedding_model.get_embed()
                 loss = likelihood_loss(beta_matrix, pred_proba, ind_matrix)
+
+                # Check for NaN loss
+                if torch.isnan(loss):
+                    num_nan_batches += 1
+                    continue  # Skip this batch
+
                 loss.backward()
+
+                # Gradient clipping for stability
+                torch.nn.utils.clip_grad_norm_(embedding_model.parameters(), max_norm=1.0)
+
                 optimizer.step()
                 epoch_loss += loss.item()
 
+            avg_loss = epoch_loss / max(len(dataloader) - num_nan_batches, 1)
             if epoch == 0 or epoch == num_epochs - 1:
-                print(f"    Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss/len(dataloader):.4f}")
+                if num_nan_batches > 0:
+                    print(f"    Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f} ({num_nan_batches} NaN batches skipped)")
+                else:
+                    print(f"    Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}")
 
         embedding_model.eval()
 
@@ -267,8 +396,17 @@ def update_embedding_model(embedding_model, online_data, flexibility_personaliti
         with torch.no_grad():
             tracked_ids = torch.LongTensor([cid - 1 for cid in unique_customers[:5]])
             pred_proba = embedding_model(tracked_ids)
-            predicted_types = torch.argmax(pred_proba, dim=1)
+            #predicted_types = torch.argmax(pred_proba, dim=1)
+
+            dist = torch.distributions.Categorical(probs=pred_proba)
+            predicted_flexibilities = dist.sample() 
             print(f"  [Embedding Update] Sample predictions for customers {unique_customers[:5]}: {predicted_types.tolist()}")
+
+            # Also show probability distributions to diagnose collapse
+            print(f"  [Embedding Update] Sample probability distributions:")
+            for i, cid in enumerate(unique_customers[:3]):
+                probs = pred_proba[i].tolist()
+                print(f"    Customer {cid}: {[f'{p:.3f}' for p in probs]}")
 
     except Exception as e:
         print(f"  [Embedding Update] Error: {e}")
@@ -297,55 +435,75 @@ class EmbeddingFFN(nn.Module):
     def forward(self, entity_ids):
         emb = self.embedding(entity_ids)
         return self.ffn(emb)
-
+    
+    
 def likelihood_loss(beta_matrix: torch.Tensor,
               P_z_given_d: torch.Tensor,
               ind_matrix: torch.Tensor,
               alpha_e: float = 0.5,
               alpha: float = 0.4,
+              entropy_coef: float = 0.05,  # NEW: controls exploration
               eps: float = 1e-9,
               unbiased_var: bool = False) -> torch.Tensor:
     """
     Compute loss corresponding to likelihood (we minimize this).
-
-    Loss = - sum_{i=1..N} sum_{l=1..L} w_tilde[i,l] * log(P_z_given_d[i,l])
-           + alpha * sum_{m=1..M} ( var(beta[:,m]) / mean_var - 1 )^2
-
-    Args:
-        beta_matrix: Tensor shape (G, M) -- embedding parameters; var computed across G for each dimension m
-        P_z_given_d: Tensor shape (N, L) -- probabilities P(Z_l | d_i); values in (0,1]
-        w_tilde: Tensor shape (N, L) -- modified/sample weights \tilde{w}_{i,l}
-        alpha: regularization strength (scalar). In the paper they used α_m; here we use same alpha for sum.
-        eps: small float to stabilize log
-        unbiased_var: whether to use unbiased var (ddof=1). Default False for population var.
-
-    Returns:
-        loss: scalar tensor (to minimize)
+    
+    Now includes Entropy Regularization to prevent mode collapse.
     """
-    ## Compute w_tilde
-    w_tilde = (P_z_given_d * ind_matrix) / torch.sum(P_z_given_d * ind_matrix, dim = 1).reshape((-1, 1)) * (1 - alpha_e * torch.prod(ind_matrix, dim = 1)).reshape((-1, 1))
+    
+    # 1. CLAMPING: Prevent probabilities from being exactly 0 or 1.
+    # This prevents log(0) and ensures the denominator in w_tilde is never 0 
+    # (unless ind_matrix is all zeros, which implies bad data).
+    P_z_given_d = P_z_given_d.clamp(min=1e-4, max=1.0 - 1e-4)
+    
+    # Re-normalize to ensure sum is 1.0 after clamping
+    P_z_given_d = P_z_given_d / P_z_given_d.sum(dim=1, keepdim=True)
 
-    # Weighted log-likelihood term: sum_i sum_l w_il * log P(Z_l | d_i)
-    # we minimize negative of that (maximize objective in eq(21))
-    logP = torch.log(P_z_given_d.clamp(min=eps))
-    weighted_loglik = torch.sum(w_tilde * logP)  # scalar
+    # 2. Compute w_tilde
+    # Numerator: element-wise product (P(z) * Ind(z))
+    numerator = P_z_given_d * ind_matrix
 
-    # Regularization: compute per-dimension variances of beta_matrix
-    # beta_matrix shape: (G, M) -> variances over dim 0 -> result shape (M,)
-    var_dims = beta_matrix.var(dim=0, unbiased=unbiased_var)  # σ^2(β_m) for each m
+    # Denominator: sum across flexibility types
+    # Since P is clamped > 0, this can only be 0 if ind_matrix is all 0s.
+    denominator = torch.sum(numerator, dim=1, keepdim=True)
+    denominator_safe = denominator.clamp(min=eps)
+
+    # Compute normalized weights P(z | d, accepted)
+    w_normalized = numerator / denominator_safe
+
+    # Compute adjustment term (1 - alpha_e * prod(ind_matrix))
+    ind_prod = torch.prod(ind_matrix, dim=1, keepdim=True)
+    adjustment = (1 - alpha_e * ind_prod).clamp(min=0.0)
+
+    # Final sample weights
+    w_tilde = w_normalized * adjustment
+
+    # 3. Weighted Log-Likelihood
+    # sum_i sum_l w_il * log P(Z_l | d_i)
+    logP = torch.log(P_z_given_d)
+    weighted_loglik = torch.sum(w_tilde * logP)
+
+    # 4. Variance Regularization (Beta matrix)
+    var_dims = beta_matrix.var(dim=0, unbiased=unbiased_var)
     mean_var = var_dims.mean()
 
-    # avoid divide-by-zero
     if mean_var.item() == 0.0:
-        # If mean_var is zero (all zeros), regularizer should be zero (no variance across dims)
-        reg_term = torch.tensor(0.0, device=beta_matrix.device, dtype=beta_matrix.dtype)
+        reg_term = torch.tensor(0.0, device=beta_matrix.device)
     else:
         ratio = var_dims / (mean_var + 1e-12)
-        reg_term = torch.sum((ratio - 1.0) ** 2)  # sum_m (σ^2(β_m)/meanvar - 1)^2
+        reg_term = torch.sum((ratio - 1.0) ** 2)
 
-    # full objective from Eq (21) is: maximize weighted_loglik + alpha * reg_term
-    # we return loss = - (weighted_loglik + alpha * reg_term)
-    loss = - (weighted_loglik + alpha * reg_term)
+    # 5. Entropy Regularization (NEW)
+    # Penalize the model for being 100% sure (to keep exploration alive).
+    # H = - sum p * log(p)
+    entropy = -torch.sum(P_z_given_d * logP, dim=1).mean()
+
+    # 6. Total Loss
+    # We want to:
+    #  - Maximize Likelihood (minimize -Likelihood)
+    #  - Minimize Variance Heterogeneity (minimize +Reg)
+    #  - Maximize Entropy (minimize -Entropy)
+    loss = -weighted_loglik + (alpha * reg_term) - (entropy_coef * entropy)
 
     return loss
 

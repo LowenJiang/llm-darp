@@ -156,12 +156,14 @@ def train(
     num_epochs = max(1, num_episodes // num_envs)
 
     # Create vectorized environment (num_envs parallel environments)
+    traveler_decisions_path = "/Users/jiangwolin/Desktop/Research/llm-rl/rl4co git/ppo_loop/traveler_decisions_augmented.csv"
     vec_env = VectorizedDVRPEnv(
         num_envs=num_envs,
         num_customers=num_customers,
         max_vehicles=5,
         solver_time_limit=1,
         seed=seed,
+        traveler_decisions_path=traveler_decisions_path,
     )
 
     # Create PPO agent
@@ -263,14 +265,14 @@ def train(
 
             # Predict flexibility and compute masks based on embeddings
             with torch.no_grad():
-                # user_ids are 1-indexed from env, convert to 0-indexed for embedding
                 user_embedding_ids = torch.LongTensor(user_ids) - 1
                 pred_proba = embedding_model(user_embedding_ids)
-                predicted_flexibilities = torch.argmax(pred_proba, dim=1)
-                ## TODO: Change it
-#                masks = compute_masks_from_flexibility(predicted_flexibility, action_dim=action_dim)
+                
+                # Create a categorical distribution and sample from it
+                dist = torch.distributions.Categorical(probs=pred_proba)
+                predicted_flexibilities = dist.sample() 
+                
                 masks = vec_env.get_masks(user_ids, predicted_flexibilities)
-                masks = torch.tensor(masks)
                 
             # Select actions for all environments in parallel with masks
             actions = agent.select_action_batch(
@@ -286,11 +288,30 @@ def train(
             # Collect online data from all environments and accumulate statistics
             for i in range(num_envs):
                 accepted = step_infos[i].get('accepted', False)
-                online_data.append({
-                    'customer_id': user_ids[i],
-                    'action': actions[i],
-                    'accepted': accepted
-                })
+                # Store trip context for CSV lookup during embedding learning
+                env = vec_env.envs[i]
+                user_id = user_ids[i]
+
+                # Get trip metadata using the helper method from env
+                try:
+                    metadata = env._get_meta_data_single_traveler(user_id)
+                    online_data.append({
+                        'customer_id': user_ids[i],
+                        'action': actions[i],
+                        'accepted': accepted,
+                        'trip_purpose': metadata.get('trip_purpose'),
+                        'departure_location': metadata.get('departure_location'),
+                        'arrival_location': metadata.get('arrival_location'),
+                        'departure_time_window': metadata.get('departure_time_window'),
+                        'arrival_time_window': metadata.get('arrival_time_window'),
+                    })
+                except (KeyError, IndexError, TypeError):
+                    # Fallback without metadata if extraction fails
+                    online_data.append({
+                        'customer_id': user_ids[i],
+                        'action': actions[i],
+                        'accepted': accepted
+                    })
                 # Accumulate statistics
                 env_rewards[i] += rewards[i]
                 if accepted:
@@ -316,7 +337,13 @@ def train(
             epoch_episode_accepted.append(env_accepted_count[i] / num_customers)  # Acceptance rate
 
         # Perform PPO update after each epoch (with data from num_envs episodes)
-        train_stats = agent.update(num_epochs=10, batch_size=64)
+        train_stats = agent.update(
+            num_value_epochs=50,
+            num_policy_epochs=10,
+            batch_size=64,
+            num_envs=num_envs,
+            num_steps=num_customers
+        )
 
         # Update embedding model every K steps
         if total_steps % steps_per_embedding_update == 0 and len(online_data) > 0:
@@ -389,7 +416,6 @@ def train(
                 "avg_cost": avg_recent_cost,
                 "avg_accepted_rate": avg_recent_accepted_rate,
                 "failure_rate": avg_failure_rate,
-                "epsilon": epsilon,
                 "policy_loss": train_stats.get('policy_loss', 0),
                 "value_loss": train_stats.get('value_loss', 0),
                 "entropy": train_stats.get('entropy', 0),

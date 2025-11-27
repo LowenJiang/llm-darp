@@ -258,7 +258,11 @@ class DVRPEnv(gym.Env):
         trip_purpose = metadata["trip_purpose"]
         departure_location = metadata["departure_location"]
         arrival_location = metadata["arrival_location"]
-        mask = self._get_mask_from_flex(traveler_id, trip_purpose, departure_location, arrival_location, predicted_flex_index)
+        departure_time_window = metadata["departure_time_window"]
+        arrival_time_window = metadata["arrival_time_window"]
+        mask = self._get_mask_from_flex(traveler_id, trip_purpose, departure_location, arrival_location, departure_time_window, arrival_time_window, predicted_flex_index)
+
+
         return mask
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, dict]:
@@ -535,30 +539,49 @@ class DVRPEnv(gym.Env):
         return perturbed
     
     def _compute_mask_single_flex(self, index_cols, action_cols, flexibility):
-        # Convert decision to 0/1
-        df = self.traveler_decisions_df[index_cols + action_cols + [flexibility]].copy()
-        df["indicator"] = (df[flexibility] == "accept").astype(int)
-        # Pivot to wide form (each proposed_time_shift → one column)
-        wide = df.pivot_table(
-            index=index_cols,
-            columns=action_cols,
-            values="indicator",
-            fill_value=0
-        )
-        # Ensure columns are sorted by shift value
-        wide = wide.sort_index(axis=1)
-        # Convert each row into a vector (list of ints)
-        wide[flexibility] = wide.apply(lambda row: row.values.tolist(), axis=1)
-        # Keep only the vector column
-        result = wide[[flexibility]].reset_index()
-        result.columns.name = None
-        return result
+            # 1. Prepare data
+            df = self.traveler_decisions_df[index_cols + action_cols + [flexibility]].copy()
+            df["indicator"] = (df[flexibility] == "accept").astype(int)
+
+            # 2. Pivot to wide form (MultiIndex columns: pickup_shift_min, dropoff_shift_min)
+            # fill_value=0 means if a specific shift combo is missing from CSV, we assume REJECT
+            wide = df.pivot_table(
+                index=index_cols,
+                columns=action_cols,
+                values="indicator",
+                fill_value=0
+            )
+
+            # 3. Create the strict ordering required by ACTION_SPACE_MAP
+            # The CSV uses absolute values, so we convert action map to match CSV headers
+            strict_ordering = []
+            for pickup_shift, dropoff_shift in self.ACTION_SPACE_MAP:
+                # Matches CSV columns: pickup_shift_min, dropoff_shift_min
+                strict_ordering.append((abs(pickup_shift), abs(dropoff_shift)))
+            
+            # 4. Reindex the columns to enforce the specific Action Space order
+            # This fixes the sorting bug. 
+            # Note: We must ensure the pivot table columns are integers to match the tuple list
+            wide = wide.reindex(columns=strict_ordering, fill_value=0)
+
+            # 5. Collapse into list
+            # Now wide.iloc[row, 0] corresponds exactly to ACTION_SPACE_MAP[0]
+            wide[flexibility] = wide.apply(lambda row: row.values.tolist(), axis=1)
+
+            # 6. Clean up
+            result = wide[[flexibility]].reset_index()
+            if isinstance(result.columns, pd.MultiIndex):
+                result.columns = result.columns.get_level_values(0)
+            result.columns.name = None
+            
+            return result
     
     def _compute_mask_all_flexs(self):
-        index_cols = ["traveler_id", "trip_purpose", "departure_location", "arrival_location"]
+        index_cols = ["traveler_id", "trip_purpose", "departure_location", "arrival_location", "departure_time_window", "arrival_time_window"]
         action_cols = ["pickup_shift_min", "dropoff_shift_min"]
         df_mask = None
-        for i, flexibility in enumerate(["flexible for both early pickup and late dropoff", "flexible for early pickup, but inflexible for late dropoff", "flexible for late dropoff, but inflexible for early pickup", "inflexible for any schedule changes"]):
+        # IMPORTANT: This order MUST match embedding.py:21-26 for correct mask lookup!
+        for i, flexibility in enumerate(["flexible for late dropoff, but inflexible for early pickup", "flexible for early pickup, but inflexible for late dropoff", "inflexible for any schedule changes", "flexible for both early pickup and late dropoff"]):
             result = self._compute_mask_single_flex(index_cols, action_cols, flexibility)
             result = result.rename(columns = {flexibility: i})
             if df_mask is None:
@@ -567,14 +590,23 @@ class DVRPEnv(gym.Env):
                 df_mask = df_mask.merge(result, on = index_cols)
         return df_mask
     
-    def _get_mask_from_flex(self, traveler_id, trip_purpose, departure_location, arrival_location, predicted_flex_index):
+    def _get_mask_from_flex(self, traveler_id, trip_purpose, departure_location, arrival_location, departure_time_window, arrival_time_window, predicted_flex_index):
+        # Convert tensor inputs to Python scalars if needed
+        if isinstance(predicted_flex_index, torch.Tensor):
+            predicted_flex_index = int(predicted_flex_index.item())
+
         selection = (
             (self.df_mask["traveler_id"] == traveler_id) &
             (self.df_mask["trip_purpose"] == trip_purpose) &
             (self.df_mask["departure_location"] == departure_location) &
-            (self.df_mask["arrival_location"] == arrival_location)
+            (self.df_mask["arrival_location"] == arrival_location) & 
+            (self.df_mask["departure_time_window"] == departure_time_window) & 
+            (self.df_mask["arrival_time_window"] == arrival_time_window)
         )
-        mask = df_mask[selection][predicted_flex_index]
+        mask_series = self.df_mask[selection][predicted_flex_index]
+        # Extract the actual value from the Series (should be a list)
+        mask = mask_series.iloc[0] if len(mask_series) > 0 else [1]*16
+
         return mask
 
     def _get_acceptance_decision(
@@ -587,6 +619,8 @@ class DVRPEnv(gym.Env):
         pickup_shift: int,
         dropoff_shift: int
     ) -> bool:
+
+
         """
         Look up the acceptance decision from traveler_decisions_augmented.csv.
 
@@ -613,24 +647,23 @@ class DVRPEnv(gym.Env):
         # Find matching row
         mask = (
             (self.traveler_decisions_df["traveler_id"] == traveler_id) &
-#            (self.traveler_decisions_df["flexibility"] == flexibility) &
             (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
             (self.traveler_decisions_df["departure_location"] == departure_location) &
             (self.traveler_decisions_df["arrival_location"] == arrival_location) &
             (self.traveler_decisions_df["pickup_shift_min"] == pickup_shift_abs) &
-            (self.traveler_decisions_df["dropoff_shift_min"] == dropoff_shift_abs)
+            (self.traveler_decisions_df["dropoff_shift_min"] == dropoff_shift_abs)           
         )
 
         matching_rows = self.traveler_decisions_df[mask]
 
-        ## TODO: Note that this should never happen
-#        if len(matching_rows) == 0:
-#            print(f"WARNING: No matching decision found for traveler {traveler_id}, "
-#                  f"flexibility='{flexibility}', trip_purpose='{trip_purpose}', "
-#                  f"departure='{departure_location}', arrival='{arrival_location}', "
-#                  f"pickup_shift={pickup_shift}, dropoff_shift={dropoff_shift}")
-#            # Fallback to random acceptance
-#            return np.random.random() < self.acceptance_rate
+
+        if len(matching_rows) == 0:
+            print(f"WARNING: No matching decision found for traveler {traveler_id}, "
+                    f"flexibility='{flexibility}', trip_purpose='{trip_purpose}', "
+                  f"departure='{departure_location}', arrival='{arrival_location}', "
+                  f"pickup_shift={pickup_shift}, dropoff_shift={dropoff_shift}")
+
+            return np.random.random() < self.acceptance_rate
 
         # Get the first matching row
         row = matching_rows.iloc[0]

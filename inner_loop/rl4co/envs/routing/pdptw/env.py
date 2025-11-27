@@ -274,9 +274,9 @@ class PDPTWEnv(CVRPTWEnv):
         no_feasible = ~final_mask[..., 1:].any(dim=-1, keepdim=True)
         final_mask[..., 0] = final_mask[..., 0] | (no_feasible & schedule_empty).squeeze(-1)
         none_at_all = ~final_mask.any(dim=-1, keepdim=True)
-        ## TODO: Tentatively modify it
-#        final_mask[..., 0] = final_mask[..., 0] | none_at_all.squeeze(-1)
-        final_mask[..., 0] |= (none_at_all.squeeze(-1) & (schedule_empty.squeeze(-1)))
+        # Always allow depot as escape hatch when no actions are feasible
+        # This prevents "infeasible action selected" errors
+        final_mask[..., 0] = final_mask[..., 0] | none_at_all.squeeze(-1)
 
         return final_mask
 
