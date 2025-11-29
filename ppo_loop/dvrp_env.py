@@ -88,10 +88,10 @@ class DVRPEnv(gym.Env):
         num_customers: int = 30,
         max_vehicles: int = 5,
         solver_time_limit: int = 1,
-        acceptance_rate: float = 0.5,
+        acceptance_rate: float = 0.9,
         depot: Optional[Tuple[float, float]] = None,
         seed: Optional[int] = None,
-        patience_factor : int=0.2,
+        patience_factor : float=0.002,
         model_path : Optional[str] = '/Users/jiangwolin/Desktop/Research/llm-rl/llm-dvrp/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt',
         traveler_decisions_path: Optional[str] = None,
         device: str = 'cpu'

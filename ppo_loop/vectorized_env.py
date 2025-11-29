@@ -77,12 +77,14 @@ class VectorizedDVRPEnv:
 
         return masks
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray, baseline_marginal_costs: np.ndarray = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
         """
         Step all environments in parallel with batched neural oracle.
 
         Args:
             actions: (num_envs,) array of action indices
+            baseline_marginal_costs: (num_envs,) optional array of baseline marginal costs
+                                     for Option 3 reward scheme (marginal cost comparison)
 
         Returns:
             states: (num_envs, num_customers, 6) next states
@@ -175,8 +177,19 @@ class VectorizedDVRPEnv:
                 terminated = True
                 truncated = False
             else:
-                # Calculate reward
-                reward = previous_costs[i] - new_cost - patience_penalties[i]
+                # Calculate marginal cost for agent
+                agent_marginal_cost = new_cost - previous_costs[i]
+
+                # Calculate reward based on scheme
+                if baseline_marginal_costs is not None:
+                    # Option 3: Step-wise marginal cost difference
+                    # reward = baseline_marginal - agent_marginal - patience_penalty
+                    reward = baseline_marginal_costs[i] - agent_marginal_cost - patience_penalties[i]
+                else:
+                    # Option 1: Original temporal difference (backward compatible)
+                    # reward = previous_cost - new_cost - patience_penalty
+                    reward = previous_costs[i] - new_cost - patience_penalties[i]
+
                 env.previous_cost = new_cost
                 env.current_step += 1
                 terminated = env.current_step >= env.num_customers

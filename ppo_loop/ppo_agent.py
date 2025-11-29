@@ -40,11 +40,11 @@ class PolicyNetwork(nn.Module):
 
         self.network = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim // 2, action_dim),
         )
 
@@ -84,11 +84,11 @@ class ValueNetwork(nn.Module):
 
         self.network = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim // 2, 1),
         )
 

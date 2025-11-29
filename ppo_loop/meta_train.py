@@ -111,6 +111,179 @@ def compute_masks_from_flexibility(predicted_flexibility: torch.Tensor, action_d
     return masks
 
 
+def create_eval_envs(
+    num_eval_envs: int = 8,
+    num_customers: int = 30,
+    eval_seed: int = 9999,
+    traveler_decisions_path: Path = None,
+    device: str = "cpu"
+):
+    """
+    Create fixed evaluation environments for consistent testing across epochs.
+
+    Args:
+        num_eval_envs: Number of parallel evaluation environments
+        num_customers: Number of customers per episode
+        eval_seed: Fixed seed for reproducible evaluation
+        traveler_decisions_path: Path to traveler decisions CSV
+        device: Device to run on
+
+    Returns:
+        eval_agent_env: VectorizedDVRPEnv for agent rollouts
+        eval_baseline_env: VectorizedDVRPEnv for baseline rollouts
+    """
+    eval_agent_env = VectorizedDVRPEnv(
+        num_envs=num_eval_envs,
+        num_customers=num_customers,
+        max_vehicles=5,
+        solver_time_limit=1,
+        seed=eval_seed,
+        traveler_decisions_path=traveler_decisions_path,
+        device=device,
+    )
+
+    eval_baseline_env = VectorizedDVRPEnv(
+        num_envs=num_eval_envs,
+        num_customers=num_customers,
+        max_vehicles=5,
+        solver_time_limit=1,
+        seed=eval_seed,  # Same seed for fair comparison
+        traveler_decisions_path=traveler_decisions_path,
+        device=device,
+    )
+
+    return eval_agent_env, eval_baseline_env
+
+
+def evaluate_epoch(
+    agent: PPOAgent,
+    embedding_model: EmbeddingFFN,
+    eval_agent_env: VectorizedDVRPEnv,
+    eval_baseline_env: VectorizedDVRPEnv,
+    epoch: int,
+    num_customers: int = 30,
+    flexibility_personalities: list = None,
+    device: str = "cpu"
+) -> dict:
+    """
+    Evaluate agent on fixed test environments using greedy rollout.
+
+    Args:
+        agent: Trained PPO agent
+        embedding_model: Embedding model for predicting flexibility
+        eval_agent_env: Fixed evaluation environments for agent
+        eval_baseline_env: Fixed evaluation environments for baseline
+        epoch: Current training epoch
+        num_customers: Number of customers per episode
+        flexibility_personalities: List of flexibility type names
+        device: Device to run on
+
+    Returns:
+        Dictionary of evaluation metrics
+    """
+    num_eval_envs = eval_agent_env.num_envs
+
+    # Reset both eval environments
+    agent_states, _ = eval_agent_env.reset()
+    baseline_states, _ = eval_baseline_env.reset()
+
+    # Track statistics
+    agent_accepted_counts = np.zeros(num_eval_envs)
+    baseline_previous_costs = np.zeros(num_eval_envs)
+
+    # Greedy rollout (epsilon=0, no exploration)
+    for step in range(num_customers):
+        # Get user IDs
+        user_ids = eval_agent_env.get_current_user_ids()
+
+        # Predict flexibility and compute masks
+        with torch.no_grad():
+            user_embedding_ids = torch.LongTensor(user_ids) - 1
+            pred_proba = embedding_model(user_embedding_ids)
+            dist = torch.distributions.Categorical(probs=pred_proba)
+            predicted_flexibilities = dist.sample()
+            masks = eval_agent_env.get_masks(user_ids, predicted_flexibilities)
+
+        # Agent actions (GREEDY: epsilon=0)
+        agent_actions = agent.select_action_batch(
+            agent_states,
+            masks=masks,
+            epsilon=0.0  # Greedy evaluation
+        )
+
+        # Baseline actions (always action 12 = no time shift)
+        baseline_actions = np.full(num_eval_envs, 12, dtype=np.int64)
+
+        # Step baseline first to get marginal costs
+        baseline_next_states, _, _, _, baseline_infos = eval_baseline_env.step(baseline_actions)
+
+        # Compute baseline marginal costs (for Option 3 reward, though not used in eval)
+        baseline_current_costs = np.array([info.get('current_cost', 0.0) for info in baseline_infos])
+        baseline_marginal_costs = baseline_current_costs - baseline_previous_costs
+        baseline_previous_costs = baseline_current_costs
+
+        # Step agent environment
+        agent_next_states, _, _, _, agent_infos = eval_agent_env.step(agent_actions, baseline_marginal_costs)
+
+        # Track acceptance statistics
+        for i in range(num_eval_envs):
+            if agent_infos[i].get('accepted', False):
+                agent_accepted_counts[i] += 1
+
+        # Update states
+        agent_states = agent_next_states
+        baseline_states = baseline_next_states
+
+    # Collect final costs from all environments
+    agent_episode_costs = []
+    baseline_episode_costs = []
+
+    for i in range(num_eval_envs):
+        agent_cost = agent_infos[i].get('current_cost', float('inf'))
+        baseline_cost = baseline_infos[i].get('current_cost', float('inf'))
+
+        agent_episode_costs.append(agent_cost)
+        baseline_episode_costs.append(baseline_cost)
+
+    # Compute metrics (filter out inf costs)
+    valid_indices = [i for i, c in enumerate(agent_episode_costs) if not np.isinf(c)]
+
+    if len(valid_indices) > 0:
+        valid_agent_costs = [agent_episode_costs[i] for i in valid_indices]
+        valid_baseline_costs = [baseline_episode_costs[i] for i in valid_indices]
+
+        avg_agent_cost = np.mean(valid_agent_costs)
+        avg_baseline_cost = np.mean(valid_baseline_costs)
+
+        improvements_pct = [(b - a) / b * 100 for a, b in zip(valid_agent_costs, valid_baseline_costs) if b > 0]
+        avg_improvement_pct = np.mean(improvements_pct) if len(improvements_pct) > 0 else 0.0
+        avg_improvement_km = avg_baseline_cost - avg_agent_cost
+    else:
+        avg_agent_cost = float('inf')
+        avg_baseline_cost = float('inf')
+        avg_improvement_pct = 0.0
+        avg_improvement_km = 0.0
+
+    avg_accepted_rate = np.mean(agent_accepted_counts / num_customers)
+
+    # Create metrics dictionary
+    metrics = {
+        "eval/avg_cost": avg_agent_cost,
+        "eval/avg_baseline_cost": avg_baseline_cost,
+        "eval/avg_improvement_pct": avg_improvement_pct,
+        "eval/avg_improvement_km": avg_improvement_km,
+        "eval/avg_accepted_rate": avg_accepted_rate,
+    }
+
+    # Print summary
+    print(f"\n[Eval Epoch {epoch}] Greedy rollout on {num_eval_envs} fixed envs:")
+    print(f"  Avg Cost: {avg_agent_cost:.2f} km (Baseline: {avg_baseline_cost:.2f} km)")
+    print(f"  Avg Improvement: {avg_improvement_pct:.2f}% ({avg_improvement_km:.2f} km)")
+    print(f"  Acceptance Rate: {avg_accepted_rate * 100:.1f}%")
+
+    return metrics
+
+
 def train(
     num_episodes: int = 30,
     num_customers: int = 30,
@@ -181,6 +354,16 @@ def train(
         seed=seed,  # Same seed for fair comparison
         traveler_decisions_path=traveler_decisions_path,
         device=device,
+    )
+
+    # Create fixed evaluation environments (8 envs with fixed seed for reproducibility)
+    print("\nCreating fixed evaluation environments...")
+    eval_agent_env, eval_baseline_env = create_eval_envs(
+        num_eval_envs=8,
+        num_customers=num_customers,
+        eval_seed=9999,  # Different seed from training
+        traveler_decisions_path=traveler_decisions_path,
+        device=device
     )
 
     # Calculate state_dim based on environment's observation space
@@ -274,6 +457,7 @@ def train(
     print(f"Save directory: {save_path}")
     print(f"Policy update interval: every {policy_update_interval} epoch(s)")
     print(f"Embedding update frequency: every {steps_per_embedding_update} steps")
+    print(f"Reward scheme: Option 3 (Step-wise marginal cost comparison)")
     print("=" * 80)
 
     # Training statistics (track per epoch, aggregated over num_envs episodes)
@@ -299,6 +483,9 @@ def train(
         # Initialize per-environment accumulators
         env_rewards = np.zeros(num_envs)  # Accumulate rewards per environment
         env_accepted_count = np.zeros(num_envs)  # Count accepted requests per environment
+
+        # Track baseline costs for Option 3 reward scheme (marginal cost comparison)
+        baseline_previous_costs = np.zeros(num_envs)  # Previous costs in baseline trajectory
 
         # Compute current epsilon (linear decay based on epoch)
         epsilon = initial_epsilon - (initial_epsilon - final_epsilon) * (epoch - 1) / max(num_epochs - 1, 1)
@@ -326,12 +513,17 @@ def train(
                 epsilon=epsilon
             )  # (num_envs,)
 
-            # Step all environments in parallel (BATCHED NEURAL ORACLE!)
-            next_states, rewards, dones, truncs, step_infos = vec_env.step(actions)
-
             # Step baseline environments with no-shift action (action 12 = (0, 0))
             baseline_actions = np.full(num_envs, 12, dtype=np.int64)  # All take action 12
             baseline_next_states, _, baseline_dones, baseline_truncs, baseline_step_infos = baseline_vec_env.step(baseline_actions)
+
+            # Compute baseline marginal costs for Option 3 reward scheme
+            baseline_current_costs = np.array([info.get('current_cost', 0.0) for info in baseline_step_infos])
+            baseline_marginal_costs = baseline_current_costs - baseline_previous_costs  # Δ cost in baseline
+            baseline_previous_costs = baseline_current_costs  # Update for next step
+
+            # Step agent environments with Option 3 reward (marginal cost comparison)
+            next_states, rewards, dones, truncs, step_infos = vec_env.step(actions, baseline_marginal_costs=baseline_marginal_costs)
 
             # Collect online data from all environments and accumulate statistics
             for i in range(num_envs):
@@ -489,6 +681,28 @@ def train(
                 "entropy": train_stats.get('entropy', 0),
             })
 
+        # Evaluate every 5 epochs on fixed test environments
+        if epoch % 5 == 0:
+            eval_metrics = evaluate_epoch(
+                agent=agent,
+                embedding_model=embedding_model,
+                eval_agent_env=eval_agent_env,
+                eval_baseline_env=eval_baseline_env,
+                epoch=epoch,
+                num_customers=num_customers,
+                flexibility_personalities=flexibility_personalities,
+                device=device
+            )
+
+            # Log eval metrics to wandb
+            wandb.log({
+                "epoch": epoch,
+                **eval_metrics
+            })
+
+            # Clear agent buffer to avoid contamination from eval data
+            agent.clear_buffer()
+
         # Save checkpoint
         if epoch % save_interval == 0:
             checkpoint_path = save_path / f"ppo_agent_ep{epoch * num_envs}.pt"
@@ -521,6 +735,8 @@ def train(
     # Clean up
     vec_env.close()
     baseline_vec_env.close()
+    eval_agent_env.close()
+    eval_baseline_env.close()
 
     return agent, epoch_rewards, epoch_costs, epoch_accepted_rates, epoch_failures
 
@@ -548,6 +764,7 @@ def evaluate(
     trained_rewards = []
     trained_costs = []
     baseline_costs = []
+    improvement_percentages = []  # Track percentage improvement vs baseline
 
     for episode in range(1, num_episodes + 1):
         episode_seed = seed + episode  # Unique seed for each episode
@@ -597,6 +814,7 @@ def evaluate(
         # Calculate improvement
         improvement = baseline_cost - trained_cost
         improvement_pct = (improvement / baseline_cost * 100) if baseline_cost > 0 else 0
+        improvement_percentages.append(improvement_pct)
 
         print(
             f"Episode {episode}: "
@@ -610,12 +828,16 @@ def evaluate(
     avg_baseline = np.mean(baseline_costs)
     avg_improvement = avg_baseline - avg_trained
     avg_improvement_pct = (avg_improvement / avg_baseline * 100) if avg_baseline > 0 else 0
+    best_improvement_pct = np.max(improvement_percentages)
+    worst_improvement_pct = np.min(improvement_percentages)
 
     print("\n" + "=" * 80)
     print("Evaluation Summary:")
     print(f"  Trained Agent Avg Cost:  {avg_trained:.2f} km")
     print(f"  Baseline Avg Cost:       {avg_baseline:.2f} km")
     print(f"  Average Improvement:     {avg_improvement:.2f} km ({avg_improvement_pct:.1f}%)")
+    print(f"  Best Episode Improvement: {best_improvement_pct:.1f}%")
+    print(f"  Worst Episode Improvement: {worst_improvement_pct:.1f}%")
     print(f"  Avg Reward (trained):    {np.mean(trained_rewards):.2f}")
     print("=" * 80)
 
@@ -625,6 +847,8 @@ def evaluate(
         "eval/baseline_avg_cost": avg_baseline,
         "eval/improvement_km": avg_improvement,
         "eval/improvement_pct": avg_improvement_pct,
+        "eval/best_improvement_pct": best_improvement_pct,
+        "eval/worst_improvement_pct": worst_improvement_pct,
         "eval/avg_reward": np.mean(trained_rewards),
     })
 
