@@ -428,7 +428,7 @@ def train(
 
     # Update embedding every K total environment steps
     # 10 epochs * num_envs = e.g., 10 * 64 = 640 total episodes
-    steps_per_embedding_update = 10 * num_envs * num_customers  # 10 epochs worth of steps
+    steps_per_embedding_update = 25 * num_envs * num_customers  # 10 epochs worth of steps
     total_steps = 0
 
     # Initialize wandb
