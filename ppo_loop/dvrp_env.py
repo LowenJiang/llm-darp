@@ -2,7 +2,10 @@
 Dynamic Vehicle Routing Problem with Time Windows (DVRP-TW) Environment
 
 MDP formulation:
-- State: Current accepted requests + new incoming request (padded to max 30)
+- State: One-hot encoded representation (2*num_locations + 192, 2)
+  - Column 0: Aggregated sum of all previously accepted requests
+  - Column 1: Current new incoming request
+  - Rows encode: pickup_loc, dropoff_loc, 4 time windows (each 48 intervals)
 - Action: 16 discrete actions for time window perturbation
 - Reward: old_routing_cost - new_routing_cost - patience_penalty
 - Episode: 30 sequential request arrivals
@@ -34,10 +37,17 @@ class DVRPEnv(gym.Env):
     Gym environment for Dynamic Vehicle Routing Problem with Time Windows.
 
     State Space:
-        - Shape: (30, 6) - 30 requests max, 6 features per request
-        - Features: [pickup_h3, pickup_tw_early, pickup_tw_late,
-                    dropoff_h3, dropoff_tw_early, dropoff_tw_late]
-        - Padding: zero vectors for empty slots
+        - Shape: (2*num_distinct_locations + 192, 2)
+        - Column 0: Aggregated sum of all previously accepted requests
+        - Column 1: Current new incoming request
+        - Rows structure:
+          * [0:num_locations]: Pickup location one-hot
+          * [num_locations:2*num_locations]: Dropoff location one-hot
+          * [2*num_locations:+48]: Pickup TW early (48 time intervals)
+          * [2*num_locations+48:+96]: Pickup TW late
+          * [2*num_locations+96:+144]: Dropoff TW early
+          * [2*num_locations+144:+192]: Dropoff TW late
+        - Time intervals: Day divided into 48 intervals of 30 minutes each
 
     Action Space:
         - Discrete(16): 4 pickup shifts × 4 dropoff shifts
@@ -82,7 +92,7 @@ class DVRPEnv(gym.Env):
         depot: Optional[Tuple[float, float]] = None,
         seed: Optional[int] = None,
         patience_factor : int=0.2,
-        model_path : Optional[str] = '/home/jiangwolin/rl4co git/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt',
+        model_path : Optional[str] = '/Users/jiangwolin/Desktop/Research/llm-rl/llm-dvrp/examples/checkpoints/sf_newenv_2/epoch_epoch=067.ckpt',
         traveler_decisions_path: Optional[str] = None,
         device: str = 'cpu'
     ):  
@@ -110,12 +120,20 @@ class DVRPEnv(gym.Env):
             "num_customers": num_customers
         })
 
+        # Get number of distinct locations from the travel time matrix
+        self.num_distinct_locations = self.data_generator.generator.travel_time_matrix.shape[0]
+
         # Define observation and action spaces
-        # State: (30 requests, 6 features per request)
+        # New state space: (2*num_distinct_locations + 4*48, 2)
+        # Rows: pickup_loc_onehot + dropoff_loc_onehot + 4 time_window sections (each 48 rows)
+        # Columns: [aggregated_previous_requests, current_new_request]
+        self.num_time_intervals = 48  # Day divided into 48 intervals of 30 minutes each
+        self.state_rows = 2 * self.num_distinct_locations + 4 * self.num_time_intervals
+
         self.observation_space = spaces.Box(
-            low=-np.inf,
-            high=np.inf,
-            shape=(num_customers, 6),
+            low=0,
+            high=np.inf,  # For aggregated column, values can be > 1
+            shape=(self.state_rows, 2),
             dtype=np.float32,
         )
 
@@ -123,7 +141,8 @@ class DVRPEnv(gym.Env):
         self.action_space = spaces.Discrete(16)
 
         # Episode state
-        self.current_requests: Optional[TensorDict] = None
+        self.current_requests: Optional[TensorDict] = None  # Perturbed TWs for routing
+        self.real_requests: Optional[TensorDict] = None  # Original TWs for oracle evaluation
         self.pending_requests: Optional[TensorDict] = None
         self.current_step = 0
         self.previous_cost = 0.0
@@ -173,6 +192,9 @@ class DVRPEnv(gym.Env):
 
         # Initialize current_requests with depot only (index 0)
         self.current_requests = self._init_depot_only(self.pending_requests)
+
+        # Initialize real_requests (original unperturbed TWs for oracle)
+        self.real_requests = self._init_depot_only(self.pending_requests)
 
         self.current_step = 0
         self.previous_cost = 0.0
@@ -250,6 +272,27 @@ class DVRPEnv(gym.Env):
 
         return sliced_td
     
+    def _parse_time_window_string(self, tw_string: str) -> Tuple[int, int]:
+        """
+        Parse time window string (e.g., "08:00-08:30") into minutes.
+
+        Args:
+            tw_string: Time window string in format "HH:MM-HH:MM"
+
+        Returns:
+            Tuple of (early_minutes, late_minutes)
+        """
+        try:
+            early_str, late_str = tw_string.split('-')
+            early_h, early_m = early_str.strip().split(':')
+            late_h, late_m = late_str.strip().split(':')
+            early_minutes = int(early_h) * 60 + int(early_m)
+            late_minutes = int(late_h) * 60 + int(late_m)
+            return early_minutes, late_minutes
+        except (ValueError, AttributeError):
+            # Fallback to 0-1440 if parsing fails
+            return 0, 1440
+
     def _get_meta_data_single_traveler(self, traveler_id):
         # Use direct attribute access to avoid TensorDict indexing issues
         trip_metadata_list = self.pending_requests["trip_metadata"]
@@ -344,9 +387,38 @@ class DVRPEnv(gym.Env):
             perturbed_request = new_request.clone()
             patience_penalty = 0.0
 
-        # Add perturbed request to current requests
+        # Add perturbed request to current requests (for routing optimization)
         self.current_requests = self._append_to_current(
             self.current_requests, perturbed_request
+        )
+
+        # Create real_request with ORIGINAL time windows from trip_metadata (for oracle evaluation)
+        real_request = new_request.clone()
+        if "trip_metadata" in self.pending_requests.keys():
+            try:
+                metadata = trip_metadata[traveler_id]
+                # Get original time window strings
+                departure_tw_str = metadata.get("departure_time_window", "00:00-24:00")
+                arrival_tw_str = metadata.get("arrival_time_window", "00:00-24:00")
+
+                # Parse to minutes
+                pickup_early, pickup_late = self._parse_time_window_string(departure_tw_str)
+                dropoff_early, dropoff_late = self._parse_time_window_string(arrival_tw_str)
+
+                # Set original time windows in real_request
+                real_tw = torch.FloatTensor([
+                    [pickup_early, pickup_late],
+                    [dropoff_early, dropoff_late]
+                ]).unsqueeze(0)  # Add batch dimension
+
+                real_request["time_windows"] = real_tw
+            except (KeyError, TypeError):
+                # Fallback: use the new_request TWs if metadata extraction fails
+                pass
+
+        # Add real request to real_requests (original TWs for oracle)
+        self.real_requests = self._append_to_current(
+            self.real_requests, real_request
         )
 
         # Solve routing problem
@@ -427,52 +499,149 @@ class DVRPEnv(gym.Env):
 
         return observation, reward, terminated, truncated, info
 
+    def _encode_location_onehot(self, location_idx: int) -> np.ndarray:
+        """
+        Encode a location index as one-hot vector.
+
+        Args:
+            location_idx: Integer index of location in [0, num_distinct_locations)
+
+        Returns:
+            One-hot numpy array of shape (num_distinct_locations,)
+        """
+        onehot = np.zeros(self.num_distinct_locations, dtype=np.float32)
+        if 0 <= location_idx < self.num_distinct_locations:
+            onehot[location_idx] = 1.0
+        return onehot
+
+    def _encode_time_onehot(self, time_value: float) -> np.ndarray:
+        """
+        Encode a time value (in minutes) as one-hot vector for 48 intervals.
+
+        A day (1440 minutes) is divided into 48 intervals of 30 minutes each.
+        For a time value, we find which interval(s) it belongs to and set those to 1.
+
+        Example: time_value = 320 minutes -> interval 10 (320 // 30 = 10.67 -> floor = 10)
+                 time_value = 350 minutes -> interval 11 (350 // 30 = 11.67 -> floor = 11)
+
+        Args:
+            time_value: Time in minutes [0, 1440]
+
+        Returns:
+            One-hot numpy array of shape (48,)
+        """
+        onehot = np.zeros(self.num_time_intervals, dtype=np.float32)
+        interval_idx = int(time_value // 30)  # 30 minutes per interval
+        # Clamp to valid range [0, 47]
+        interval_idx = max(0, min(interval_idx, self.num_time_intervals - 1))
+        onehot[interval_idx] = 1.0
+        return onehot
+
+    def _encode_request_onehot(
+        self,
+        pickup_loc_idx: int,
+        dropoff_loc_idx: int,
+        pickup_tw_early: float,
+        pickup_tw_late: float,
+        dropoff_tw_early: float,
+        dropoff_tw_late: float
+    ) -> np.ndarray:
+        """
+        Encode a single request as a one-hot vector.
+
+        Returns a vector of shape (state_rows,) with the following structure:
+        - [0:num_distinct_locations]: pickup location one-hot
+        - [num_distinct_locations:2*num_distinct_locations]: dropoff location one-hot
+        - [2*num_distinct_locations:2*num_distinct_locations+48]: pickup TW early one-hot
+        - [2*num_distinct_locations+48:2*num_distinct_locations+96]: pickup TW late one-hot
+        - [2*num_distinct_locations+96:2*num_distinct_locations+144]: dropoff TW early one-hot
+        - [2*num_distinct_locations+144:2*num_distinct_locations+192]: dropoff TW late one-hot
+
+        Args:
+            pickup_loc_idx: Pickup location index
+            dropoff_loc_idx: Dropoff location index
+            pickup_tw_early: Pickup time window early bound (minutes)
+            pickup_tw_late: Pickup time window late bound (minutes)
+            dropoff_tw_early: Dropoff time window early bound (minutes)
+            dropoff_tw_late: Dropoff time window late bound (minutes)
+
+        Returns:
+            One-hot encoded vector of shape (state_rows,)
+        """
+        encoding = np.zeros(self.state_rows, dtype=np.float32)
+
+        # Encode pickup location
+        encoding[0:self.num_distinct_locations] = self._encode_location_onehot(pickup_loc_idx)
+
+        # Encode dropoff location
+        encoding[self.num_distinct_locations:2*self.num_distinct_locations] = self._encode_location_onehot(dropoff_loc_idx)
+
+        # Encode time windows
+        offset = 2 * self.num_distinct_locations
+        encoding[offset:offset+48] = self._encode_time_onehot(pickup_tw_early)
+        encoding[offset+48:offset+96] = self._encode_time_onehot(pickup_tw_late)
+        encoding[offset+96:offset+144] = self._encode_time_onehot(dropoff_tw_early)
+        encoding[offset+144:offset+192] = self._encode_time_onehot(dropoff_tw_late)
+
+        return encoding
+
     def _get_observation(self) -> np.ndarray:
         """
-        Build observation state.
+        Build observation state with new one-hot encoding format.
 
-        State format: (num_customers, 6) where each row contains:
-        [pickup_h3, pickup_tw_early, pickup_tw_late, dropoff_h3, dropoff_tw_early, dropoff_tw_late]
+        State format: (state_rows, 2) where:
+        - Column 0: Aggregated sum of all previously accepted requests (one-hot encodings)
+        - Column 1: Current new incoming request (one-hot encoding)
 
-        Fixed requests fill from top (row 0) downward, new request is always at bottom row,
-        and zeros for padding in between.
+        state_rows = 2*num_distinct_locations + 4*48
+        - Rows [0:num_distinct_locations]: pickup location one-hot
+        - Rows [num_distinct_locations:2*num_distinct_locations]: dropoff location one-hot
+        - Rows [2*num_distinct_locations:+48]: pickup TW early
+        - Rows [2*num_distinct_locations+48:+96]: pickup TW late
+        - Rows [2*num_distinct_locations+96:+144]: dropoff TW early
+        - Rows [2*num_distinct_locations+144:+192]: dropoff TW late
         """
         # Initialize observation with zeros
-        obs = np.zeros((self.num_customers, 6), dtype=np.float32)
+        obs = np.zeros((self.state_rows, 2), dtype=np.float32)
 
-        # Get current number of accepted requests (excluding depot)
+        # Column 0: Aggregate all previously accepted requests
         num_nodes = self.current_requests["h3_indices"].shape[1]
-        num_fixed_requests = (num_nodes - 1) // 2
+        num_fixed_requests = (num_nodes - 1) // 2  # Exclude depot
 
-        # Fill in fixed requests from top to bottom (rows 0, 1, 2, ...)
         h3_indices = self.current_requests["h3_indices"][0].cpu().numpy()  # [num_nodes]
         time_windows = self.current_requests["time_windows"][0].cpu().numpy()  # [num_nodes, 2]
 
+        # Sum up one-hot encodings of all accepted requests
         for i in range(num_fixed_requests):
-            pickup_idx = 2 * i + 1
+            pickup_idx = 2 * i + 1  # Skip depot at index 0
             dropoff_idx = 2 * i + 2
 
             if pickup_idx < num_nodes and dropoff_idx < num_nodes:
-                obs[i] = [
-                    h3_indices[pickup_idx],
-                    time_windows[pickup_idx, 0],
-                    time_windows[pickup_idx, 1],
-                    h3_indices[dropoff_idx],
-                    time_windows[dropoff_idx, 0],
-                    time_windows[dropoff_idx, 1],
-                ]
+                # Encode this request and add to column 0
+                request_encoding = self._encode_request_onehot(
+                    pickup_loc_idx=int(h3_indices[pickup_idx]),
+                    dropoff_loc_idx=int(h3_indices[dropoff_idx]),
+                    pickup_tw_early=time_windows[pickup_idx, 0],
+                    pickup_tw_late=time_windows[pickup_idx, 1],
+                    dropoff_tw_early=time_windows[dropoff_idx, 0],
+                    dropoff_tw_late=time_windows[dropoff_idx, 1]
+                )
+                obs[:, 0] += request_encoding
 
-        # Add new request at bottom row (if not done)
+        # Column 1: Current new incoming request (if not done)
         if self.current_step < self.num_customers:
             new_request = self._slice(self.pending_requests, self.current_step)
-            new_h3 = new_request["h3_indices"][0].cpu().numpy()  # [2]
+            new_h3 = new_request["h3_indices"][0].cpu().numpy()  # [2] - pickup and dropoff
             new_tw = new_request["time_windows"][0].cpu().numpy()  # [2, 2]
 
-            # Place new request at the bottom row (last index)
-            obs[self.num_customers - 1] = [
-                new_h3[0], new_tw[0, 0], new_tw[0, 1],  # Pickup
-                new_h3[1], new_tw[1, 0], new_tw[1, 1],  # Dropoff
-            ]
+            obs[:, 1] = self._encode_request_onehot(
+                pickup_loc_idx=int(new_h3[0]),
+                dropoff_loc_idx=int(new_h3[1]),
+                pickup_tw_early=new_tw[0, 0],
+                pickup_tw_late=new_tw[0, 1],
+                dropoff_tw_early=new_tw[1, 0],
+                dropoff_tw_late=new_tw[1, 1]
+            )
 
         return obs
 
@@ -694,6 +863,16 @@ class DVRPEnv(gym.Env):
             pickup_idx = 2 * self.current_step + 1
             return self.pending_requests["user_id"][0, pickup_idx].item()
         return self.current_step  # Fallback to step index
+
+    def get_real_requests(self) -> TensorDict:
+        """
+        Get requests with ORIGINAL (unperturbed) time windows for oracle evaluation.
+
+        Returns:
+            TensorDict containing requests with original time windows from trip_metadata.
+            This is used by oracle evaluators to assess performance against ground truth.
+        """
+        return self.real_requests
 
     def render(self, mode: str = "human") -> None:
         """Render environment (not implemented)."""

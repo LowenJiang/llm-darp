@@ -19,21 +19,22 @@ class PolicyNetwork(nn.Module):
     """
     Policy network (Actor) for PPO.
 
-    Input: State (30, 6) flattened to 180-dimensional vector
+    Input: State (state_rows, 2) flattened to state_dim-dimensional vector
+           For SF dataset with 207 locations: (606, 2) -> 1212-dimensional
     Output: Action probabilities over discrete actions
     """
 
     def __init__(
         self,
-        state_dim: int = 180,
+        state_dim: int = 1212,  # Default for SF dataset: 606 rows * 2 columns
         action_dim: int = 16,
         hidden_dim: int = 512,
     ):
         """
         Args:
-            state_dim: Flattened state dimension (default: 180)
+            state_dim: Flattened state dimension (default: 1212 for SF dataset)
             action_dim: Number of discrete actions (default: 16)
-            hidden_dim: Hidden layer dimension (default: 256)
+            hidden_dim: Hidden layer dimension (default: 512)
         """
         super(PolicyNetwork, self).__init__()
 
@@ -64,19 +65,20 @@ class ValueNetwork(nn.Module):
     """
     Value network (Critic) for PPO.
 
-    Input: State (30, 6) flattened to 180-dimensional vector
+    Input: State (state_rows, 2) flattened to state_dim-dimensional vector
+           For SF dataset with 207 locations: (606, 2) -> 1212-dimensional
     Output: State value estimation
     """
 
     def __init__(
         self,
-        state_dim: int = 180,
+        state_dim: int = 1212,  # Default for SF dataset: 606 rows * 2 columns
         hidden_dim: int = 512,
     ):
         """
         Args:
-            state_dim: Flattened state dimension (default: 180)
-            hidden_dim: Hidden layer dimension (default: 256)
+            state_dim: Flattened state dimension (default: 1212 for SF dataset)
+            hidden_dim: Hidden layer dimension (default: 512)
         """
         super(ValueNetwork, self).__init__()
 
@@ -107,20 +109,21 @@ class ActorCritic(nn.Module):
     """
     Actor-Critic neural network for PPO with separate policy and value networks.
 
-    Input: State (30, 6) flattened to 180-dimensional vector
+    Input: State (state_rows, 2) flattened to state_dim-dimensional vector
+           For SF dataset with 207 locations: (606, 2) -> 1212-dimensional
     Actor output: Action probabilities over 16 discrete actions
     Critic output: State value estimation
     """
 
     def __init__(
         self,
-        state_dim: int = 180,  # 30 requests * 6 features
+        state_dim: int = 1212,  # Default for SF dataset: 606 rows * 2 columns
         action_dim: int = 16,
         hidden_dim: int = 256,
     ):
         """
         Args:
-            state_dim: Flattened state dimension (default: 180)
+            state_dim: Flattened state dimension (default: 1212 for SF dataset)
             action_dim: Number of discrete actions (default: 16)
             hidden_dim: Hidden layer dimension (default: 256)
         """
@@ -139,13 +142,15 @@ class ActorCritic(nn.Module):
         Forward pass.
 
         Args:
-            state: State tensor of shape (batch_size, 30, 6)
+            state: State tensor of shape (batch_size, state_rows, 2)
+                   For SF dataset: (batch_size, 606, 2)
 
         Returns:
             action_probs: Action probabilities (batch_size, 16)
             state_value: State value (batch_size, 1)
         """
-        # Flatten state: (batch_size, 30, 6) -> (batch_size, 180)
+        # Flatten state: (batch_size, state_rows, 2) -> (batch_size, state_dim)
+        # For SF dataset: (batch_size, 606, 2) -> (batch_size, 1212)
         state_flat = state.reshape(state.shape[0], -1)
 
         # Policy network: action logits
@@ -207,7 +212,8 @@ class ActorCritic(nn.Module):
         Sample action from policy.
 
         Args:
-            state: State tensor of shape (30, 6)
+            state: State tensor of shape (state_rows, 2)
+                   For SF dataset: (606, 2)
             mask: Action mask tensor of shape (action_dim,) where 1 = allowed, 0 = masked
             epsilon: Epsilon for epsilon-greedy masking (forced exploration into masked actions)
 
@@ -242,7 +248,8 @@ class ActorCritic(nn.Module):
         Evaluate states and actions (for PPO update).
 
         Args:
-            states: Batch of states (batch_size, 30, 6)
+            states: Batch of states (batch_size, state_rows, 2)
+                    For SF dataset: (batch_size, 606, 2)
             actions: Batch of actions (batch_size,)
 
         Returns:
@@ -266,7 +273,7 @@ class PPOAgent:
 
     def __init__(
         self,
-        state_dim: int = 240,
+        state_dim: int = 1212,  # Default for SF dataset: 606 rows * 2 columns
         action_dim: int = 16,
         hidden_dim: int = 256,
         lr: float = 3e-4,
@@ -322,7 +329,8 @@ class PPOAgent:
         Select action using current policy.
 
         Args:
-            state: State array of shape (30, 6)
+            state: State array of shape (state_rows, 2)
+                   For SF dataset: (606, 2)
             mask: Action mask tensor where 1 = allowed, 0 = masked
             epsilon: Epsilon for epsilon-greedy masking
 
@@ -744,14 +752,19 @@ class PPOAgent:
         Compute Generalized Advantage Estimation (GAE).
 
         Args:
-            rewards: Rewards tensor
-            values: State values tensor
-            dones: Done flags tensor
+            rewards: Rewards tensor (1D)
+            values: State values tensor (1D)
+            dones: Done flags tensor (1D)
 
         Returns:
             advantages: GAE advantages
             returns: Discounted returns
         """
+        # Ensure all tensors are 1D (handle edge case of 0-dim tensors from squeeze())
+        rewards = rewards.flatten()
+        values = values.flatten()
+        dones = dones.flatten()
+
         advantages = torch.zeros_like(rewards)
         last_advantage = 0.0
 
@@ -759,14 +772,18 @@ class PPOAgent:
             if t == len(rewards) - 1:
                 next_value = 0.0
             else:
-                next_value = values[t + 1]
+                next_value = values[t + 1].item() if values[t + 1].dim() == 0 else values[t + 1]
 
             # TD error
-            delta = rewards[t] + self.gamma * next_value * (1 - dones[t]) - values[t]
+            current_value = values[t].item() if values[t].dim() == 0 else values[t]
+            current_done = dones[t].item() if dones[t].dim() == 0 else dones[t]
+            current_reward = rewards[t].item() if rewards[t].dim() == 0 else rewards[t]
+
+            delta = current_reward + self.gamma * next_value * (1 - current_done) - current_value
 
             # GAE
             advantages[t] = last_advantage = (
-                delta + self.gamma * self.gae_lambda * (1 - dones[t]) * last_advantage
+                delta + self.gamma * self.gae_lambda * (1 - current_done) * last_advantage
             )
 
         # Returns = advantages + values
@@ -879,29 +896,31 @@ class PPOAgent:
 
 
 def test_agent():
-    """Test the PPO agent."""
-    print("Testing PPOAgent...")
+    """Test the PPO agent with new state space."""
+    print("Testing PPOAgent with new state space...")
 
-    agent = PPOAgent(state_dim=180, action_dim=16, hidden_dim=128)
+    # For SF dataset: 606 rows * 2 columns = 1212 state_dim
+    agent = PPOAgent(state_dim=1212, action_dim=16, hidden_dim=128)
 
-    # Create dummy state
-    state = np.random.randn(30, 6).astype(np.float32)
+    # Create dummy state (606, 2) - matches SF dataset
+    state = np.random.randn(606, 2).astype(np.float32)
 
     # Select action
     action = agent.select_action(state)
     print(f"Selected action: {action}")
+    print(f"State shape: {state.shape}")
 
     # Store reward
     agent.store_reward(reward=10.0, done=False)
 
     # Collect more samples
     for _ in range(10):
-        state = np.random.randn(30, 6).astype(np.float32)
+        state = np.random.randn(606, 2).astype(np.float32)
         action = agent.select_action(state)
         agent.store_reward(reward=np.random.randn(), done=False)
 
     # Final state
-    state = np.random.randn(30, 6).astype(np.float32)
+    state = np.random.randn(606, 2).astype(np.float32)
     action = agent.select_action(state)
     agent.store_reward(reward=5.0, done=True)
 
@@ -909,6 +928,7 @@ def test_agent():
     print("\nPerforming PPO update...")
     stats = agent.update(num_value_epochs=50, num_policy_epochs=10, batch_size=4)
     print(f"Training stats: {stats}")
+    print("\n✓ PPO agent test completed successfully!")
 
 
 if __name__ == "__main__":

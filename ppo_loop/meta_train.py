@@ -183,10 +183,16 @@ def train(
         device=device,
     )
 
+    # Calculate state_dim based on environment's observation space
+    # New state space: (state_rows, 2) where state_rows = 2*num_locations + 192
+    # For SF dataset with 207 locations: (606, 2) -> flattened to 1212
+    obs_shape = vec_env.envs[0].observation_space.shape  # e.g., (606, 2)
+    state_dim = obs_shape[0] * obs_shape[1]  # 606 * 2 = 1212
+
     # Create PPO agent
     action_dim = 16
     agent = PPOAgent(
-        state_dim=num_customers * 6,  # 30 * 6 = 180
+        state_dim=state_dim,
         action_dim=action_dim,
         hidden_dim=256,
         lr=3e-4,
