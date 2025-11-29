@@ -119,7 +119,10 @@ def create_eval_envs(
     device: str = "cpu"
 ):
     """
-    Create fixed evaluation environments for consistent testing across epochs.
+    Create fixed evaluation environment for consistent testing across epochs.
+
+    Generates problem instances once and stores them for reuse across all evaluations.
+    Both agent and baseline will be evaluated on the same environment sequentially.
 
     Args:
         num_eval_envs: Number of parallel evaluation environments
@@ -129,10 +132,10 @@ def create_eval_envs(
         device: Device to run on
 
     Returns:
-        eval_agent_env: VectorizedDVRPEnv for agent rollouts
-        eval_baseline_env: VectorizedDVRPEnv for baseline rollouts
+        eval_env: VectorizedDVRPEnv for evaluations
+        eval_initial_states: Initial states to reset to
     """
-    eval_agent_env = VectorizedDVRPEnv(
+    eval_env = VectorizedDVRPEnv(
         num_envs=num_eval_envs,
         num_customers=num_customers,
         max_vehicles=5,
@@ -142,24 +145,17 @@ def create_eval_envs(
         device=device,
     )
 
-    eval_baseline_env = VectorizedDVRPEnv(
-        num_envs=num_eval_envs,
-        num_customers=num_customers,
-        max_vehicles=5,
-        solver_time_limit=1,
-        seed=eval_seed,  # Same seed for fair comparison
-        traveler_decisions_path=traveler_decisions_path,
-        device=device,
-    )
+    # Generate fixed problem instances once
+    eval_initial_states, _ = eval_env.reset()
 
-    return eval_agent_env, eval_baseline_env
+    return eval_env, eval_initial_states
 
 
 def evaluate_epoch(
     agent: PPOAgent,
     embedding_model: EmbeddingFFN,
-    eval_agent_env: VectorizedDVRPEnv,
-    eval_baseline_env: VectorizedDVRPEnv,
+    eval_env: VectorizedDVRPEnv,
+    eval_initial_states: np.ndarray,
     epoch: int,
     num_customers: int = 30,
     flexibility_personalities: list = None,
@@ -168,11 +164,14 @@ def evaluate_epoch(
     """
     Evaluate agent on fixed test environments using greedy rollout.
 
+    Runs both agent and baseline on the same environment sequentially.
+    Reuses the exact same problem instances generated at startup for consistent evaluation.
+
     Args:
         agent: Trained PPO agent
         embedding_model: Embedding model for predicting flexibility
-        eval_agent_env: Fixed evaluation environments for agent
-        eval_baseline_env: Fixed evaluation environments for baseline
+        eval_env: Fixed evaluation environment
+        eval_initial_states: Fixed initial states
         epoch: Current training epoch
         num_customers: Number of customers per episode
         flexibility_personalities: List of flexibility type names
@@ -181,20 +180,23 @@ def evaluate_epoch(
     Returns:
         Dictionary of evaluation metrics
     """
-    num_eval_envs = eval_agent_env.num_envs
+    num_eval_envs = eval_env.num_envs
 
-    # Reset both eval environments
-    agent_states, _ = eval_agent_env.reset()
-    baseline_states, _ = eval_baseline_env.reset()
+    # ========== AGENT ROLLOUT ==========
+    # Restore to the SAME initial states (no reset, just restore the saved states)
+    agent_states = eval_initial_states.copy()
+
+    # Manually reset environment step counters and internal state
+    for i in range(num_eval_envs):
+        eval_env.envs[i].current_request_index = 0
 
     # Track statistics
     agent_accepted_counts = np.zeros(num_eval_envs)
-    baseline_previous_costs = np.zeros(num_eval_envs)
 
-    # Greedy rollout (epsilon=0, no exploration)
+    # Greedy rollout with masking (epsilon=0 means always apply masks)
     for step in range(num_customers):
         # Get user IDs
-        user_ids = eval_agent_env.get_current_user_ids()
+        user_ids = eval_env.get_current_user_ids()
 
         # Predict flexibility and compute masks
         with torch.no_grad():
@@ -202,28 +204,17 @@ def evaluate_epoch(
             pred_proba = embedding_model(user_embedding_ids)
             dist = torch.distributions.Categorical(probs=pred_proba)
             predicted_flexibilities = dist.sample()
-            masks = eval_agent_env.get_masks(user_ids, predicted_flexibilities)
+            masks = eval_env.get_masks(user_ids, predicted_flexibilities)
+            # epsilon=0 for evaluation, so always apply the predicted masks
 
-        # Agent actions (GREEDY: epsilon=0)
+        # Agent actions selected according to policy probabilities (with masking)
         agent_actions = agent.select_action_batch(
             agent_states,
-            masks=masks,
-            epsilon=0.0  # Greedy evaluation
+            masks=masks
         )
 
-        # Baseline actions (always action 12 = no time shift)
-        baseline_actions = np.full(num_eval_envs, 12, dtype=np.int64)
-
-        # Step baseline first to get marginal costs
-        baseline_next_states, _, _, _, baseline_infos = eval_baseline_env.step(baseline_actions)
-
-        # Compute baseline marginal costs (for Option 3 reward, though not used in eval)
-        baseline_current_costs = np.array([info.get('current_cost', 0.0) for info in baseline_infos])
-        baseline_marginal_costs = baseline_current_costs - baseline_previous_costs
-        baseline_previous_costs = baseline_current_costs
-
-        # Step agent environment
-        agent_next_states, _, _, _, agent_infos = eval_agent_env.step(agent_actions, baseline_marginal_costs)
+        # Step agent environment (no baseline marginal costs needed for eval)
+        agent_next_states, _, _, _, agent_infos = eval_env.step(agent_actions, baseline_marginal_costs=None)
 
         # Track acceptance statistics
         for i in range(num_eval_envs):
@@ -232,17 +223,31 @@ def evaluate_epoch(
 
         # Update states
         agent_states = agent_next_states
-        baseline_states = baseline_next_states
 
-    # Collect final costs from all environments
+    # Collect agent costs from all environments
     agent_episode_costs = []
-    baseline_episode_costs = []
-
     for i in range(num_eval_envs):
         agent_cost = agent_infos[i].get('current_cost', float('inf'))
-        baseline_cost = baseline_infos[i].get('current_cost', float('inf'))
-
         agent_episode_costs.append(agent_cost)
+
+    # ========== BASELINE ROLLOUT ==========
+    # Restore to the SAME initial states again
+    baseline_states = eval_initial_states.copy()
+
+    # Reset environment step counters
+    for i in range(num_eval_envs):
+        eval_env.envs[i].current_request_index = 0
+
+    # Baseline rollout (always action 12 = no time shift)
+    for step in range(num_customers):
+        baseline_actions = np.full(num_eval_envs, 12, dtype=np.int64)
+        baseline_next_states, _, _, _, baseline_infos = eval_env.step(baseline_actions)
+        baseline_states = baseline_next_states
+
+    # Collect baseline costs from all environments
+    baseline_episode_costs = []
+    for i in range(num_eval_envs):
+        baseline_cost = baseline_infos[i].get('current_cost', float('inf'))
         baseline_episode_costs.append(baseline_cost)
 
     # Compute metrics (filter out inf costs)
@@ -257,12 +262,9 @@ def evaluate_epoch(
 
         improvements_pct = [(b - a) / b * 100 for a, b in zip(valid_agent_costs, valid_baseline_costs) if b > 0]
         avg_improvement_pct = np.mean(improvements_pct) if len(improvements_pct) > 0 else 0.0
+        max_improvement_pct = np.max(improvements_pct) if len(improvements_pct) > 0 else 0.0
+        min_improvement_pct = np.min(improvements_pct) if len(improvements_pct) > 0 else 0.0
         avg_improvement_km = avg_baseline_cost - avg_agent_cost
-    else:
-        avg_agent_cost = float('inf')
-        avg_baseline_cost = float('inf')
-        avg_improvement_pct = 0.0
-        avg_improvement_km = 0.0
 
     avg_accepted_rate = np.mean(agent_accepted_counts / num_customers)
 
@@ -271,6 +273,8 @@ def evaluate_epoch(
         "eval/avg_cost": avg_agent_cost,
         "eval/avg_baseline_cost": avg_baseline_cost,
         "eval/avg_improvement_pct": avg_improvement_pct,
+        "eval/max_improvement_pct": max_improvement_pct,
+        "eval/min_improvement_pct": min_improvement_pct,
         "eval/avg_improvement_km": avg_improvement_km,
         "eval/avg_accepted_rate": avg_accepted_rate,
     }
@@ -279,6 +283,7 @@ def evaluate_epoch(
     print(f"\n[Eval Epoch {epoch}] Greedy rollout on {num_eval_envs} fixed envs:")
     print(f"  Avg Cost: {avg_agent_cost:.2f} km (Baseline: {avg_baseline_cost:.2f} km)")
     print(f"  Avg Improvement: {avg_improvement_pct:.2f}% ({avg_improvement_km:.2f} km)")
+    print(f"  Max/Min Improvement: {max_improvement_pct:.2f}% / {min_improvement_pct:.2f}%")
     print(f"  Acceptance Rate: {avg_accepted_rate * 100:.1f}%")
 
     return metrics
@@ -356,15 +361,16 @@ def train(
         device=device,
     )
 
-    # Create fixed evaluation environments (8 envs with fixed seed for reproducibility)
-    print("\nCreating fixed evaluation environments...")
-    eval_agent_env, eval_baseline_env = create_eval_envs(
+    # Create fixed evaluation environment (8 envs with fixed seed for reproducibility)
+    print("\nCreating fixed evaluation environment...")
+    eval_env, eval_initial_states = create_eval_envs(
         num_eval_envs=8,
         num_customers=num_customers,
         eval_seed=9999,  # Different seed from training
         traveler_decisions_path=traveler_decisions_path,
         device=device
     )
+    print("Fixed evaluation instances generated and stored for reuse.")
 
     # Calculate state_dim based on environment's observation space
     # New state space: (state_rows, 2) where state_rows = 2*num_locations + 192
@@ -499,18 +505,27 @@ def train(
             with torch.no_grad():
                 user_embedding_ids = torch.LongTensor(user_ids) - 1
                 pred_proba = embedding_model(user_embedding_ids)
-                
+
                 # Create a categorical distribution and sample from it
                 dist = torch.distributions.Categorical(probs=pred_proba)
-                predicted_flexibilities = dist.sample() 
-                
+                predicted_flexibilities = dist.sample()
+
                 masks = vec_env.get_masks(user_ids, predicted_flexibilities)
-                
+
+                # Epsilon-greedy masking: with probability epsilon, don't apply masks
+                # With probability (1-epsilon), use the predicted masks
+                if epsilon > 0:
+                    random_vals = np.random.random(num_envs)
+                    for i in range(num_envs):
+                        if random_vals[i] < epsilon:
+                            # Don't apply masking - all actions are valid
+                            masks[i] = torch.ones_like(masks[i])
+
             # Select actions for all environments in parallel with masks
+            # PPO always selects according to policy probabilities
             actions = agent.select_action_batch(
                 states,
-                masks=masks,
-                epsilon=epsilon
+                masks=masks
             )  # (num_envs,)
 
             # Step baseline environments with no-shift action (action 12 = (0, 0))
@@ -686,8 +701,8 @@ def train(
             eval_metrics = evaluate_epoch(
                 agent=agent,
                 embedding_model=embedding_model,
-                eval_agent_env=eval_agent_env,
-                eval_baseline_env=eval_baseline_env,
+                eval_env=eval_env,
+                eval_initial_states=eval_initial_states,
                 epoch=epoch,
                 num_customers=num_customers,
                 flexibility_personalities=flexibility_personalities,
@@ -735,8 +750,7 @@ def train(
     # Clean up
     vec_env.close()
     baseline_vec_env.close()
-    eval_agent_env.close()
-    eval_baseline_env.close()
+    eval_env.close()
 
     return agent, epoch_rewards, epoch_costs, epoch_accepted_rates, epoch_failures
 

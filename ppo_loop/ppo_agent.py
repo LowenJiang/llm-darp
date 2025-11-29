@@ -357,15 +357,17 @@ class PPOAgent:
     def select_action_batch(
             self,
             states: np.ndarray,
-            masks: torch.Tensor = None,
-            epsilon: float = 0.0
+            masks: torch.Tensor = None
         ) -> np.ndarray:
             """
             Select actions for a batch of states (Vectorized).
             Robust against policy-mask disagreement and numerical instability.
+
+            NOTE: Epsilon-greedy masking is handled BEFORE calling this function.
+            This function always selects actions according to the policy distribution.
             """
             batch_size = states.shape[0]
-            
+
             # 1. Convert State to Tensor
             state_tensor = torch.FloatTensor(states).to(self.device)
 
@@ -380,9 +382,9 @@ class PPOAgent:
                 # Check for NaNs in input state to prevent immediate crash
                 if torch.isnan(state_tensor).any():
                     state_tensor = torch.nan_to_num(state_tensor, 0.0)
-                
+
                 action_probs, state_values = self.policy.forward(state_tensor)
-                
+
                 # Safety: Handle NaNs from network output (exploding gradients)
                 if torch.isnan(action_probs).any():
                     # Fallback to uniform distribution if network breaks
@@ -392,18 +394,18 @@ class PPOAgent:
                 if masks is not None:
                     # A. Apply Mask: Multiply probabilities by 0 or 1
                     masked_probs = action_probs * masks
-                    
+
                     # B. Check for degenerate cases (Sum approx 0)
                     sum_probs = masked_probs.sum(dim=1, keepdim=True)
-                    
+
                     # Identify rows where policy assigns 0 prob to all valid actions
                     # OR where mask is all zeros
                     problematic_rows = (sum_probs < 1e-8)
-                    
+
                     if problematic_rows.any():
                         # Calculate count of valid actions per row
                         valid_counts = masks.sum(dim=1, keepdim=True)
-                        
+
                         # Case 1: Mask is all zeros (Invalid State). Force allow all.
                         mask_is_empty = (valid_counts < 1e-8)
                         if mask_is_empty.any():
@@ -411,28 +413,19 @@ class PPOAgent:
                             masks = masks.clone() # Clone to avoid in-place error if leaf
                             masks[mask_is_empty.squeeze()] = 1.0
                             valid_counts[mask_is_empty.squeeze()] = masks.shape[1]
-                        
+
                         # Case 2: Policy Disagreement.
                         # Create a uniform distribution over VALID actions for problematic rows
                         fallback_probs = masks / (valid_counts + 1e-8)
-                        
+
                         # Replace masked_probs with fallback_probs where sum was ~0
                         masked_probs = torch.where(problematic_rows, fallback_probs, masked_probs)
-                        
+
                         # Recompute sum for normalization
                         sum_probs = masked_probs.sum(dim=1, keepdim=True)
 
                     # Normalize to sum to 1
                     action_probs = masked_probs / (sum_probs + 1e-8)
-                    
-                    # C. Vectorized Epsilon-Greedy Logic
-                    if epsilon > 0:
-                        # Create a uniform distribution over VALID actions only
-                        valid_counts = masks.sum(dim=1, keepdim=True)
-                        uniform_probs = masks / (valid_counts + 1e-8)
-                        
-                        # Mix: (1 - epsilon) * Policy + epsilon * Random
-                        action_probs = (1 - epsilon) * action_probs + epsilon * uniform_probs
 
                 # Final Safety: Clamp to remove 0s or negatives (numerical errors)
                 # Categorical requires > 0 and sum=1 (implied, but good to be safe)
