@@ -1,15 +1,6 @@
 """
 Dynamic Vehicle Routing Problem with Time Windows (DVRP-TW) Environment
 (Batched Version)
-
-MDP formulation:
-- State: One-hot encoded representation (2*num_locations + 192, 2)
-  - Column 0: Aggregated sum of all previously accepted requests
-  - Column 1: Current new incoming request
-  - Rows encode: pickup_loc, dropoff_loc, 4 time windows (each 48 intervals)
-- Action: 16 discrete actions for time window perturbation
-- Reward: old_routing_cost - new_routing_cost - patience_penalty
-- Episode: 30 sequential request arrivals
 """
 
 from __future__ import annotations
@@ -57,9 +48,6 @@ class DVRPEnv(gym.Env):
         (0, 0),   (0, 10),   (0, 20),   (0, 30),
     ]
 
-    # Fields that grow with the number of requests (must be sliced/concatenated)
-    # Note: Global fields like 'travel_time_matrix', 'capacity', 'vehicle_capacity', 'trip_metadata'
-    # are NOT in here, so they are preserved automatically by clone().
     SLICE_FIELDS = {
         "h3_indices", 
         "time_windows", 
@@ -67,8 +55,8 @@ class DVRPEnv(gym.Env):
         "locs", 
         "action_mask", 
         "visited", 
-        "user_id",      # Added to track IDs in history
-        "service_time"  # Added if present in data
+        "user_id",
+        "service_time"
     }
 
     def __init__(
@@ -76,11 +64,12 @@ class DVRPEnv(gym.Env):
         num_customers: int = 30,
         max_vehicles: int = 5,
         solver_time_limit: int = 1,
-        acceptance_rate: float = 0.9,
+        acceptance_rate: float = 0.5,
         depot: Optional[Tuple[float, float]] = None,
         seed: Optional[int] = None,
         patience_factor: float = 0.002,
         batch_size: int = 1,
+        num_time_bins: int = 48,  # <--- control bins
         model_path: Optional[str] = "/Users/jiangwolin/Downloads/llm-darp-main/checkpoints/sf_newenv_3/epoch_epoch=062.ckpt",
         traveler_decisions_path: Optional[str] = "/Users/jiangwolin/Downloads/llm-darp-main/ppo_loop/traveler_decisions_augmented.csv",
         device: str = 'cpu'
@@ -94,6 +83,12 @@ class DVRPEnv(gym.Env):
         self.seed_val = seed
         self.device = device
         self.batch_size = batch_size
+        
+        # Time Binning Configuration
+        self.num_time_bins = num_time_bins
+        # Assuming 1440 minutes in a day. 
+        # If num_time_bins=48, interval is 30.0
+        self.time_bin_interval = 1440.0 / self.num_time_bins
 
         # Precompute action tensor for vectorization [16, 2]
         self.action_tensor = torch.tensor(self.ACTION_SPACE_MAP, device=self.device)
@@ -131,12 +126,9 @@ class DVRPEnv(gym.Env):
             env = PDPTWEnv()
             torch.serialization.add_safe_globals([PDPTWEnv])
             try:
-                ckpt = torch.load(model_path, map_location='cpu', weights_only=False)
-                state = ckpt["state_dict"]
-                model = AttentionModel(env=PDPTWEnv)
-                model.load_state_dict(state, strict=False)
-                self.policy = model.policy.to(self.device)
-                self.policy.eval()
+                ckpt_path = model_path
+                model = AttentionModel.load_from_checkpoint(ckpt_path, env=env, map_location="cpu", weights_only=False)
+                self.policy = model.policy
             except Exception as e:
                 print(f"Warning: Could not load model from {model_path}. Error: {e}")
                 self.policy = None
@@ -157,13 +149,7 @@ class DVRPEnv(gym.Env):
     ) -> Tuple[TensorDict, dict]:
         """Reset the environment (batched)."""
         super().reset(seed=seed)
-
-        # Generate new batch of episodes
-        # pending_requests will contain full batch: [batch_size, 61, ...]
         self.pending_requests = self.data_generator.reset(batch_size=[self.batch_size]).to(self.device)
-
-        # Initialize current/real requests with depot only [batch_size, 1, ...]
-        # NOTE: This preserves global fields like travel_time_matrix automatically
         self.current_requests = self._init_depot_only(self.pending_requests)
         self.real_requests = self._init_depot_only(self.pending_requests)
 
@@ -181,19 +167,12 @@ class DVRPEnv(gym.Env):
         return initial_state, info
 
     def step(self, action: Union[int, torch.Tensor, np.ndarray]) -> Tuple[TensorDict, torch.Tensor, torch.Tensor, torch.Tensor, dict]:
-        """
-        Execute one environment step (Vectorized).
-        Args:
-            action: Tensor/Array of shape [batch_size] containing int actions [0-15].
-        """
-        # Ensure action is a tensor on device
+        """Execute one environment step (Vectorized)."""
         if not isinstance(action, torch.Tensor):
             action = torch.tensor(action, device=self.device, dtype=torch.long)
         if action.dim() == 0:
             action = action.unsqueeze(0).expand(self.batch_size)
         
-        # Get current incoming request for the whole batch
-        # Slice returns [Batch, 2 (P+D), Attributes]
         new_request = self._slice(self.pending_requests, self.current_step)
 
         # 1. Vectorized Acceptance Logic
@@ -202,11 +181,7 @@ class DVRPEnv(gym.Env):
         dropoff_shifts = shifts[:, 1]
 
         accepted_mask = torch.zeros(self.batch_size, dtype=torch.bool, device=self.device)
-        
-        # Metadata extraction
         trip_metadata_col = self.pending_requests.get("trip_metadata")
-        
-        # Identify User IDs
         pickup_idx = 2 * self.current_step + 1
         current_user_ids = self.pending_requests["user_id"][:, pickup_idx]
 
@@ -217,23 +192,23 @@ class DVRPEnv(gym.Env):
             
             decision = False
             if trip_metadata_col is not None:
-                try:
-                    md = trip_metadata_col[b]
-                    if md is not None and not isinstance(md, (TensorDict, TensorDictBase)) and u_id in md:
-                        user_meta = md[u_id]
-                        decision = self._get_acceptance_decision(
-                            traveler_id=u_id,
-                            flexibility=user_meta["flexibility"],
-                            trip_purpose=user_meta["trip_purpose"],
-                            departure_location=user_meta["departure_location"],
-                            arrival_location=user_meta["arrival_location"],
-                            pickup_shift=p_shift,
-                            dropoff_shift=d_shift
-                        )
-                    else:
-                        decision = np.random.random() < self.acceptance_rate
-                except (IndexError, KeyError, RuntimeError):
-                     decision = np.random.random() < self.acceptance_rate
+                md = trip_metadata_col[b]
+                if hasattr(md, "data"):
+                    md = md.data
+
+                if md is not None and not isinstance(md, (TensorDict, TensorDictBase)) and u_id in md:
+                    user_meta = md[u_id]
+                    decision = self._get_acceptance_decision(
+                        traveler_id=u_id,
+                        flexibility=user_meta["flexibility"],
+                        trip_purpose=user_meta["trip_purpose"],
+                        departure_location=user_meta["departure_location"],
+                        arrival_location=user_meta["arrival_location"],
+                        pickup_shift=p_shift,
+                        dropoff_shift=d_shift
+                    )
+                else:
+                    decision = np.random.random() < self.acceptance_rate
             else:
                 decision = np.random.random() < self.acceptance_rate
             
@@ -242,27 +217,18 @@ class DVRPEnv(gym.Env):
         # 2. Apply Perturbations
         final_p_shifts = pickup_shifts * accepted_mask.float()
         final_d_shifts = dropoff_shifts * accepted_mask.float()
-        
         patience_penalties = (final_p_shifts.abs() + final_d_shifts.abs()) * self.patience_factor
 
         perturbed_request = self._apply_perturbation_batch(
             new_request, final_p_shifts, final_d_shifts
         )
 
-        # Update current_requests (Append new request to existing history)
-        # Note: Global fields are preserved from previous step
         self.current_requests = self._append_to_current(self.current_requests, perturbed_request)
-
-        # 3. Handle Real Requests (Oracle Data - Ground Truth)
         self.real_requests = self._append_to_current(self.real_requests, new_request)
 
         # 4. Solve / Evaluate Cost
         new_costs = torch.zeros(self.batch_size, device=self.device)
         solver_failures = torch.zeros(self.batch_size, dtype=torch.bool, device=self.device)
-
-        # IMPORTANT: Sanitize input for solver.
-        # The solver expects a "fresh" problem (visited=False, current_node=Depot)
-        # even though self.current_requests contains accumulated history.
         solver_input = self._get_solver_input(self.current_requests)
 
         if self.policy is not None:
@@ -270,7 +236,6 @@ class DVRPEnv(gym.Env):
                 out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
                 new_costs = -out["reward"] 
         else:
-            # Fallback Loop for OR-Tools
             print("FALLBACK TO ORTOOLS SOLVER")
             for b in range(self.batch_size):
                 single_td = solver_input[b] 
@@ -287,11 +252,9 @@ class DVRPEnv(gym.Env):
         rewards = self.previous_cost - new_costs - patience_penalties
         rewards = torch.where(solver_failures, torch.tensor(-5000.0, device=self.device), rewards)
 
-        # Update state
         self.previous_cost = new_costs
         self.current_step += 1
 
-        # Check termination
         terminated = torch.full((self.batch_size,), self.current_step >= self.num_customers, dtype=torch.bool, device=self.device)
         truncated = torch.zeros(self.batch_size, dtype=torch.bool, device=self.device)
 
@@ -308,42 +271,27 @@ class DVRPEnv(gym.Env):
         return observation, rewards, terminated, truncated, info
 
     def _get_solver_input(self, td: TensorDict) -> TensorDict:
-        """
-        Prepares a TensorDict for the solver (Oracle).
-        
-        Crucial: Resets optimization state variables to ensure the solver 
-        treats this as a fresh routing problem for the current subset of nodes, 
-        rather than continuing a previous rollout.
-        
-        Preserves:
-        - locs, time_windows, demand (The problem definition)
-        - travel_time_matrix, capacity, etc. (The global constants)
-        """
+        """Prepares a TensorDict for the solver (Oracle)."""
         solver_td = td.clone()
-        
-        # Reset Routing State
         if "visited" in solver_td.keys():
             solver_td["visited"] = torch.zeros_like(solver_td["visited"])
-            # Some RL4CO envs assume depot (idx 0) is visited, others don't. 
-            # Usually safe to leave all False for a fresh 'reset' state 
-            # as the policy will mask the depot based on 'current_node'.
-        
         if "used_capacity" in solver_td.keys():
             solver_td["used_capacity"] = torch.zeros_like(solver_td["used_capacity"])
-            
         if "current_node" in solver_td.keys():
-            # Reset to Depot (Index 0)
             solver_td["current_node"] = torch.zeros_like(solver_td["current_node"])
-            
         if "i" in solver_td.keys():
-            # Reset step counter
             solver_td["i"] = torch.zeros_like(solver_td["i"])
-            
         return solver_td
 
     def _get_observation(self) -> TensorDict:
-        """Build batched observation for PPO."""
+        """
+        Build batched observation for PPO.
+        Converts continuous time windows into discrete bins based on num_time_bins.
+        """
         fixed = torch.zeros((self.batch_size, self.num_customers, 6), device=self.device)
+        
+        # Calculate Bins (0-indexed)
+        # e.g., if interval=30, 20->0, 350->11, 440->14
         
         if self.current_step > 0:
             p_indices = torch.arange(1, 2 * self.current_step + 1, 2, device=self.device)
@@ -354,22 +302,35 @@ class DVRPEnv(gym.Env):
             d_h3 = self.current_requests["h3_indices"][:, d_indices]
             d_tw = self.current_requests["time_windows"][:, d_indices]
             
+            # Apply Binning
+            p_tw_binned = torch.floor(p_tw / self.time_bin_interval)
+            d_tw_binned = torch.floor(d_tw / self.time_bin_interval)
+            
             fixed[:, :self.current_step, 0] = p_h3
-            fixed[:, :self.current_step, 1] = p_tw[:, :, 0]
-            fixed[:, :self.current_step, 2] = p_tw[:, :, 1]
+            fixed[:, :self.current_step, 1] = p_tw_binned[:, :, 0]
+            fixed[:, :self.current_step, 2] = p_tw_binned[:, :, 1]
             fixed[:, :self.current_step, 3] = d_h3
-            fixed[:, :self.current_step, 4] = d_tw[:, :, 0]
-            fixed[:, :self.current_step, 5] = d_tw[:, :, 1]
+            fixed[:, :self.current_step, 4] = d_tw_binned[:, :, 0]
+            fixed[:, :self.current_step, 5] = d_tw_binned[:, :, 1]
 
         if self.current_step < self.num_customers:
             req = self._slice(self.pending_requests, self.current_step)
             new = torch.zeros((self.batch_size, 1, 6), device=self.device)
+            
+            # Extract raw
+            p_tw_raw = req["time_windows"][:, 0, :]
+            d_tw_raw = req["time_windows"][:, 1, :]
+            
+            # Apply Binning
+            p_tw_new_binned = torch.floor(p_tw_raw / self.time_bin_interval)
+            d_tw_new_binned = torch.floor(d_tw_raw / self.time_bin_interval)
+
             new[:, 0, 0] = req["h3_indices"][:, 0]
-            new[:, 0, 1] = req["time_windows"][:, 0, 0]
-            new[:, 0, 2] = req["time_windows"][:, 0, 1]
+            new[:, 0, 1] = p_tw_new_binned[:, 0]
+            new[:, 0, 2] = p_tw_new_binned[:, 1]
             new[:, 0, 3] = req["h3_indices"][:, 1]
-            new[:, 0, 4] = req["time_windows"][:, 1, 0]
-            new[:, 0, 5] = req["time_windows"][:, 1, 1]
+            new[:, 0, 4] = d_tw_new_binned[:, 0]
+            new[:, 0, 5] = d_tw_new_binned[:, 1]
         else:
             new = torch.zeros((self.batch_size, 1, 6), device=self.device)
 
@@ -383,10 +344,6 @@ class DVRPEnv(gym.Env):
         }, batch_size=[self.batch_size])
 
     def _init_depot_only(self, td: TensorDict) -> TensorDict:
-        """
-        Initialize [Batch, 1 (Depot), ...]
-        Implicitly preserves fields NOT in SLICE_FIELDS (e.g., travel_time_matrix).
-        """
         depot_td = td.clone()
         for key in td.keys():
             if key in self.SLICE_FIELDS:
@@ -398,10 +355,6 @@ class DVRPEnv(gym.Env):
         return depot_td
 
     def _slice(self, td: TensorDict, step: int) -> TensorDict:
-        """
-        Extract P/D nodes for the whole batch at specific step.
-        Implicitly preserves fields NOT in SLICE_FIELDS (e.g., travel_time_matrix).
-        """
         p_idx = 2 * step + 1
         d_idx = 2 * step + 2
         indices = [p_idx, d_idx]
@@ -433,15 +386,12 @@ class DVRPEnv(gym.Env):
         return perturbed
 
     def _append_to_current(self, current: TensorDict, incoming: TensorDict) -> TensorDict:
-        """Concatenates incoming nodes to current request sequence."""
         appended = current.clone()
         for key in self.SLICE_FIELDS:
-            # Check if key exists in both to avoid errors if incoming missing something
             if key in current.keys() and key in incoming.keys():
                  appended[key] = torch.cat([current[key], incoming[key]], dim=1)
         return appended
     
-    # --- Helpers (Masking, etc.) ---
     def _compute_mask_all_flexs(self):
         index_cols = ["traveler_id", "trip_purpose", "departure_location", "arrival_location", "departure_time_window", "arrival_time_window"]
         action_cols = ["pickup_shift_min", "dropoff_shift_min"]
@@ -471,7 +421,9 @@ class DVRPEnv(gym.Env):
         return df_mask
 
     def _get_acceptance_decision(self, traveler_id, flexibility, trip_purpose, departure_location, arrival_location, pickup_shift, dropoff_shift) -> bool:
-        if self.traveler_decisions_df is None: return np.random.random() < self.acceptance_rate
+        if self.traveler_decisions_df is None: 
+            print("TRAVELER DECISION NOT FOUND, REVERT TO RANDOM ACCEPTANCE")
+            return np.random.random() < self.acceptance_rate
         p_abs = abs(pickup_shift)
         d_abs = abs(dropoff_shift)
         
@@ -483,70 +435,7 @@ class DVRPEnv(gym.Env):
             (self.traveler_decisions_df["pickup_shift_min"] == p_abs) &
             (self.traveler_decisions_df["dropoff_shift_min"] == d_abs)
         )
+
         rows = self.traveler_decisions_df[mask]
         if len(rows) == 0: return np.random.random() < self.acceptance_rate
         return rows.iloc[0][flexibility] == "accept"
-
-    def _get_mask_from_flex(self, traveler_id, trip_purpose, departure_location, arrival_location, departure_time_window, arrival_time_window, predicted_flex_index):
-        if isinstance(predicted_flex_index, torch.Tensor): predicted_flex_index = int(predicted_flex_index.item())
-        selection = (
-            (self.df_mask["traveler_id"] == traveler_id) &
-            (self.df_mask["trip_purpose"] == trip_purpose) &
-            (self.df_mask["departure_location"] == departure_location) &
-            (self.df_mask["arrival_location"] == arrival_location) & 
-            (self.df_mask["departure_time_window"] == departure_time_window) & 
-            (self.df_mask["arrival_time_window"] == arrival_time_window)
-        )
-        mask_series = self.df_mask[selection][predicted_flex_index]
-        return mask_series.iloc[0] if len(mask_series) > 0 else [1]*16
-
-
-def test_stepwise_reward_logic():
-    print("\n=== Testing Step-wise Reward Logic ===")
-    
-    BATCH_SIZE = 1
-    NUM_CUSTOMERS = 30
-    env = DVRPEnv(num_customers=NUM_CUSTOMERS, batch_size=BATCH_SIZE)
-    
-    obs, info = env.reset()
-    prev_cost_tracker = torch.zeros(BATCH_SIZE)
-    
-    print(f"{'Step':<5} | {'Act':<4} | {'Old Cost':<10} | {'New Cost':<10} | {'Marginal':<10} | {'Penalty':<8} | {'Env Rew':<10} | {'Calc Rew':<10} | {'Match?'}")
-    print("-" * 95)
-
-    done = False
-    step_count = 0
-
-    while not done:
-        action = torch.randint(0, 16, (BATCH_SIZE,))
-        obs, reward, terminated, truncated, info = env.step(action)
-        
-        b_idx = 0
-        act = action[b_idx].item()
-        old_c = prev_cost_tracker[b_idx].item()
-        new_c = info['current_cost'][b_idx].item()
-        penalty = info['patience_penalty'][b_idx].item()
-        env_r = reward[b_idx].item()
-        solver_failed = info['solver_failed'][b_idx].item()
-        
-        marginal_diff = old_c - new_c
-        calculated_reward = marginal_diff - penalty
-        
-        if solver_failed:
-            calculated_reward = -5000.0
-            check_str = "FAIL_OK" if env_r == -5000.0 else "FAIL_ERR"
-        else:
-            is_match = abs(env_r - calculated_reward) < 1e-3
-            check_str = "YES" if is_match else "NO"
-
-        print(f"{step_count:<5} | {act:<4} | {old_c:<10.2f} | {new_c:<10.2f} | {marginal_diff:<10.2f} | {penalty:<8.2f} | {env_r:<10.2f} | {calculated_reward:<10.2f} | {check_str}")
-        prev_cost_tracker = info['current_cost']
-        done = terminated[0].item()
-        step_count += 1
-
-    print("-" * 95)
-    print("Test Complete.")
-
-
-if __name__ == "__main__":
-    test_stepwise_reward_logic()

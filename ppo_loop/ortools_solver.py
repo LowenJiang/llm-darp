@@ -54,7 +54,7 @@ def darp_solver(
         raise ValueError("TensorDict must contain 'h3_indices' and 'travel_time_matrix' fields.")
     
     h3_indices = h3_indices_tensor[batch_idx].detach().cpu().numpy().astype(int)
-    num_nodes = 30
+    num_nodes = h3_indices.shape[0]
     
     # Extract Time Windows
     time_windows = td["time_windows"][batch_idx].detach().cpu().numpy()

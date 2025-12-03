@@ -162,7 +162,7 @@ class PolicyNetwork(nn.Module):
         gcn_hidden: int = 32,
         gcn_out: int = 32,
         time_embed_dim: int = 16,
-        time_vocab_size=500,
+        time_vocab_size=50,
         transformer_embed_dim: int = 64,
         action_dim: int = 16,
         hidden_dim: int = 512,   # MLP Hidden Layer Size
@@ -618,26 +618,22 @@ class PPOAgent:
             self.dones.append(bool(done))
 
     def update(self, num_value_epochs=40, num_policy_epochs=10, batch_size=64,
-               num_envs=None, num_steps=None) -> dict:
+               num_envs=None, num_steps=None, plot=True) -> dict:
         """
         Update PPO agent:
             1. Train value function to convergence
             2. Compute advantages using updated value function
             3. Train policy using PPO objective
-
-        Args:
-            num_value_epochs: Number of epochs to train value network
-            num_policy_epochs: Number of epochs to train policy network
-            batch_size: Mini-batch size for updates
-            num_envs: Number of parallel environments (for parallel GAE)
-            num_steps: Number of steps per episode (for parallel GAE)
-
-        Returns:
-            Dictionary with training statistics
+        
+        *Modified to plot loss curves per update step.*
         """
 
         if len(self.states) == 0:
             return {}
+
+        # Initialize counter for plot naming if it doesn't exist
+        if not hasattr(self, "update_counter"):
+            self.update_counter = 0
 
         # ========================================
         # Convert buffers to tensors
@@ -651,6 +647,10 @@ class PPOAgent:
 
         num_samples = len(states)
 
+        # Lists to track loss per step for plotting
+        value_loss_history = []
+        policy_loss_history = []
+
         # ========================================
         # 1. TRAIN VALUE FUNCTION ONLY
         # ========================================
@@ -658,6 +658,7 @@ class PPOAgent:
         value_params = list(self.policy.value_network.parameters())
         value_optimizer = optim.Adam(value_params, lr=self.optimizer.param_groups[0]['lr'])
         total_value_loss = 0.0
+        val_updates = 0
 
         for _ in range(num_value_epochs):
             idx = np.random.permutation(num_samples)
@@ -669,13 +670,14 @@ class PPOAgent:
                 batch_states = states[batch_idx]
                 batch_rewards = rewards[batch_idx]
                 batch_dones = dones[batch_idx]
-                batch_old_values = old_values[batch_idx]
-
+                
                 # Compute updated values
                 with torch.no_grad():
                     _, new_values = self.policy.forward(batch_states)
 
                 # Compute new returns using updated values (bootstrapped)
+                # Note: Calculating GAE on shuffled batches is approximation; 
+                # usually done on full rollout before shuffling.
                 _, batch_returns = self._compute_gae(batch_rewards, new_values.squeeze(), batch_dones)
 
                 # Forward again for gradient
@@ -684,6 +686,10 @@ class PPOAgent:
                 # Value loss
                 value_loss = nn.MSELoss()(predicted_values.squeeze(), batch_returns)
                 total_value_loss += value_loss.item()
+                val_updates += 1
+
+                # TRACK HISTORY
+                value_loss_history.append(value_loss.item())
 
                 value_optimizer.zero_grad()
                 value_loss.backward()
@@ -715,7 +721,7 @@ class PPOAgent:
 
         total_policy_loss = 0
         total_entropy = 0
-        num_updates = 0
+        pol_updates = 0
 
         for _ in range(num_policy_epochs):
             idx = np.random.permutation(num_samples)
@@ -751,7 +757,48 @@ class PPOAgent:
 
                 total_policy_loss += policy_loss.item()
                 total_entropy += entropy.mean().item()
-                num_updates += 1
+                pol_updates += 1
+                
+                # TRACK HISTORY
+                policy_loss_history.append(policy_loss.item())
+
+        # ========================================
+        # PLOTTING LOGIC
+        # ========================================
+        if plot: 
+            try:
+                import matplotlib.pyplot as plt
+                import os
+                
+                # Create directory if it doesn't exist
+                save_dir = "training_plots"
+                os.makedirs(save_dir, exist_ok=True)
+                
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+                
+                # Plot Value Loss
+                ax1.plot(value_loss_history, color='tab:blue', alpha=0.7)
+                ax1.set_title(f"Value Loss (Update {self.update_counter})")
+                ax1.set_xlabel("Gradient Step")
+                ax1.set_ylabel("MSE Loss")
+                ax1.grid(True, alpha=0.3)
+                
+                # Plot Policy Loss
+                ax2.plot(policy_loss_history, color='tab:orange', alpha=0.7)
+                ax2.set_title(f"Policy Loss (Update {self.update_counter})")
+                ax2.set_xlabel("Gradient Step")
+                ax2.set_ylabel("Clipped Loss")
+                ax2.grid(True, alpha=0.3)
+                
+                plt.tight_layout()
+                save_path = os.path.join(save_dir, f"loss_update_{self.update_counter}.png")
+                plt.savefig(save_path)
+                plt.close(fig) # Close to prevent memory leaks
+                
+            except Exception as e:
+                print(f"Warning: Failed to generate loss plot: {e}")
+
+        self.update_counter += 1
 
         # ========================================
         # Clear buffer and return logs
@@ -759,10 +806,11 @@ class PPOAgent:
         self.clear_buffer()
 
         return {
-            "policy_loss": total_policy_loss / num_updates,
-            "value_loss": total_value_loss / num_updates,
-            "entropy": total_entropy / num_updates,
+            "policy_loss": total_policy_loss / max(pol_updates, 1),
+            "value_loss": total_value_loss / max(val_updates, 1),
+            "entropy": total_entropy / max(pol_updates, 1),
         }
+
 
     def _compute_gae(
         self, rewards: torch.Tensor, values: torch.Tensor, dones: torch.Tensor

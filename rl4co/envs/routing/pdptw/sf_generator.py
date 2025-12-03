@@ -45,7 +45,7 @@ from __future__ import annotations
 import h3
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 import pandas as pd
@@ -78,8 +78,8 @@ class SFGenerator(Generator):
 
     def __init__(
         self,
-        csv_path: Optional[Union[str, Path]] = None,
-        travel_time_matrix_path: Optional[Union[str, Path]] = None,
+        csv_path: Optional[str | Path] = None,
+        travel_time_matrix_path: Optional[str | Path] = None,
         num_customers: int = 30,
         perturbation: int = 30,
         vehicle_capacity: int = 8,
@@ -336,9 +336,9 @@ class SFGenerator(Generator):
         if missing_cols:
             raise ValueError(f"Missing columns {missing_cols} in {self.csv_path}")
 
-        trips: Dict[int, List[Dict[str, Union[Tuple[int, int], H3Index]]]] = {}
+        trips: Dict[int, List[Dict[str, Tuple[int, int] | H3Index]]] = {}
         for traveler_id, group in df.groupby("traveler_id"):
-            processed: List[Dict[str, Union[Tuple[int, int], H3Index]]] = []
+            processed: List[Dict[str, Tuple[int, int] | H3Index]] = []
             for _, row in group.iterrows():
                 try:
                     origin_h3 = str(row["origin_h3"]).strip()
@@ -407,7 +407,7 @@ class SFGenerator(Generator):
 
         return trips
 
-    def _sample_trip(self, traveler_id: int) -> Dict[str, Union[H3Index, TimeWindow]]:
+    def _sample_trip(self, traveler_id: int) -> Dict[str, H3Index | TimeWindow]:
         trips = self._trips_by_traveler[traveler_id]
         if len(trips) == 1:
             return trips[0]
