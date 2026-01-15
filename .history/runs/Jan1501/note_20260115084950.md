@@ -1,0 +1,3 @@
+- lr decrease to 3e-5
+- penalty increaase to 50 per vehicle
+- temperature increase to 2
