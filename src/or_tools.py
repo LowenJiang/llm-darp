@@ -28,13 +28,14 @@ def darp_solver(
     max_vehicles: int = 5,
     time_limit_seconds: int = 30,
     run_until_solution: bool = False,
+    vehicle_cost: float = 250.0,
 ) -> Dict[str, Any]:
     """
     Solve a Dial-a-Ride Problem (DARP) instance using Google OR-Tools.
     
     Assumptions:
     1. Nodes are ordered: [Depot, Pickup_1, Delivery_1, Pickup_2, Delivery_2, ...].
-    2. Optimization objective is minimizing total travel time.
+    2. Optimization objective is minimizing total travel time + vehicle_cost * vehicles used.
     3. Travel time is queried from travel_time_matrix using H3 indices.
     4. Service times are 0 (only travel time is considered).
 
@@ -48,10 +49,12 @@ def darp_solver(
         max_vehicles: Maximum number of vehicles allowed.
         time_limit_seconds: Time limit for the solver.
         run_until_solution: If True, stops after finding the first feasible solution.
+        vehicle_cost: Fixed cost added per vehicle (weight on vehicle count).
 
     Returns:
         Dictionary containing:
             - total_distance: Total travel time (minutes).
+            - total_cost: Total travel time + vehicle_cost * vehicles_used.
             - vehicles_used: Number of vehicles used.
             - routes: List of routes (lists of node indices).
             - actions: Single action sequence with depot returns (0) between vehicles.
@@ -110,6 +113,7 @@ def darp_solver(
 
     transit_callback_index = routing.RegisterTransitCallback(time_cost_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+    routing.SetFixedCostOfAllVehicles(int(vehicle_cost * TIME_SCALE))
 
     # B. Time Windows Constraint
     def time_callback(from_index: int, to_index: int) -> int:
@@ -201,13 +205,17 @@ def darp_solver(
     # --- 6. Result Extraction ---
     if solution is None:
         return {
-            "total_time": float('inf'),
+            "total_time": float("inf"),
+            "total_distance": float("inf"),
+            "total_cost": float("inf"),
             "vehicles_used": 0,
-            "routes": []
+            "routes": [],
+            "actions": [],
+            "actions_tensor": torch.tensor([], dtype=torch.long),
         }
 
     routes = []
-    total_time = 0.0
+    total_distance = 0.0
     vehicles_used = 0
 
     for vehicle_id in range(max_vehicles):
@@ -230,7 +238,7 @@ def darp_solver(
             
             # Add travel time (in minutes)
             time = distance_matrix[manager.IndexToNode(previous_index), manager.IndexToNode(index)]
-            total_time += time
+            total_distance += time
 
         if route:
             routes.append(route)
@@ -238,11 +246,41 @@ def darp_solver(
 
     actions = routes_to_actions(routes)
 
+    total_cost = total_distance + float(vehicle_cost) * vehicles_used
+
     return {
-        "total_time": total_time,
+        "total_time": total_distance,
+        "total_distance": total_distance,
+        "total_cost": total_cost,
         "vehicles_used": vehicles_used,
         "routes": routes,
         "actions": actions,
         "actions_tensor": torch.tensor(actions, dtype=torch.long),
     }
 
+
+def main() -> None:
+    """Sanity-check the OR-Tools solver on one generated instance."""
+    from pathlib import Path
+
+    from oracle_env import PDPTWEnv
+    from oracle_generator import SFGenerator
+
+    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+    csv_path = Path(__file__).with_name("traveler_trip_types_res_7.csv")
+    ttm_path = Path(__file__).with_name("travel_time_matrix_res_7.csv")
+    generator = SFGenerator(csv_path=csv_path, travel_time_matrix_path=ttm_path)
+    env = PDPTWEnv(generator=generator)
+
+    batch = generator(batch_size=[1]).to(device)
+    state = env.reset(batch)
+    result = darp_solver(state, max_vehicles=5, time_limit_seconds=5)
+
+    print("Total distance:", result["total_distance"])
+    print("Vehicles used:", result["vehicles_used"])
+    print("Total cost:", result["total_cost"])
+    print("Routes:", result["routes"])
+
+
+if __name__ == "__main__":
+    main()

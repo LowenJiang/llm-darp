@@ -1,0 +1,961 @@
+traveler_id,action,accepted,trip_purpose,departure_location,arrival_location,departure_time_window,arrival_time_window
+1,9,1,recreation,Financial District,Golden Gate Park,17:00-17:30,17:30-18:00
+1,13,1,school,home,university,08:00-08:30,08:20-08:50
+1,12,1,shopping,Financial District,Union Square,11:30-12:00,11:35-12:05
+1,12,1,work,home,SoMa,07:00-07:30,07:20-07:50
+1,12,1,shopping,Financial District,Union Square,12:30-13:00,12:35-13:05
+1,10,1,recreation,university,Golden Gate Park,14:30-15:00,14:55-15:25
+1,13,1,school,Union Square,university,16:30-17:00,16:40-17:10
+1,11,1,shopping,Financial District,Union Square,12:30-13:00,12:35-13:05
+1,13,1,shopping,university,Union Square,12:00-12:30,12:10-12:40
+1,12,1,school,home,university,08:00-08:30,08:20-08:50
+1,12,1,work,home,Financial District,06:30-07:00,07:00-07:30
+1,8,0,shopping,Financial District,Union Square,11:30-12:00,11:35-12:05
+1,12,1,work,home,SoMa,10:30-11:00,10:50-11:20
+1,13,1,work,home,SoMa,09:00-09:30,09:20-09:50
+1,10,1,recreation,university,Golden Gate Park,16:00-16:30,16:25-16:55
+1,13,1,recreation,university,Golden Gate Park,16:30-17:00,16:55-17:25
+1,13,1,work,home,SoMa,11:30-12:00,11:50-12:20
+1,13,1,work,home,Financial District,09:00-09:30,09:30-10:00
+1,12,1,recreation,Financial District,Golden Gate Park,17:00-17:30,17:30-18:00
+1,15,1,recreation,university,Presidio,18:30-19:00,18:50-19:20
+1,12,1,work,home,SoMa,12:30-13:00,12:50-13:20
+1,12,1,hiking,Union Square,Lands End,09:30-10:00,10:05-10:35
+1,12,1,work,home,Financial District,08:30-09:00,09:00-09:30
+1,11,1,recreation,university,Presidio,16:30-17:00,16:50-17:20
+1,14,1,recreation,university,Golden Gate Park,14:30-15:00,14:55-15:25
+1,12,1,school,home,university,10:00-10:30,10:20-10:50
+1,12,1,work,home,Financial District,09:00-09:30,09:30-10:00
+1,12,1,recreation,university,Lands End,19:30-20:00,20:00-20:30
+1,14,1,shopping,SoMa,Stonestown Galleria,14:00-14:30,14:25-14:55
+1,12,1,school,home,university,08:00-08:30,08:20-08:50
+1,9,1,shopping,university,Union Square,13:00-13:30,13:10-13:40
+1,12,1,school,home,university,09:00-09:30,09:20-09:50
+2,9,1,hiking,home,Fort Funston,07:00-07:30,07:30-08:00
+2,13,1,shopping,home,Ferry Building,10:00-10:30,10:25-10:55
+2,5,1,shopping,home,Castro District,18:30-19:00,18:40-19:10
+2,8,1,recreation,home,Alamo Square,14:00-14:30,14:10-14:40
+2,12,1,work,home,SoMa,07:30-08:00,07:50-08:20
+2,12,1,recreation,home,Alamo Square,14:00-14:30,14:10-14:40
+2,9,1,shopping,home,Stonestown Galleria,13:00-13:30,13:15-13:45
+2,12,1,recreation,home,Ocean Beach,17:00-17:30,17:25-17:55
+2,9,1,shopping,home,Fillmore Street,12:00-12:30,12:20-12:50
+2,13,1,shopping,home,Union Square,13:00-13:30,13:20-13:50
+2,12,1,hiking,home,Twin Peaks,06:30-07:00,06:40-07:10
+2,12,1,shopping,home,Stonestown Galleria,16:30-17:00,16:45-17:15
+2,12,1,hiking,home,Lands End,07:00-07:30,07:25-07:55
+2,12,1,recreation,home,Crissy Field,09:30-10:00,09:55-10:25
+2,5,1,shopping,home,Fillmore Street,12:00-12:30,12:20-12:50
+2,12,1,shopping,home,Fillmore Street,12:00-12:30,12:20-12:50
+2,13,1,recreation,home,Dolores Park,11:30-12:00,11:40-12:10
+2,9,1,shopping,home,Mission District,17:00-17:30,17:10-17:40
+2,13,0,shopping,home,Castro District,12:30-13:00,12:40-13:10
+2,12,1,work,home,SoMa,07:30-08:00,07:50-08:20
+2,8,1,shopping,home,Haight Street,15:30-16:00,15:45-16:15
+2,13,0,hiking,home,Bernal Heights Park,08:30-09:00,08:40-09:10
+2,12,1,recreation,home,Alamo Square,18:30-19:00,18:40-19:10
+2,8,1,shopping,home,Castro District,12:30-13:00,12:40-13:10
+2,2,1,hiking,home,Mount Sutro,09:30-10:00,09:45-10:15
+2,9,1,recreation,home,Alamo Square,14:00-14:30,14:10-14:40
+2,8,1,hiking,home,Twin Peaks,06:30-07:00,06:40-07:10
+2,13,0,shopping,home,Westfield San Francisco Centre,10:00-10:30,10:20-10:50
+2,12,1,recreation,home,Ocean Beach,10:30-11:00,10:55-11:25
+2,12,1,shopping,home,Westfield San Francisco Centre,10:00-10:30,10:20-10:50
+2,12,1,recreation,home,Sutro Baths,09:00-09:30,09:25-09:55
+2,12,1,recreation,home,Ocean Beach,10:30-11:00,10:55-11:25
+3,8,0,grocery_shopping,home,shopping,10:00-10:30,10:15-10:45
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,visit_friend,home,friend's_home,18:00-18:30,18:18-18:48
+3,9,0,grocery_shopping,home,shopping,10:00-10:30,10:15-10:45
+3,10,0,hiking,home,recreation,09:00-09:30,09:18-09:48
+3,5,0,hiking,home,recreation,09:00-09:30,09:18-09:48
+3,12,1,visit_friend,home,friend's_home,18:00-18:30,18:18-18:48
+3,9,0,grocery_shopping,home,shopping,10:00-10:30,10:15-10:45
+3,4,0,hiking,home,recreation,09:00-09:30,09:18-09:48
+3,12,1,grocery_shopping,home,shopping,10:00-10:30,10:15-10:45
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,visit_friend,home,friend's_home,18:00-18:30,18:18-18:48
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,visit_friend,home,friend's_home,18:00-18:30,18:18-18:48
+3,13,0,visit_friend,home,friend's_home,18:00-18:30,18:18-18:48
+3,13,0,grocery_shopping,home,shopping,10:00-10:30,10:15-10:45
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,9,0,visit_friend,home,friend's_home,18:00-18:30,18:18-18:48
+3,12,1,medical_appointment,home,clinic,14:30-15:00,14:40-15:10
+3,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+4,12,1,photography,home,Twin Peaks,15:00-15:30,15:08-15:38
+4,12,1,doctor_appointment,home,UCSF Medical Center,09:00-09:30,09:10-09:40
+4,5,1,art_class,home,Fort Mason,13:00-13:30,13:20-13:50
+4,1,0,bird_watching,home,Heron's Head Park,07:00-07:30,07:25-07:55
+4,5,1,shopping,home,Westfield San Francisco Centre,13:00-13:30,13:15-13:45
+4,5,1,music_lesson,home,Hayes Valley,14:00-14:30,14:10-14:40
+4,12,1,theater,home,Curran Theatre,19:00-19:30,19:18-19:48
+4,12,1,museum_visit,home,SFMOMA,13:00-13:30,13:15-13:45
+4,12,1,library_visit,home,San Francisco Public Library,10:00-10:30,10:14-10:44
+4,9,1,community_festival,home,Japantown,11:00-11:30,11:14-11:44
+4,0,1,sightseeing,home,Coit Tower,09:00-09:30,09:20-09:50
+4,1,1,museum_visit,home,SFMOMA,13:00-13:30,13:15-13:45
+4,12,1,doctor_appointment,home,UCSF Medical Center,09:00-09:30,09:10-09:40
+4,8,1,hiking,home,Lands End,09:00-09:30,09:22-09:52
+4,4,1,museum_visit,home,SFMOMA,13:00-13:30,13:15-13:45
+4,4,1,lecture,home,San Francisco State University,16:00-16:30,16:18-16:48
+4,0,0,bird_watching,home,Heron's Head Park,07:00-07:30,07:25-07:55
+4,12,1,garden_visit,home,Japanese Tea Garden,13:00-13:30,13:12-13:42
+4,12,1,beach_walk,home,Baker Beach,08:00-08:30,08:20-08:50
+4,9,1,bird_watching,home,Heron's Head Park,07:00-07:30,07:25-07:55
+4,4,1,chess_club,home,Market Street,19:00-19:30,19:18-19:48
+4,12,1,wine_tasting,home,Russian Hill,14:00-14:30,14:20-14:50
+4,1,1,sightseeing,home,Coit Tower,09:00-09:30,09:20-09:50
+4,4,1,visit_friend,home,Noe Valley,18:00-18:30,18:05-18:35
+4,12,1,culinary_class,home,Culinary Institute of America,16:00-16:30,16:22-16:52
+4,12,1,chess_club,home,Market Street,19:00-19:30,19:18-19:48
+4,9,1,visit_friend,home,Noe Valley,18:00-18:30,18:05-18:35
+4,12,1,hiking,home,Lands End,09:00-09:30,09:22-09:52
+4,12,1,historical_tour,home,Alcatraz Landing,10:00-10:30,10:22-10:52
+4,12,1,evening_stroll,home,Palace of Fine Arts,18:00-18:30,18:20-18:50
+4,12,1,recreation,home,Golden Gate Park,14:00-14:30,14:15-14:45
+4,13,1,dinner,home,North Beach,17:30-18:00,17:55-18:25
+5,12,1,dining_out,home,restaurant,19:00-19:30,19:22-19:52
+5,12,1,personal_appointment,home,Civic Center,13:00-13:30,13:20-13:50
+5,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+5,13,1,grocery_shopping,home,shopping,10:00-10:30,10:20-10:50
+5,13,1,work,home,workplace,07:30-08:00,07:55-08:25
+5,9,1,recreation,home,Golden Gate Park,11:00-11:30,11:15-11:45
+5,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+5,13,1,visit_friend,home,friend's place,18:00-18:30,18:10-18:40
+5,12,1,recreation,home,Golden Gate Park,11:00-11:30,11:15-11:45
+5,8,0,recreation,home,Golden Gate Park,11:00-11:30,11:15-11:45
+5,12,1,grocery_shopping,home,shopping,10:00-10:30,10:20-10:50
+5,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+5,14,1,visit_friend,home,friend's place,18:00-18:30,18:10-18:40
+5,12,1,recreation,home,Golden Gate Park,11:00-11:30,11:15-11:45
+5,12,1,grocery_shopping,home,shopping,10:00-10:30,10:20-10:50
+5,12,1,medical_appointment,home,hospital,14:00-14:30,14:12-14:42
+5,12,1,medical_appointment,home,hospital,14:00-14:30,14:12-14:42
+5,13,1,shopping,home,Stonestown Galleria,15:00-15:30,15:15-15:45
+5,9,1,dining_out,home,restaurant,19:00-19:30,19:22-19:52
+5,12,1,medical_appointment,home,hospital,14:00-14:30,14:12-14:42
+5,12,1,medical_appointment,home,hospital,14:00-14:30,14:12-14:42
+5,12,1,personal_appointment,home,Civic Center,13:00-13:30,13:20-13:50
+5,14,1,dining_out,home,restaurant,19:00-19:30,19:22-19:52
+5,12,1,personal_appointment,home,Civic Center,13:00-13:30,13:20-13:50
+5,15,1,recreation,home,Golden Gate Park,11:00-11:30,11:15-11:45
+5,8,0,hiking,home,Twin Peaks,09:00-09:30,09:15-09:45
+5,8,0,grocery_shopping,home,shopping,10:00-10:30,10:20-10:50
+5,9,1,shopping,home,Stonestown Galleria,15:00-15:30,15:15-15:45
+5,12,1,recreation,home,Golden Gate Park,11:00-11:30,11:15-11:45
+5,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+5,7,0,visit_friend,home,friend's place,18:00-18:30,18:10-18:40
+5,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+6,9,0,hiking,home,Lands End,07:30-08:00,07:55-08:25
+6,13,0,work,workplace,home,17:00-17:30,17:25-17:55
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,13,0,shopping,home,Union Square,13:00-13:30,13:20-13:50
+6,13,0,dinner,workplace,restaurant,18:00-18:30,18:10-18:40
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,12,1,meeting,workplace,client office,09:00-09:30,09:10-09:40
+6,13,0,work,workplace,home,17:00-17:30,17:25-17:55
+6,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+6,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+6,12,1,shopping,home,Union Square,10:00-10:30,10:20-10:50
+6,12,1,meeting,workplace,client office,10:00-10:30,10:10-10:40
+6,12,1,shopping,home,Union Square,12:00-12:30,12:20-12:50
+6,8,0,friends,workplace,friend's house,18:30-19:00,18:45-19:15
+6,12,1,shopping,home,Union Square,10:00-10:30,10:20-10:50
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,13,0,dinner,home,restaurant,18:30-19:00,18:47-19:17
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,12,1,dinner,workplace,restaurant,18:00-18:30,18:10-18:40
+6,12,1,shopping,home,Union Square,13:00-13:30,13:20-13:50
+6,14,0,friends,workplace,friend's house,18:30-19:00,18:45-19:15
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,12,1,recreation,workplace,Golden Gate Park,12:00-12:30,12:25-12:55
+6,12,1,gym,workplace,gym,06:00-06:30,06:15-06:45
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,9,0,dinner,home,restaurant,18:30-19:00,18:47-19:17
+6,12,1,dinner,workplace,restaurant,18:00-18:30,18:10-18:40
+6,12,1,work,home,workplace,07:45-08:15,08:15-08:45
+6,8,1,hiking,home,Presidio,08:30-09:00,08:50-09:20
+6,12,1,gym,workplace,gym,06:00-06:30,06:15-06:45
+6,12,1,dinner,workplace,restaurant,18:00-18:30,18:10-18:40
+6,12,1,dinner,workplace,restaurant,18:00-18:30,18:10-18:40
+7,12,1,medical_appointment,home,dentist,09:00-09:30,09:08-09:38
+7,4,1,hiking,home,Lands End,08:00-08:30,08:30-09:00
+7,1,1,recreation,home,Twin Peaks,16:30-17:00,16:40-17:10
+7,8,1,dining,home,restaurant,20:00-20:30,20:22-20:52
+7,8,1,work,workplace,home,18:00-18:30,18:25-18:55
+7,9,1,community_meeting,home,community_center,17:00-17:30,17:18-17:48
+7,12,1,work,home,workplace,09:30-10:00,09:55-10:25
+7,5,1,visiting_family,home,family_house,15:00-15:30,15:08-15:38
+7,13,0,dining,home,restaurant,20:00-20:30,20:22-20:52
+7,4,1,dining,home,restaurant,20:00-20:30,20:22-20:52
+7,8,1,community_meeting,home,community_center,17:00-17:30,17:18-17:48
+7,6,1,hiking,home,Lands End,08:00-08:30,08:30-09:00
+7,12,1,visiting_family,home,family_house,15:00-15:30,15:08-15:38
+7,8,1,work,workplace,home,18:00-18:30,18:25-18:55
+7,0,0,recreation,home,Golden Gate Park,10:00-10:30,10:20-10:50
+7,1,1,exercise,home,gym,07:00-07:30,07:10-07:40
+7,12,1,community_meeting,home,community_center,17:00-17:30,17:18-17:48
+7,1,1,exercise,home,gym,06:00-06:30,06:10-06:40
+7,4,1,shopping,home,local_market,16:00-16:30,16:10-16:40
+7,9,1,movie,home,cinema,19:00-19:30,19:18-19:48
+7,12,1,exercise,home,gym,06:00-06:30,06:10-06:40
+7,4,1,volunteering,home,volunteer_center,10:30-11:00,10:45-11:15
+7,12,1,recreation,home,Mission Dolores Park,11:00-11:30,11:08-11:38
+7,9,1,exercise,home,gym,08:00-08:30,08:10-08:40
+7,0,1,volunteering,home,volunteer_center,10:30-11:00,10:45-11:15
+7,12,1,exercise,home,gym,08:00-08:30,08:10-08:40
+7,12,1,exercise,home,gym,06:00-06:30,06:10-06:40
+7,8,1,work,home,workplace,08:30-09:00,09:00-09:30
+7,12,1,exercise,home,gym,08:00-08:30,08:10-08:40
+7,12,1,work,workplace,home,18:00-18:30,18:25-18:55
+7,9,1,community_meeting,home,community_center,18:30-19:00,18:48-19:18
+7,13,0,shopping,home,local_market,16:00-16:30,16:10-16:40
+8,9,1,dining,home,Union Square,19:00-19:30,19:20-19:50
+8,5,1,social,home,SOMA (bar),20:00-20:30,20:18-20:48
+8,14,1,dining,home,North Beach,18:00-18:30,18:22-18:52
+8,4,1,cultural,home,Contemporary Jewish Museum,11:00-11:30,11:18-11:48
+8,13,1,workplace,home,Downtown,08:00-08:30,08:18-08:48
+8,6,1,recreation,home,Alamo Square,14:30-15:00,14:40-15:10
+8,3,1,shopping,home,Stonestown Galleria,13:00-13:30,13:20-13:50
+8,4,1,hiking,home,Lands End,11:00-11:30,11:25-11:55
+8,15,1,hiking,home,Sutro Baths,10:30-11:00,10:52-11:22
+8,12,1,medical,home,UCSF Medical Center,07:00-07:30,07:12-07:42
+8,12,1,dining,home,Hayes Valley,18:30-19:00,18:40-19:10
+8,12,1,social,home,Mission District,15:00-15:30,15:10-15:40
+8,12,1,recreation,home,Presidio,14:00-14:30,14:18-14:48
+8,12,1,recreation,home,Presidio,14:00-14:30,14:18-14:48
+8,13,1,recreation,home,Fort Mason,10:00-10:30,10:20-10:50
+8,15,1,hiking,home,Baker Beach,10:30-11:00,10:52-11:22
+8,15,1,recreation,home,Dolores Park,17:00-17:30,17:05-17:35
+8,3,1,shopping,home,Japantown,14:00-14:30,14:10-14:40
+8,12,1,cultural,home,Contemporary Jewish Museum,11:00-11:30,11:18-11:48
+8,14,1,shopping,home,Westfield San Francisco Centre,13:00-13:30,13:18-13:48
+8,14,1,recreation,home,Fort Mason,10:00-10:30,10:20-10:50
+8,10,1,dining,home,Union Square,19:00-19:30,19:20-19:50
+8,8,1,dining,home,Hayes Valley,18:30-19:00,18:40-19:10
+8,12,1,dining,home,Hayes Valley,18:30-19:00,18:40-19:10
+8,11,1,shopping,home,Union Square,09:00-09:30,09:20-09:50
+8,8,1,shopping,home,Haight Street,15:00-15:30,15:12-15:42
+8,12,1,workplace,home,Financial District,08:00-08:30,08:30-09:00
+8,4,1,shopping,home,Union Square,09:00-09:30,09:20-09:50
+8,7,1,shopping,home,Fillmore Street,12:00-12:30,12:12-12:42
+8,11,1,cultural,home,San Francisco Museum of Modern Art,12:00-12:30,12:20-12:50
+8,12,1,workplace,home,SoMa,07:30-08:00,07:48-08:18
+8,13,1,workplace,home,Embarcadero,07:00-07:30,07:25-07:55
+9,12,1,beach day,home,Ocean Beach,10:30-11:00,10:50-11:20
+9,11,1,day trip,home,Ferry Building,09:30-10:00,09:55-10:25
+9,13,1,study,home,San Francisco State University,12:30-13:00,12:50-13:20
+9,12,1,lecture,home,university,10:00-10:30,10:20-10:50
+9,12,1,school,home,university,08:00-08:30,08:20-08:50
+9,12,1,museum tour,home,Exploratorium,11:00-11:30,11:25-11:55
+9,12,1,museum visit,home,de Young Museum,11:30-12:00,11:45-12:15
+9,14,1,groceries,home,Trader Joe's,17:00-17:30,17:15-17:45
+9,12,1,lecture,home,university,10:00-10:30,10:20-10:50
+9,14,1,beach day,home,Ocean Beach,10:30-11:00,10:50-11:20
+9,12,1,fitness class,home,Crunch Fitness,06:00-06:30,06:15-06:45
+9,13,1,workshop,home,Moscone Center,07:30-08:00,07:50-08:20
+9,12,1,farmers market,home,Ferry Plaza Farmers Market,08:00-08:30,08:25-08:55
+9,13,1,charity run,home,Golden Gate Park,06:00-06:30,06:15-06:45
+9,0,0,hiking,home,Lands End,10:00-10:30,10:25-10:55
+9,12,1,museum tour,home,Exploratorium,11:00-11:30,11:25-11:55
+9,12,1,study session,home,university,13:00-13:30,13:20-13:50
+9,10,1,coffee,home,Philz Coffee,14:00-14:30,14:15-14:45
+9,12,1,workshop,home,Moscone Center,07:30-08:00,07:50-08:20
+9,13,1,library,home,San Francisco Public Library,09:00-09:30,09:20-09:50
+9,13,1,nature walk,home,Golden Gate Park,07:00-07:30,07:15-07:45
+9,8,0,gym,university,24 Hour Fitness,16:00-16:30,16:10-16:40
+9,13,1,sports event,home,Oracle Park,17:30-18:00,17:55-18:25
+9,10,1,outdoor event,home,Presidio,15:00-15:30,15:25-15:55
+9,9,1,groceries,home,Trader Joe's,17:00-17:30,17:15-17:45
+9,12,1,conference,home,Moscone Center,07:00-07:30,07:20-07:50
+9,9,1,study session,home,university,13:00-13:30,13:20-13:50
+9,8,0,fitness class,home,Crunch Fitness,06:00-06:30,06:15-06:45
+9,12,1,study group,university,coffee shop,14:00-14:30,14:05-14:35
+9,9,1,shopping,university,Union Square,12:00-12:30,12:15-12:45
+9,12,1,café work,home,Ritual Coffee Roasters,09:00-09:30,09:15-09:45
+9,12,1,groceries,home,Trader Joe's,17:00-17:30,17:15-17:45
+10,8,1,shopping,home,Stonestown Galleria,14:00-14:30,14:20-14:50
+10,12,1,study,home,University of San Francisco,10:00-10:30,10:15-10:45
+10,12,1,recreation,home,Dolores Park,11:00-11:30,11:08-11:38
+10,12,1,work,home,SoMa,14:00-14:30,14:25-14:55
+10,12,1,concert,home,The Warfield,19:00-19:30,19:20-19:50
+10,12,1,shopping,home,Ferry Building Marketplace,12:30-13:00,12:52-13:22
+10,12,1,social,home,friend's house in Noe Valley,18:00-18:30,18:05-18:35
+10,12,1,museum,home,de Young Museum,14:00-14:30,14:18-14:48
+10,8,1,shopping,home,Westfield San Francisco Centre,12:00-12:30,12:20-12:50
+10,12,1,park,home,Buena Vista Park,10:30-11:00,10:42-11:12
+10,12,1,museum,home,de Young Museum,14:00-14:30,14:18-14:48
+10,12,1,concert,home,The Warfield,19:00-19:30,19:20-19:50
+10,8,1,recreation,home,Dolores Park,11:00-11:30,11:08-11:38
+10,8,1,shopping,home,Chinatown,15:30-16:00,15:53-16:23
+10,4,1,cycling,home,Lake Merced,06:00-06:30,06:30-07:00
+10,8,1,shopping,home,Ghirardelli Square,17:00-17:30,17:25-17:55
+10,12,1,shopping,home,Union Square,11:00-11:30,11:20-11:50
+10,12,1,museum,home,de Young Museum,14:00-14:30,14:18-14:48
+10,5,1,exercise,home,Presidio,06:30-07:00,06:55-07:25
+10,8,1,entertainment,home,AMC Metreon,16:00-16:30,16:20-16:50
+10,12,1,fitness,home,24 Hour Fitness on Van Ness,05:30-06:00,05:50-06:20
+10,12,1,concert,home,The Masonic,19:30-20:00,19:50-20:20
+10,8,1,concert,home,The Fillmore,18:30-19:00,18:52-19:22
+10,8,1,recreation,home,Golden Gate Park,09:00-09:30,09:15-09:45
+10,12,1,work,home,SoMa,13:00-13:30,13:25-13:55
+10,12,1,exercise,home,Presidio,06:30-07:00,06:55-07:25
+10,12,1,museum,home,SFMOMA,09:30-10:00,09:50-10:20
+10,12,1,social,home,friend's house in Noe Valley,18:00-18:30,18:05-18:35
+10,12,1,concert,home,The Fillmore,18:30-19:00,18:52-19:22
+10,12,1,grocery,home,Safeway on Market Street,17:00-17:30,17:15-17:45
+10,8,1,recreation,home,Dolores Park,11:00-11:30,11:08-11:38
+10,12,1,concert,home,The Masonic,19:30-20:00,19:50-20:20
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,8,1,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,1,visit friends,home,friend's house,14:00-14:30,14:10-14:40
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,8,1,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+11,12,1,recreation,home,Lands End,10:00-10:30,10:25-10:55
+11,8,1,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,1,dentist,home,dentist office,14:00-14:30,14:15-14:45
+11,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+11,8,1,family gathering,home,family member's house,16:00-16:30,16:20-16:50
+11,5,1,volunteer,home,community center,09:00-09:30,09:15-09:45
+11,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+11,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+11,12,1,recreation,home,Lands End,10:00-10:30,10:25-10:55
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,0,doctor visit,home,doctor's office,09:30-10:00,09:50-10:20
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,8,1,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,1,recreation,home,Golden Gate Park,09:00-09:30,09:15-09:45
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,8,1,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+11,13,1,concert,home,concert venue,19:00-19:30,19:20-19:50
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,14,1,hiking,home,Presidio,08:00-08:30,08:25-08:55
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,12,0,work,home,workplace,07:30-08:00,07:55-08:25
+11,8,1,pharmacy,home,pharmacy,12:00-12:30,12:10-12:40
+12,12,1,exercise,home,gym,06:00-06:30,06:10-06:40
+12,12,1,shopping,home,shopping,18:30-19:00,18:55-19:25
+12,12,1,work,workplace,home,20:00-20:30,20:25-20:55
+12,12,1,work,home,workplace,04:30-05:00,04:55-05:25
+12,12,1,work,home,workplace,08:00-08:30,08:25-08:55
+12,12,1,work,home,workplace,15:00-15:30,15:25-15:55
+12,12,1,exercise,home,gym,06:00-06:30,06:10-06:40
+12,12,1,recreation,home,park,12:00-12:30,12:15-12:45
+12,12,1,work,workplace,home,19:00-19:30,19:25-19:55
+12,12,1,work,workplace,home,03:00-03:30,03:25-03:55
+12,12,1,recreation,home,aquarium,09:00-09:30,09:28-09:58
+12,13,0,dinner,home,restaurant,18:30-19:00,18:45-19:15
+12,12,1,work,workplace,home,03:00-03:30,03:25-03:55
+12,12,1,recreation,home,park,12:00-12:30,12:15-12:45
+12,12,1,shopping,home,shopping,16:00-16:30,16:10-16:40
+12,12,1,work,workplace,home,22:00-22:30,22:25-22:55
+12,12,1,work,workplace,home,19:00-19:30,19:25-19:55
+12,12,1,shopping,home,shopping,16:00-16:30,16:10-16:40
+12,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+12,12,1,exercise,home,gym,06:00-06:30,06:10-06:40
+12,12,1,social,home,bar,20:00-20:30,20:10-20:40
+12,12,1,shopping,home,shopping,13:00-13:30,13:22-13:52
+12,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+12,9,0,social,home,bar,20:00-20:30,20:10-20:40
+12,12,1,work,workplace,home,18:00-18:30,18:25-18:55
+12,12,1,shopping,home,shopping,15:00-15:30,15:25-15:55
+12,12,1,shopping,home,shopping,15:00-15:30,15:25-15:55
+12,9,0,recreation,home,beach,13:30-14:00,13:49-14:19
+12,12,1,work,home,workplace,03:30-04:00,03:55-04:25
+12,12,1,shopping,home,shopping,14:00-14:30,14:20-14:50
+12,5,0,recreation,home,recreation,13:00-13:30,13:15-13:45
+12,13,0,social,home,friend's house,19:00-19:30,19:08-19:38
+13,12,1,recreation,home,Baker Beach,14:30-15:00,14:50-15:20
+13,14,1,shopping,home,Japantown,14:00-14:30,14:10-14:40
+13,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+13,5,1,recreation,home,Sutro Baths,09:00-09:30,09:22-09:52
+13,12,1,work,workplace,home,16:00-16:30,16:25-16:55
+13,6,0,hiking,home,Lands End,07:00-07:30,07:22-07:52
+13,13,1,shopping,home,Stonestown Galleria,14:00-14:30,14:20-14:50
+13,12,1,social,home,bar,19:00-19:30,19:08-19:38
+13,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+13,12,1,work,home,workplace,06:30-07:00,07:00-07:30
+13,9,0,hiking,home,Lands End,07:00-07:30,07:22-07:52
+13,13,1,shopping,home,Mission District,18:00-18:30,18:08-18:38
+13,13,0,recreation,home,Dolores Park,11:30-12:00,11:37-12:07
+13,13,1,recreation,home,Glen Canyon Park,10:30-11:00,10:38-11:08
+13,4,1,work,home,workplace,06:30-07:00,07:00-07:30
+13,8,1,work,workplace,home,17:00-17:30,17:25-17:55
+13,5,1,recreation,home,Crissy Field,11:00-11:30,11:20-11:50
+13,9,1,personal,home,library,13:30-14:00,13:42-14:12
+13,9,1,shopping,home,local market,17:30-18:00,17:36-18:06
+13,0,1,work,home,workplace,06:30-07:00,07:00-07:30
+13,12,1,recreation,home,Alamo Square,08:30-09:00,08:39-09:09
+13,12,0,shopping,home,Haight Street,17:00-17:30,17:10-17:40
+13,4,1,work,home,workplace,06:30-07:00,07:00-07:30
+13,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+13,8,1,work,workplace,home,17:00-17:30,17:25-17:55
+13,14,1,shopping,home,Ferry Building Marketplace,16:30-17:00,16:48-17:18
+13,12,1,medical,home,hospital,11:00-11:30,11:10-11:40
+13,9,1,recreation,home,Ocean Beach,10:30-11:00,10:48-11:18
+13,12,1,recreation,home,Ocean Beach,10:30-11:00,10:48-11:18
+13,12,1,work,home,workplace,06:30-07:00,07:00-07:30
+13,12,1,personal,home,library,13:30-14:00,13:42-14:12
+13,12,1,work,home,workplace,06:30-07:00,07:00-07:30
+14,6,0,social_visit,friend's house,home,16:00-16:30,16:12-16:42
+14,12,1,medical_appointment,workplace,UCSF Medical Center,11:00-11:30,11:20-11:50
+14,12,1,hiking,home,Presidio,10:00-10:30,10:25-10:55
+14,13,0,shopping,home,Union Square,10:00-10:30,10:20-10:50
+14,12,1,recreation,home,Golden Gate Park,09:30-10:00,09:45-10:15
+14,12,1,recreation,workplace,Golden Gate Park,18:00-18:30,18:22-18:52
+14,13,0,shopping,workplace,Union Square,12:00-12:30,12:08-12:38
+14,12,1,medical_appointment,home,UCSF Medical Center,14:00-14:30,14:15-14:45
+14,12,1,medical_appointment,home,UCSF Medical Center,10:00-10:30,10:15-10:45
+14,9,0,gym,home,24 Hour Fitness,06:00-06:30,06:18-06:48
+14,8,0,dining,workplace,North Beach,18:30-19:00,18:40-19:10
+14,12,1,recreation,home,Golden Gate Park,09:30-10:00,09:45-10:15
+14,9,0,gym,24 Hour Fitness,home,07:00-07:30,07:18-07:48
+14,12,1,shopping,workplace,Stonestown Galleria,15:00-15:30,15:35-16:05
+14,12,1,gym,24 Hour Fitness,home,07:00-07:30,07:18-07:48
+14,12,1,dining,workplace,North Beach,18:30-19:00,18:40-19:10
+14,13,0,shopping,workplace,Stonestown Galleria,15:00-15:30,15:35-16:05
+14,12,1,recreation,Golden Gate Park,home,11:00-11:30,11:15-11:45
+14,13,0,recreation,home,Golden Gate Park,09:30-10:00,09:45-10:15
+14,12,1,medical_appointment,home,UCSF Medical Center,15:00-15:30,15:15-15:45
+14,12,1,work,workplace,home,19:00-19:30,19:25-19:55
+14,12,1,work,workplace,home,19:00-19:30,19:25-19:55
+14,12,1,dining,home,North Beach,18:00-18:30,18:30-19:00
+14,12,1,dining,workplace,North Beach,18:30-19:00,18:40-19:10
+14,10,0,dining,North Beach,home,21:00-21:30,21:30-22:00
+14,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+14,13,0,shopping,home,Union Square,10:30-11:00,10:50-11:20
+14,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+14,14,0,dining,North Beach,home,21:00-21:30,21:30-22:00
+14,8,0,shopping,Union Square,home,13:00-13:30,13:20-13:50
+14,12,1,medical_appointment,home,UCSF Medical Center,10:00-10:30,10:15-10:45
+14,14,0,recreation,workplace,Lands End,15:00-15:30,15:35-16:05
+15,8,0,visiting,relative,home,13:00-13:30,13:16-13:46
+15,13,0,visit_family,family_home,home,17:00-17:30,17:12-17:42
+15,13,0,recreation,home,Golden Gate Park,14:00-14:30,14:18-14:48
+15,13,0,work,workplace,home,17:00-17:30,17:30-18:00
+15,12,1,gardening_club,home,community_garden,08:00-08:30,08:07-08:37
+15,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+15,12,1,gardening_club,home,community_garden,08:00-08:30,08:07-08:37
+15,13,0,concert,concert_venue,home,22:00-22:30,22:23-22:53
+15,8,0,cultural_event,home,museum,10:00-10:30,10:18-10:48
+15,12,1,education,class,home,10:00-10:30,10:17-10:47
+15,12,1,visit_family,home,family_home,15:00-15:30,15:10-15:40
+15,12,1,day_trip,home,ferry_terminal,09:00-09:30,09:20-09:50
+15,9,0,cultural_event,home,museum,10:00-10:30,10:18-10:48
+15,12,1,medical_appointment,hospital,home,10:00-10:30,10:15-10:45
+15,9,0,volunteering,community_center,home,12:00-12:30,12:12-12:42
+15,8,0,spa,spa_center,home,16:00-16:30,16:16-16:46
+15,12,1,recreation,home,Golden Gate Park,14:00-14:30,14:18-14:48
+15,12,1,concert,concert_venue,home,22:00-22:30,22:23-22:53
+15,12,1,work,home,workplace,07:00-07:30,07:25-07:55
+15,5,0,recreation,Golden Gate Park,home,17:00-17:30,17:20-17:50
+15,12,1,church,church,home,11:00-11:30,11:16-11:46
+15,8,0,visiting,relative,home,13:00-13:30,13:16-13:46
+15,4,0,day_trip,ferry_terminal,home,17:00-17:30,17:22-17:52
+15,12,1,recreation,home,Golden Gate Park,14:00-14:30,14:18-14:48
+15,9,0,grocery,shopping,home,16:30-17:00,16:46-17:16
+15,12,1,library,home,library,11:00-11:30,11:15-11:45
+15,12,1,education,home,class,08:00-08:30,08:15-08:45
+15,8,0,gardening_club,community_garden,home,10:00-10:30,10:09-10:39
+15,12,1,visiting,home,relative,11:00-11:30,11:14-11:44
+15,12,1,community_meeting,civic_center,home,20:00-20:30,20:14-20:44
+15,13,0,visit_family,family_home,home,17:00-17:30,17:12-17:42
+15,12,1,library,home,library,11:00-11:30,11:15-11:45
+16,12,1,social,friend's house,home,22:00-22:30,22:10-22:40
+16,12,1,work,workplace,home,16:30-17:00,16:55-17:25
+16,10,1,shopping,home,shopping,13:00-13:30,13:10-13:40
+16,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+16,5,1,recreation,recreation,home,11:00-11:30,11:15-11:45
+16,12,1,work,workplace,home,16:30-17:00,16:55-17:25
+16,5,1,dining,home,restaurant,18:00-18:30,18:20-18:50
+16,2,1,shopping,home,shopping,13:00-13:30,13:10-13:40
+16,8,1,dining,home,restaurant,18:00-18:30,18:20-18:50
+16,5,1,dining,home,restaurant,18:00-18:30,18:20-18:50
+16,12,1,exercise,home,gym,06:00-06:30,06:15-06:45
+16,12,1,recreation,recreation,home,11:00-11:30,11:15-11:45
+16,0,1,hiking,home,hiking,08:00-08:30,08:20-08:50
+16,12,1,shopping,home,shopping,13:00-13:30,13:10-13:40
+16,12,1,exercise,home,gym,06:00-06:30,06:15-06:45
+16,8,1,work,home,workplace,06:30-07:00,06:55-07:25
+16,12,1,work,workplace,home,16:30-17:00,16:55-17:25
+16,12,1,exercise,home,gym,06:00-06:30,06:15-06:45
+16,5,1,exercise,home,gym,06:00-06:30,06:15-06:45
+16,12,1,dining,home,restaurant,18:00-18:30,18:20-18:50
+16,13,0,dining,home,restaurant,18:00-18:30,18:20-18:50
+16,8,1,work,workplace,home,16:30-17:00,16:55-17:25
+16,13,0,dining,home,restaurant,18:00-18:30,18:20-18:50
+16,1,1,shopping,home,shopping,13:00-13:30,13:10-13:40
+16,12,1,work,workplace,home,16:30-17:00,16:55-17:25
+16,14,1,shopping,home,shopping,13:00-13:30,13:10-13:40
+16,12,1,work,workplace,home,16:30-17:00,16:55-17:25
+16,8,1,shopping,workplace,shopping,17:30-18:00,17:40-18:10
+16,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+16,12,1,social,home,friend's house,19:00-19:30,19:10-19:40
+16,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+16,12,1,shopping,shopping,home,18:30-19:00,18:45-19:15
+17,9,0,hiking,home,Lands End,09:00-09:30,09:20-09:50
+17,13,0,recreation,home,Golden Gate Park,15:30-16:00,15:45-16:15
+17,12,1,recreation,home,Golden Gate Park,15:30-16:00,15:45-16:15
+17,8,0,shopping,workplace,Union Square,12:30-13:00,12:40-13:10
+17,8,0,shopping,workplace,Stonestown Galleria,10:00-10:30,10:30-11:00
+17,12,1,recreation,workplace,Lands End,15:00-15:30,15:30-16:00
+17,12,1,grocery,home,shopping,18:30-19:00,18:40-19:10
+17,12,1,work,home,workplace,07:00-07:30,07:30-08:00
+17,12,1,recreation,home,Presidio,15:00-15:30,15:20-15:50
+17,12,1,work,home,workplace,06:30-07:00,07:00-07:30
+17,12,1,recreation,home,Golden Gate Park,16:00-16:30,16:15-16:45
+17,12,1,work,workplace,home,17:00-17:30,17:30-18:00
+17,12,1,work,home,workplace,08:00-08:30,08:30-09:00
+17,8,0,recreation,home,Presidio,14:00-14:30,14:20-14:50
+17,12,1,hiking,home,Lands End,09:00-09:30,09:20-09:50
+17,12,1,grocery,home,shopping,18:30-19:00,18:40-19:10
+17,12,1,grocery,home,shopping,19:00-19:30,19:10-19:40
+17,13,0,meeting,workplace,Union Square,10:30-11:00,10:40-11:10
+17,12,1,hiking,home,Lands End,09:00-09:30,09:20-09:50
+17,12,1,grocery,home,shopping,18:00-18:30,18:10-18:40
+17,12,1,shopping,workplace,shopping,13:00-13:30,13:05-13:35
+17,12,1,grocery,home,shopping,19:00-19:30,19:10-19:40
+17,9,0,recreation,workplace,Lands End,14:00-14:30,14:30-15:00
+17,13,0,grocery,home,shopping,18:00-18:30,18:10-18:40
+17,12,1,grocery,home,shopping,18:30-19:00,18:40-19:10
+17,8,0,recreation,home,Golden Gate Park,16:00-16:30,16:15-16:45
+17,13,0,recreation,home,Presidio,12:00-12:30,12:20-12:50
+17,12,1,work,home,workplace,07:00-07:30,07:30-08:00
+17,12,1,grocery,home,shopping,20:00-20:30,20:10-20:40
+17,12,1,work,home,workplace,07:00-07:30,07:30-08:00
+17,12,1,work,home,workplace,07:30-08:00,08:00-08:30
+17,13,0,grocery,home,shopping,19:00-19:30,19:10-19:40
+18,8,1,returning home from book club,bookstore in Noe Valley,home,19:00-19:30,19:05-19:35
+18,5,1,volunteering,home,community center,09:00-09:30,09:10-09:40
+18,12,1,returning home from fitness class,fitness studio in Richmond,home,08:00-08:30,08:20-08:50
+18,12,1,returning home from library,San Francisco Public Library,home,15:00-15:30,15:15-15:45
+18,12,1,library visit,home,San Francisco Public Library,13:00-13:30,13:15-13:45
+18,12,1,attending a yoga class,home,yoga studio in Noe Valley,07:00-07:30,07:05-07:35
+18,12,1,returning home from concert,Bill Graham Civic Auditorium,home,23:00-23:30,23:15-23:45
+18,12,1,returning home from tech meetup,venue in SoMa,home,21:00-21:30,21:18-21:48
+18,9,1,returning home from friends,Union Square,home,20:00-20:30,20:25-20:55
+18,12,1,attending a fitness class,home,fitness studio in Richmond,06:00-06:30,06:20-06:50
+18,12,1,visiting a gallery,home,art gallery in SoMa,11:00-11:30,11:18-11:48
+18,12,1,returning home from tech meetup,venue in SoMa,home,21:00-21:30,21:18-21:48
+18,12,1,attending a workshop,home,workshop venue in SoMa,14:00-14:30,14:18-14:48
+18,12,1,returning home from museum,SF Museum of Modern Art,home,14:00-14:30,14:20-14:50
+18,12,1,returning home from language class,language school in Mission District,home,11:00-11:30,11:10-11:40
+18,8,1,attending a concert,home,Bill Graham Civic Auditorium,18:00-18:30,18:15-18:45
+18,8,1,returning home from book club,bookstore in Noe Valley,home,19:00-19:30,19:05-19:35
+18,8,1,returning home from lecture,lecture hall in Financial District,home,11:00-11:30,11:25-11:55
+18,12,1,returning home from shopping,Stonestown Galleria,home,12:00-12:30,12:15-12:45
+18,12,1,commuting to school,home,university,08:00-08:30,08:20-08:50
+18,5,1,returning home from beach,Ocean Beach,home,13:00-13:30,13:25-13:55
+18,12,1,attending a workshop,home,workshop venue in SoMa,14:00-14:30,14:18-14:48
+18,8,1,returning home from language class,language school in Mission District,home,11:00-11:30,11:10-11:40
+18,8,1,returning home from fitness class,fitness studio in Richmond,home,08:00-08:30,08:20-08:50
+18,9,1,gym workout,home,gym in SoMa,06:00-06:30,06:18-06:48
+18,12,1,returning home from workshop,workshop venue in SoMa,home,17:00-17:30,17:18-17:48
+18,5,1,hiking,home,Lands End,09:00-09:30,09:20-09:50
+18,12,1,returning home from fitness class,fitness studio in Richmond,home,08:00-08:30,08:20-08:50
+18,12,1,meeting friends,home,Union Square,17:00-17:30,17:25-17:55
+18,12,1,returning home from lecture,lecture hall in Financial District,home,11:00-11:30,11:25-11:55
+18,12,1,returning home from book club,bookstore in Noe Valley,home,19:00-19:30,19:05-19:35
+18,13,0,returning home from volunteering,community center,home,12:00-12:30,12:10-12:40
+19,12,1,recreation,workplace,Golden Gate Park,17:30-18:00,18:00-18:30
+19,8,1,visit friend,home,friend's house,18:00-18:30,18:10-18:40
+19,12,1,dinner,friend's house,restaurant,19:30-20:00,19:50-20:20
+19,12,1,night out,home,club,21:00-21:30,21:20-21:50
+19,12,1,return home,Union Square,home,15:00-15:30,15:30-16:00
+19,8,1,work,workplace,home,17:00-17:30,17:25-17:55
+19,12,1,work,Presidio,home,17:00-17:30,17:25-17:55
+19,12,1,dinner,Golden Gate Park,restaurant,19:00-19:30,19:10-19:40
+19,13,1,recreation,workplace,Dolores Park,16:00-16:30,16:15-16:45
+19,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+19,0,0,return home,Union Square,home,15:00-15:30,15:30-16:00
+19,4,1,recreation,workplace,Dolores Park,16:00-16:30,16:15-16:45
+19,12,1,shopping,workplace,shopping,11:30-12:00,11:35-12:05
+19,12,1,work,coffee shop,workplace,11:00-11:30,11:10-11:40
+19,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+19,12,1,return home,grocery store,home,19:00-19:30,19:10-19:40
+19,12,1,return home,Dolores Park,home,18:00-18:30,18:10-18:40
+19,8,1,work,home,workplace,06:30-07:00,06:55-07:25
+19,12,1,return home,restaurant,home,21:00-21:30,21:25-21:55
+19,12,1,return to work,hospital,workplace,15:30-16:00,15:45-16:15
+19,8,1,work,home,workplace,06:30-07:00,06:55-07:25
+19,12,1,return home,restaurant,home,21:00-21:30,21:25-21:55
+19,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+19,12,1,recreation,workplace,Dolores Park,16:00-16:30,16:15-16:45
+19,8,1,work,workplace,home,17:00-17:30,17:25-17:55
+19,12,1,work,restaurant,workplace,13:00-13:30,13:10-13:40
+19,4,1,return home,Lands End,home,11:00-11:30,11:30-12:00
+19,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+19,12,1,return home,restaurant,home,21:00-21:30,21:15-21:45
+19,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+19,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+19,12,1,visit friend,home,friend's house,18:00-18:30,18:10-18:40
+20,12,1,crafts_fair,home,Fort Mason,10:00-10:30,10:28-10:58
+20,10,1,nature_walk,home,Twin Peaks,07:30-08:00,07:38-08:08
+20,12,1,workshop,home,Fort Mason Center,09:00-09:30,09:28-09:58
+20,4,1,spa_day,home,Japantown,13:00-13:30,13:12-13:42
+20,8,1,cycling_event,home,Panhandle,08:30-09:00,08:40-09:10
+20,8,1,fitness_class,home,Mission District,17:00-17:30,17:10-17:40
+20,8,1,cultural_event,home,Yerba Buena Gardens,16:00-16:30,16:18-16:48
+20,8,1,fitness_class,home,Mission District,17:00-17:30,17:10-17:40
+20,12,1,theater_show,home,Orpheum Theatre,18:00-18:30,18:15-18:45
+20,5,1,beach_day,home,Ocean Beach,09:00-09:30,09:20-09:50
+20,13,0,dining,home,Chinatown,18:30-19:00,18:50-19:20
+20,12,1,dinner_date,home,Fisherman's Wharf,18:30-19:00,19:00-19:30
+20,12,1,dance_class,home,Hayes Valley,18:00-18:30,18:14-18:44
+20,8,1,grocery_shopping,home,Stonestown Galleria,09:30-10:00,09:45-10:15
+20,8,1,friends_gathering,home,Mission Dolores Park,17:00-17:30,17:07-17:37
+20,12,1,language_class,home,South Beach,17:00-17:30,17:18-17:48
+20,12,1,lecture,home,California Academy of Sciences,10:30-11:00,10:42-11:12
+20,12,1,yoga_class,home,Inner Richmond,07:00-07:30,07:15-07:45
+20,12,1,nature_walk,home,Twin Peaks,07:30-08:00,07:38-08:08
+20,2,1,recreation,home,Golden Gate Park,11:00-11:30,11:12-11:42
+20,12,1,workshop,home,Fort Mason Center,09:00-09:30,09:28-09:58
+20,13,1,pet_park,home,Bernal Heights Park,09:00-09:30,09:10-09:40
+20,5,1,museum_visit,home,SF Museum of Modern Art,11:00-11:30,11:18-11:48
+20,8,1,therapy_session,home,Lower Pacific Heights,15:00-15:30,15:13-15:43
+20,8,1,concert,home,Bill Graham Civic Auditorium,19:00-19:30,19:16-19:46
+20,12,1,workout,home,Financial District,06:30-07:00,06:52-07:22
+20,12,1,recreation,home,Golden Gate Park,11:00-11:30,11:12-11:42
+20,12,1,recreation,home,Golden Gate Park,11:00-11:30,11:12-11:42
+20,9,1,community_service,home,Laurel Heights,09:30-10:00,09:45-10:15
+20,12,1,therapy_session,home,Lower Pacific Heights,15:00-15:30,15:13-15:43
+20,9,1,brunch,home,Castro District,10:00-10:30,10:07-10:37
+20,12,1,dining,home,Chinatown,18:30-19:00,18:50-19:20
+21,8,1,shopping,home,shopping,15:00-15:30,15:22-15:52
+21,8,1,recreation,Lands End,home,12:30-13:00,12:51-13:21
+21,8,1,shopping,home,shopping,12:30-13:00,12:52-13:22
+21,12,1,recreation,Golden Gate Park,home,10:30-11:00,10:48-11:18
+21,12,1,shopping,shopping,home,15:30-16:00,15:52-16:22
+21,12,1,work,workplace,home,18:00-18:30,18:25-18:55
+21,12,1,recreation,Golden Gate Park,home,16:00-16:30,16:18-16:48
+21,5,1,recreation,home,Golden Gate Park,09:30-10:00,09:48-10:18
+21,12,1,work,home,workplace,07:00-07:30,07:25-07:55
+21,12,1,shopping,home,shopping,15:00-15:30,15:22-15:52
+21,12,1,work,workplace,home,17:30-18:00,17:55-18:25
+21,9,1,shopping,home,shopping,12:30-13:00,12:52-13:22
+21,13,0,recreation,home,Golden Gate Park,14:30-15:00,14:48-15:18
+21,12,1,work,home,workplace,07:00-07:30,07:25-07:55
+21,12,1,shopping,shopping,home,10:00-10:30,10:22-10:52
+21,12,1,shopping,shopping,home,11:00-11:30,11:22-11:52
+21,9,1,hiking,Presidio,home,10:00-10:30,10:28-10:58
+21,12,1,recreation,home,Lands End,08:30-09:00,08:51-09:21
+21,12,1,recreation,home,Lands End,09:30-10:00,09:51-10:21
+21,9,1,recreation,home,Lands End,08:30-09:00,08:51-09:21
+21,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+21,12,1,recreation,Golden Gate Park,home,16:00-16:30,16:18-16:48
+21,12,1,hiking,home,Presidio,09:00-09:30,09:28-09:58
+21,8,1,shopping,shopping,home,12:00-12:30,12:22-12:52
+21,12,1,shopping,home,shopping,11:00-11:30,11:22-11:52
+21,12,1,shopping,home,shopping,15:00-15:30,15:22-15:52
+21,12,1,shopping,home,shopping,15:00-15:30,15:22-15:52
+21,4,1,recreation,home,Golden Gate Park,14:30-15:00,14:48-15:18
+21,12,1,work,workplace,home,17:30-18:00,17:55-18:25
+21,12,1,recreation,Golden Gate Park,home,16:00-16:30,16:18-16:48
+21,9,1,hiking,Presidio,home,10:00-10:30,10:28-10:58
+21,12,1,shopping,shopping,home,15:30-16:00,15:52-16:22
+22,14,1,shopping,workplace,shopping,14:00-14:30,14:05-14:35
+22,12,1,hiking,home,Presidio,08:00-08:30,08:25-08:55
+22,12,1,work,home,workplace,14:30-15:00,14:55-15:25
+22,14,1,recreation,home,Golden Gate Park,18:00-18:30,18:15-18:45
+22,13,1,work,shopping,workplace,14:00-14:30,14:05-14:35
+22,9,1,hiking,home,Lands End,13:00-13:30,13:25-13:55
+22,9,1,hiking,home,Presidio,13:00-13:30,13:25-13:55
+22,12,1,work,home,workplace,10:30-11:00,10:55-11:25
+22,12,1,recreation,home,Golden Gate Park,13:00-13:30,13:15-13:45
+22,12,1,recreation,workplace,Presidio,15:30-16:00,15:50-16:20
+22,12,1,work,home,workplace,13:30-14:00,13:55-14:25
+22,12,1,work,home,workplace,13:30-14:00,13:55-14:25
+22,14,1,recreation,workplace,Lands End,12:30-13:00,13:00-13:30
+22,14,1,recreation,home,Golden Gate Park,14:00-14:30,14:15-14:45
+22,13,1,work,shopping,workplace,14:00-14:30,14:05-14:35
+22,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+22,12,1,work,home,workplace,11:30-12:00,11:55-12:25
+22,12,1,shopping,workplace,shopping,15:00-15:30,15:05-15:35
+22,8,0,recreation,workplace,Presidio,15:30-16:00,15:50-16:20
+22,13,1,work,home,workplace,07:30-08:00,07:55-08:25
+22,12,1,work,shopping,workplace,09:00-09:30,09:05-09:35
+22,12,1,recreation,workplace,Golden Gate Park,14:30-15:00,14:50-15:20
+22,13,1,work,home,workplace,13:30-14:00,13:55-14:25
+22,8,0,recreation,home,Golden Gate Park,18:00-18:30,18:15-18:45
+22,12,1,shopping,workplace,shopping,12:30-13:00,12:35-13:05
+22,12,1,work,home,workplace,07:30-08:00,07:55-08:25
+22,12,1,hiking,home,Lands End,07:00-07:30,07:25-07:55
+22,12,1,work,home,workplace,13:30-14:00,13:55-14:25
+22,12,1,recreation,workplace,Presidio,10:30-11:00,10:50-11:20
+22,13,1,recreation,workplace,Lands End,14:30-15:00,15:00-15:30
+22,13,1,work,shopping,workplace,14:00-14:30,14:05-14:35
+22,12,1,work,shopping,workplace,15:00-15:30,15:05-15:35
+23,12,1,doctor's appointment,home,clinic,09:00-09:30,09:10-09:40
+23,12,1,attending a festival,home,festival grounds,11:00-11:30,11:18-11:48
+23,12,1,attending a tech meetup,workplace,meetup venue,18:00-18:30,18:04-18:34
+23,12,1,visit family,home,family residence,15:00-15:30,15:12-15:42
+23,10,1,meeting a friend,home,friend's place,14:00-14:30,14:10-14:40
+23,12,1,shopping for electronics,workplace,electronics store,17:30-18:00,17:36-18:06
+23,13,1,catching a flight,home,airport,05:00-05:30,05:40-06:10
+23,12,1,attending a conference,workplace,conference center,09:00-09:30,09:05-09:35
+23,13,1,attending a festival,home,festival grounds,11:00-11:30,11:18-11:48
+23,10,1,visit to the library,home,library,11:00-11:30,11:18-11:48
+23,13,1,software conference,home,conference center,08:30-09:00,08:52-09:22
+23,10,1,shopping for clothes,home,shopping mall,12:00-12:30,12:22-12:52
+23,12,1,volunteering,home,community center,08:00-08:30,08:08-08:38
+23,12,1,software conference,home,conference center,08:30-09:00,08:52-09:22
+23,12,1,attending a tech meetup,workplace,meetup venue,18:00-18:30,18:04-18:34
+23,13,1,attending a tech meetup,workplace,meetup venue,18:00-18:30,18:04-18:34
+23,12,1,commute to work,home,workplace,07:00-07:30,07:25-07:55
+23,12,1,dinner with friends,home,restaurant,18:30-19:00,18:48-19:18
+23,12,1,commute to work,home,workplace,07:00-07:30,07:25-07:55
+23,12,1,commute from work,workplace,home,17:00-17:30,17:30-18:00
+23,12,1,catching a flight,home,airport,05:00-05:30,05:40-06:10
+23,12,1,commute from work,workplace,home,17:00-17:30,17:30-18:00
+23,13,1,visit art gallery,home,art gallery,13:30-14:00,13:52-14:22
+23,9,1,movie night,home,cinema,18:00-18:30,18:22-18:52
+23,12,1,weekend getaway,home,hotel,10:00-10:30,10:20-10:50
+23,10,1,dinner with friends,home,restaurant,18:30-19:00,18:48-19:18
+23,12,1,attending a tech meetup,workplace,meetup venue,18:00-18:30,18:04-18:34
+23,10,1,movie night,home,cinema,18:00-18:30,18:22-18:52
+23,12,1,attending a book club,home,library,17:00-17:30,17:18-17:48
+23,12,1,catching a flight,home,airport,05:00-05:30,05:40-06:10
+23,13,1,catching a flight,home,airport,05:00-05:30,05:40-06:10
+23,12,1,grocery shopping,home,supermarket,11:00-11:30,11:18-11:48
+24,14,1,visit_friend,home,"friend's house, Mission District",14:00-14:30,14:15-14:45
+24,8,0,gaming,home,"Arcade, Japantown",15:00-15:30,15:20-15:50
+24,12,1,workshop,home,SoMa,13:30-14:00,13:50-14:20
+24,12,1,workshop,home,SoMa,13:30-14:00,13:50-14:20
+24,14,1,museum_visit,home,California Academy of Sciences,10:00-10:30,10:20-10:50
+24,13,1,farmers_market,home,Ferry Plaza Farmers Market,08:00-08:30,08:30-09:00
+24,10,1,opera,home,War Memorial Opera House,18:00-18:30,18:20-18:50
+24,14,1,art_exhibit,home,de Young Museum,11:00-11:30,11:18-11:48
+24,12,1,art_class,home,"Art Center, South of Market",15:30-16:00,15:50-16:20
+24,14,1,library_visit,home,San Francisco Public Library,15:00-15:30,15:20-15:50
+24,9,1,gaming,home,"Arcade, Japantown",15:00-15:30,15:20-15:50
+24,8,0,laundry,home,"Laundromat, Mission District",09:00-09:30,09:10-09:40
+24,9,1,dining_out,home,"Restaurant, North Beach",18:30-19:00,19:00-19:30
+24,12,1,gym,home,"24 Hour Fitness, Market St",07:00-07:30,07:15-07:45
+24,12,1,library_visit,home,San Francisco Public Library,15:00-15:30,15:20-15:50
+24,10,1,dance_class,home,"Dance Studio, Hayes Valley",17:00-17:30,17:18-17:48
+24,11,1,concert,home,Bill Graham Civic Auditorium,19:00-19:30,19:20-19:50
+24,12,1,brunch,home,"Zazie, Cole Valley",10:30-11:00,10:40-11:10
+24,13,1,community_garden,home,"Community Garden, Noe Valley",08:00-08:30,08:05-08:35
+24,13,1,community_meeting,home,Noe Valley Town Square,17:30-18:00,17:35-18:05
+24,12,1,hiking,home,Lands End,08:30-09:00,09:00-09:30
+24,15,1,concert,home,The Fillmore,19:00-19:30,19:20-19:50
+24,9,1,shopping,home,Westfield San Francisco Centre,11:30-12:00,11:55-12:25
+24,8,0,cultural_festival,home,Japantown,12:00-12:30,12:20-12:50
+24,13,1,dance_class,home,"Dance Studio, Hayes Valley",17:00-17:30,17:18-17:48
+24,12,1,gallery_visit,home,"Gallery, Civic Center",13:30-14:00,13:50-14:20
+24,9,1,gym,home,"24 Hour Fitness, Market St",07:00-07:30,07:15-07:45
+24,14,1,gaming,home,"Arcade, Japantown",15:00-15:30,15:20-15:50
+24,12,1,book_club,home,"Bookstore, Haight Ashbury",18:30-19:00,18:42-19:12
+24,12,1,laundry,home,"Laundromat, Mission District",09:00-09:30,09:10-09:40
+24,12,1,dining_out,home,"Restaurant, North Beach",18:30-19:00,19:00-19:30
+24,14,1,dinner_out,home,Nopa,18:00-18:30,18:15-18:45
+25,0,1,shopping,home,Chinatown,11:00-11:30,11:25-11:55
+25,5,1,shopping,home,Union Square,11:00-11:30,11:20-11:50
+25,13,1,picnic,home,Alamo Square,13:00-13:30,13:15-13:45
+25,13,1,art_class,home,The Art Studio,14:00-14:30,14:25-14:55
+25,12,1,sightseeing,home,Coit Tower,09:30-10:00,10:00-10:30
+25,4,1,park_walk,home,Mission Dolores Park,16:00-16:30,16:10-16:40
+25,9,1,grocery_shopping,home,Stonestown Galleria,10:00-10:30,10:15-10:45
+25,2,1,sailing,home,South Beach Harbor,13:00-13:30,13:25-13:55
+25,8,1,library_visit,home,San Francisco Public Library,11:00-11:30,11:20-11:50
+25,13,1,movie_night,home,AMC Metreon,19:30-20:00,19:50-20:20
+25,12,1,cultural_event,home,Asian Art Museum,16:00-16:30,16:20-16:50
+25,12,1,culinary_class,home,Culinary Artistas,14:30-15:00,14:55-15:25
+25,8,1,art_class,home,The Art Studio,14:00-14:30,14:25-14:55
+25,5,1,museum_visit,home,SFMOMA,13:00-13:30,13:20-13:50
+25,10,1,library_visit,home,San Francisco Public Library,11:00-11:30,11:20-11:50
+25,0,1,ferry_ride,home,Pier 39,10:30-11:00,10:55-11:25
+25,10,1,shopping,home,Chinatown,11:00-11:30,11:25-11:55
+25,9,1,evening_walk,home,Twin Peaks,17:00-17:30,17:10-17:40
+25,3,1,park_walk,home,Mission Dolores Park,16:00-16:30,16:10-16:40
+25,13,1,dance_class,home,ODC Dance Commons,16:30-17:00,16:40-17:10
+25,12,1,concert,home,Bill Graham Civic Auditorium,18:00-18:30,18:20-18:50
+25,4,1,ferry_trip,home,Ferry Building,08:00-08:30,08:25-08:55
+25,10,1,gym,home,24 Hour Fitness,07:00-07:30,07:20-07:50
+25,12,1,beach_walk,home,Baker Beach,09:00-09:30,09:20-09:50
+25,13,1,gallery_visit,home,De Young Museum,11:30-12:00,11:45-12:15
+25,12,1,wine_tasting,home,Treasure Island Wines,12:00-12:30,12:30-13:00
+25,5,1,hiking,home,Lands End,07:00-07:30,07:25-07:55
+25,5,1,evening_walk,home,Twin Peaks,17:00-17:30,17:10-17:40
+25,11,1,beach_day,home,Ocean Beach,10:00-10:30,10:15-10:45
+25,9,1,book_club,home,Books Inc.,19:00-19:30,19:25-19:55
+25,14,1,shopping,home,Union Square,11:00-11:30,11:20-11:50
+25,11,1,recreation,home,Golden Gate Park,14:00-14:30,14:15-14:45
+26,13,1,work,workplace,home,20:00-20:30,20:25-20:55
+26,13,1,work,workplace,home,17:00-17:30,17:25-17:55
+26,13,1,shopping,home,shopping,12:00-12:30,12:15-12:45
+26,9,1,recreation,home,recreation,10:00-10:30,10:30-11:00
+26,14,1,recreation,workplace,recreation,18:00-18:30,18:30-19:00
+26,11,1,recreation,home,recreation,11:00-11:30,11:20-11:50
+26,13,1,shopping,home,shopping,15:00-15:30,15:20-15:50
+26,13,1,work,workplace,home,21:00-21:30,21:25-21:55
+26,12,1,work,home,workplace,06:00-06:30,06:25-06:55
+26,14,1,shopping,shopping,workplace,11:00-11:30,11:25-11:55
+26,13,1,work,workplace,home,20:00-20:30,20:25-20:55
+26,13,1,shopping,shopping,workplace,13:00-13:30,13:05-13:35
+26,14,1,hiking,recreation,home,19:00-19:30,19:30-20:00
+26,12,1,shopping,shopping,home,16:00-16:30,16:20-16:50
+26,12,1,shopping,home,shopping,13:00-13:30,13:15-13:45
+26,12,1,work,home,workplace,08:00-08:30,08:25-08:55
+26,12,1,recreation,workplace,recreation,17:00-17:30,17:30-18:00
+26,12,1,work,home,workplace,06:30-07:00,06:55-07:25
+26,12,1,work,home,workplace,06:00-06:30,06:25-06:55
+26,12,1,recreation,home,recreation,10:00-10:30,10:20-10:50
+26,12,1,shopping,shopping,workplace,11:00-11:30,11:25-11:55
+26,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+26,12,1,work,home,workplace,06:00-06:30,06:25-06:55
+26,12,1,work,workplace,home,21:00-21:30,21:25-21:55
+26,12,1,shopping,home,shopping,14:00-14:30,14:20-14:50
+26,12,1,recreation,workplace,recreation,17:00-17:30,17:30-18:00
+26,14,1,shopping,home,shopping,13:00-13:30,13:15-13:45
+26,12,1,recreation,workplace,recreation,14:30-15:00,15:00-15:30
+26,13,1,work,workplace,home,18:30-19:00,18:55-19:25
+26,13,1,work,workplace,home,18:30-19:00,18:55-19:25
+26,12,1,work,workplace,home,19:00-19:30,19:25-19:55
+26,12,1,work,home,workplace,07:00-07:30,07:25-07:55
+27,8,1,recreation,Presidio,home,11:30-12:00,11:52-12:22
+27,12,1,grocery,Trader Joe's,home,18:00-18:30,18:15-18:45
+27,6,1,shopping,Mission District,home,13:30-14:00,13:40-14:10
+27,12,1,work,home,workplace,08:00-08:30,08:25-08:55
+27,12,1,grocery,home,Safeway,16:00-16:30,16:16-16:46
+27,9,1,shopping,home,Union Square,12:00-12:30,12:19-12:49
+27,12,1,shopping,Union Square,home,15:00-15:30,15:19-15:49
+27,12,1,work,workplace,home,17:00-17:30,17:25-17:55
+27,12,1,shopping,Union Square,home,15:00-15:30,15:19-15:49
+27,12,1,social,cafe,home,16:30-17:00,16:41-17:11
+27,13,1,recreation,home,Twin Peaks,08:30-09:00,08:39-09:09
+27,5,1,shopping,Mission District,home,13:30-14:00,13:40-14:10
+27,8,1,grocery,home,Trader Joe's,17:00-17:30,17:15-17:45
+27,12,1,work,home,workplace,08:00-08:30,08:25-08:55
+27,12,1,recreation,home,Yerba Buena Gardens,10:30-11:00,10:48-11:18
+27,9,1,recreation,home,Presidio,07:30-08:00,07:52-08:22
+27,12,1,work,workplace,home,21:00-21:30,21:25-21:55
+27,12,1,social,friend's house,home,22:00-22:30,22:12-22:42
+27,10,1,recreation,Presidio,home,11:30-12:00,11:52-12:22
+27,15,1,social,home,family's house,14:00-14:30,14:14-14:44
+27,4,1,shopping,home,Westfield San Francisco Centre,09:00-09:30,09:17-09:47
+27,9,1,grocery,home,Safeway,16:00-16:30,16:16-16:46
+27,6,1,social,cafe,home,16:30-17:00,16:41-17:11
+27,9,1,shopping,home,Union Square,12:00-12:30,12:19-12:49
+27,8,1,grocery,home,Safeway,16:00-16:30,16:16-16:46
+27,9,1,grocery,home,Stonestown Galleria,11:00-11:30,11:17-11:47
+27,12,1,social,friend's house,home,22:00-22:30,22:12-22:42
+27,5,1,social,home,friend's house,19:00-19:30,19:12-19:42
+27,12,1,work,home,workplace,08:00-08:30,08:25-08:55
+27,6,1,social,family's house,home,16:00-16:30,16:14-16:44
+27,12,1,shopping,home,Westfield San Francisco Centre,09:00-09:30,09:17-09:47
+27,12,1,shopping,shopping,home,13:00-13:30,13:18-13:48
+28,8,1,community_meeting,home,community hall,18:00-18:30,18:25-18:55
+28,12,1,museum_visit,home,museum,11:00-11:30,11:30-12:00
+28,12,1,work,home,workplace,07:00-07:30,07:25-07:55
+28,8,1,volunteering,home,community center,09:30-10:00,09:40-10:10
+28,14,1,grocery_shopping,home,shopping,10:00-10:30,10:20-10:50
+28,12,1,gym,home,gym,07:30-08:00,07:40-08:10
+28,13,1,book_club,home,bookstore,16:00-16:30,16:25-16:55
+28,13,1,business_meeting,home,office,09:00-09:30,09:25-09:55
+28,13,1,art_exhibition,home,art gallery,12:00-12:30,12:25-12:55
+28,12,1,fitness_class,home,fitness center,06:00-06:30,06:10-06:40
+28,13,1,gardening_supply,home,gardening store,13:30-14:00,13:40-14:10
+28,12,1,dinner,home,restaurant,19:00-19:30,19:18-19:48
+28,12,1,park_visit,home,park,10:30-11:00,10:45-11:15
+28,12,1,work,workplace,home,16:30-17:00,17:00-17:30
+28,9,1,visit_friend,home,friend's house,18:00-18:30,18:10-18:40
+28,12,1,car_wash,home,car wash,11:00-11:30,11:12-11:42
+28,12,1,grocery_shopping,home,shopping,10:00-10:30,10:20-10:50
+28,8,1,concert,home,concert venue,19:00-19:30,19:25-19:55
+28,12,1,movie,home,cinema,17:30-18:00,17:55-18:25
+28,12,1,concert,home,concert venue,19:00-19:30,19:25-19:55
+28,12,1,car_maintenance,home,auto shop,10:00-10:30,10:10-10:40
+28,13,1,shopping,home,Stonestown Galleria,15:00-15:30,15:15-15:45
+28,13,1,nature_walk,home,Lands End,09:00-09:30,09:30-10:00
+28,9,1,social_club,home,clubhouse,19:00-19:30,19:20-19:50
+28,12,1,fitness_class,home,fitness center,06:00-06:30,06:10-06:40
+28,9,1,art_exhibition,home,art gallery,12:00-12:30,12:25-12:55
+28,12,1,doctor_appointment,home,doctor's office,14:00-14:30,14:10-14:40
+28,11,1,nature_walk,home,Lands End,09:00-09:30,09:30-10:00
+28,13,1,coffee_with_friends,home,cafe,10:00-10:30,10:20-10:50
+28,8,1,shopping,home,Union Square,12:00-12:30,12:25-12:55
+28,12,1,shopping,home,Union Square,12:00-12:30,12:25-12:55
+28,13,1,museum_visit,home,museum,11:00-11:30,11:30-12:00
+29,12,1,work meeting,home,client's office,10:00-10:30,10:22-10:52
+29,13,1,hiking,home,Golden Gate Park,14:00-14:30,14:15-14:45
+29,9,1,library visit,home,public library,11:00-11:30,11:18-11:48
+29,12,1,work,home,workplace,08:30-09:00,08:55-09:25
+29,12,1,work,home,workplace,09:00-09:30,09:25-09:55
+29,12,1,gardening class,home,botanical garden,10:00-10:30,10:12-10:42
+29,14,1,sports event,home,stadium,18:00-18:30,18:22-18:52
+29,12,1,doctor visit,home,clinic,10:30-11:00,10:40-11:10
+29,14,0,book club meeting,home,bookstore,13:30-14:00,13:48-14:18
+29,13,1,work,home,workplace,08:00-08:30,08:25-08:55
+29,8,0,meet friend,home,cafe,09:30-10:00,09:45-10:15
+29,14,1,visit family,home,family's house,18:00-18:30,18:10-18:40
+29,10,0,dining out,home,restaurant,18:00-18:30,18:20-18:50
+29,8,0,social event,home,event venue,19:00-19:30,19:15-19:45
+29,9,1,dining out,home,restaurant,19:00-19:30,19:20-19:50
+29,12,1,yoga class,home,yoga studio,07:30-08:00,07:40-08:10
+29,12,1,class,home,university,08:00-08:30,08:15-08:45
+29,12,1,gardening class,home,botanical garden,10:00-10:30,10:12-10:42
+29,13,1,medical appointment,home,medical center,09:00-09:30,09:10-09:40
+29,14,1,grocery shopping,home,shopping,10:00-10:30,10:20-10:50
+29,10,1,shopping,home,Stonestown Galleria,10:30-11:00,10:45-11:15
+29,12,1,medical appointment,home,hospital,09:00-09:30,09:10-09:40
+29,13,1,art class,home,art studio,15:30-16:00,15:45-16:15
+29,9,1,dining out,home,restaurant,19:00-19:30,19:20-19:50
+29,12,1,work meeting,home,client's office,10:00-10:30,10:22-10:52
+29,13,1,medical appointment,home,hospital,09:00-09:30,09:10-09:40
+29,9,1,gym,home,gym,07:00-07:30,07:20-07:50
+29,15,1,hiking,home,Presidio,13:00-13:30,13:22-13:52
+29,12,1,sports event,home,stadium,18:00-18:30,18:22-18:52
+29,14,1,museum visit,home,museum,13:00-13:30,13:18-13:48
+29,12,1,concert,home,concert hall,19:00-19:30,19:15-19:45
+29,9,1,yoga class,home,yoga studio,07:30-08:00,07:40-08:10
+30,12,1,evening run,home,Panhandle Park,17:00-17:30,17:12-17:42
+30,12,1,visit exhibition,home,Palace of Fine Arts,13:30-14:00,13:52-14:22
+30,8,1,visit museum,home,"De Young Museum, Golden Gate Park",11:00-11:30,11:15-11:45
+30,4,1,attend a concert,home,"Concert Venue, Civic Center",19:30-20:00,19:48-20:18
+30,9,1,visit museum,home,"De Young Museum, Golden Gate Park",11:00-11:30,11:15-11:45
+30,8,1,visit art fair,home,Fort Mason,12:00-12:30,12:24-12:54
+30,12,1,attend yoga class,home,"Yoga Studio, Marina",07:30-08:00,07:52-08:22
+30,13,1,attend protest,home,City Hall,12:00-12:30,12:16-12:46
+30,8,1,grocery shopping,home,"Safeway, Castro",09:00-09:30,09:10-09:40
+30,12,1,visit tech expo,home,Moscone Center,08:30-09:00,08:50-09:20
+30,12,1,visit farmer's market,home,Ferry Building,08:00-08:30,08:22-08:52
+30,12,1,visit art installation,home,Yerba Buena Gardens,14:00-14:30,14:18-14:48
+30,12,1,attend festival,home,Golden Gate Park,11:30-12:00,11:48-12:18
+30,8,1,gym workout,home,"24 Hour Fitness, SoMa",17:00-17:30,17:14-17:44
+30,12,1,visit bookstore,home,"Bookstore, Noe Valley",15:00-15:30,15:05-15:35
+30,12,1,visit aquarium,home,Aquarium of the Bay,10:00-10:30,10:25-10:55
+30,12,1,go to park,home,Dolores Park,10:30-11:00,10:37-11:07
+30,13,1,visit exhibition,home,Palace of Fine Arts,13:30-14:00,13:52-14:22
+30,8,1,join a workshop,home,"Workshop Venue, Embarcadero",09:30-10:00,09:52-10:22
+30,13,1,attend a concert,home,"Concert Venue, Civic Center",19:30-20:00,19:48-20:18
+30,12,1,attend a conference,home,"Conference Center, Financial District",09:00-09:30,09:22-09:52
+30,10,1,hike,home,Lands End,09:00-09:30,09:28-09:58
+30,9,1,explore neighborhood,home,Chinatown,13:00-13:30,13:22-13:52
+30,13,1,visit farmer's market,home,Ferry Building,08:00-08:30,08:22-08:52
+30,12,1,evening run,home,Panhandle Park,17:00-17:30,17:12-17:42
+30,13,1,attend festival,home,Golden Gate Park,11:30-12:00,11:48-12:18
+30,13,1,weekly grocery shopping,home,"Trader Joe's, SoMa",13:30-14:00,13:45-14:15
+30,12,1,attend a lecture,home,"Lecture Hall, UCSF",08:00-08:30,08:12-08:42
+30,12,1,explore neighborhood,home,Chinatown,13:00-13:30,13:22-13:52
+30,12,1,attend a conference,home,"Conference Center, Financial District",09:00-09:30,09:22-09:52
+30,12,1,dinner out,home,"Restaurant, North Beach",19:00-19:30,19:25-19:55
+30,12,1,visit art fair,home,Fort Mason,12:00-12:30,12:24-12:54

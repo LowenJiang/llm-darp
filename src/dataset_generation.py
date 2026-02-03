@@ -7,8 +7,8 @@ import torch
 from tensordict import TensorDict
 from tqdm import tqdm
 
-from env import PDPTWEnv
-from generator import SFGenerator
+from oracle_env import PDPTWEnv
+from oracle_generator import SFGenerator
 from or_tools import darp_solver
 
 
@@ -76,7 +76,6 @@ def generate_instance_action_dataset(
     max_vehicles: int,
     time_limit_seconds: int,
     run_until_solution: bool,
-    max_attempts: int,
 ) -> TensorDict:
     """Generate a dataset of problem instances and desired action sequences."""
     instance_batches = []
@@ -143,7 +142,6 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run OR-Tools until a feasible solution is found.",
     )
-    parser.add_argument("--max-attempts", type=int, default=20, help="Max attempts to fill dataset.")
     parser.add_argument("--output", type=str, default=None, help="Path to save the dataset (torch.save).")
     parser.add_argument("--device", type=str, default=None, help="Override device (cpu/cuda/mps).")
     return parser.parse_args()
@@ -182,7 +180,6 @@ def main() -> None:
         max_vehicles=args.max_vehicles,
         time_limit_seconds=args.time_limit_seconds,
         run_until_solution=args.run_until_solution,
-        max_attempts=args.max_attempts,
     )
     torch.save(dataset, args.output)
     log.info("Saved dataset to %s", args.output)
