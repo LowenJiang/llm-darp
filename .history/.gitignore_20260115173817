@@ -1,5 +1,0 @@
-# PyTorch checkpoints
-*.pt
-
-# Python cache
-__pycache__/
