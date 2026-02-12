@@ -275,7 +275,7 @@ class ActorCritic(nn.Module):
             travel_time_matrix=travel_time_matrix, gcn_hidden=gcn_hidden, gcn_out=gcn_out, time_embed_dim=time_embed_dim, time_vocab_size=time_vocab_size, transformer_embed_dim=transformer_embed_dim, hidden_dim=hidden_dim, num_heads=num_heads, num_layers=num_layers
         )
 
-        self.mask = torch.ones(action_dim)
+        self.register_buffer("mask", torch.ones(action_dim))
 
     def forward(self, state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """

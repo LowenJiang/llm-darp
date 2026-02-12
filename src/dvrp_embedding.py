@@ -432,6 +432,8 @@ def update_embedding_model(embedding_model, online_data, flexibility_personaliti
             num_nan_batches = 0
 
             for entity_ids, _, ind_matrix, _ in dataloader:
+                entity_ids = entity_ids.to(next(embedding_model.parameters()).device)
+                ind_matrix = ind_matrix.to(next(embedding_model.parameters()).device)
                 optimizer.zero_grad()
                 pred_proba = embedding_model(entity_ids)
                 beta_matrix = embedding_model.get_embed()
@@ -461,7 +463,7 @@ def update_embedding_model(embedding_model, online_data, flexibility_personaliti
 
         # Log predictions for tracked customers
         with torch.no_grad():
-            tracked_ids = torch.LongTensor([cid - 1 for cid in unique_customers[:5]])
+            tracked_ids = torch.LongTensor([cid - 1 for cid in unique_customers[:5]]).to(next(embedding_model.parameters()).device)
             pred_proba = embedding_model(tracked_ids)
             #predicted_types = torch.argmax(pred_proba, dim=1)
 

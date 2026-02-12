@@ -386,6 +386,8 @@ def train(
                     embedding_model.train()
                     total_loss = 0.0
                     for entity_ids, _, ind_matrix, _ in dataloader_train:
+                        entity_ids = entity_ids.to(device)
+                        ind_matrix = ind_matrix.to(device)
                         optimizer.zero_grad()
                         pred_proba = embedding_model(entity_ids)
                         beta_matrix = embedding_model.get_embed()
@@ -399,6 +401,8 @@ def train(
                         embedding_model.eval()
                         eval_loss = 0.0
                         for entity_ids, _, ind_matrix, _ in dataloader_eval:
+                            entity_ids = entity_ids.to(device)
+                            ind_matrix = ind_matrix.to(device)
                             with torch.no_grad():
                                 pred_proba = embedding_model(entity_ids)
                                 beta_matrix = embedding_model.get_embed()

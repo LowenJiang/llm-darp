@@ -1,0 +1,13 @@
+# PyTorch checkpoints
+*.pt
+
+# Python cache
+__pycache__/
+
+runs/
+.claude/
+.vscode/
+reference/
+dataset/
+checkpoints/
+.history/
