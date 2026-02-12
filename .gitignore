@@ -10,3 +10,4 @@ runs/
 reference/
 dataset/
 checkpoints/
+.history/
