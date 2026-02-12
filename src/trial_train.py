@@ -213,8 +213,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--epochs", type=int, default=50)
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--train-data-size", type=int, default=10_000)
-    p.add_argument("--val-data-size", type=int, default=1_000)
-    p.add_argument("--pomo-size", type=int, default=20)
+    p.add_argument("--val-data-size", type=int, default=500)
+    p.add_argument("--pomo-size", type=int, default=30)
     p.add_argument("--val-pomo", action="store_true", default=True,
                    help="Use POMO during validation for best-of selection.")
 
