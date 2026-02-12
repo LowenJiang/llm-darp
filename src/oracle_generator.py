@@ -156,6 +156,7 @@ class SFGenerator(Generator):
                 "Ensure the CSV contains rows for the requested IDs."
             )
         self._traveler_ids = sorted(expected_ids)
+        self._precompute_trip_arrays()
 
     def _flexibility_to_index(self, flexibility_str: str) -> int:
         """Convert flexibility string to numeric index."""
@@ -172,26 +173,70 @@ class SFGenerator(Generator):
         flat_batch = math.prod(batch_shape)
         num_nodes = self.num_customers * 2
 
-        # H3 indices instead of GPS coordinates
-        h3_indices = torch.zeros(flat_batch, num_nodes, dtype=torch.long, device=self.device)
-        # We also store GPS coordinates for rendering
-        locs = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32, device=self.device)
-        time_windows = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32, device=self.device)
-        demand = torch.zeros(flat_batch, num_nodes, dtype=torch.float32, device=self.device)
-        # User ID tensor - tracks which traveler each node belongs to
-        user_id = torch.zeros(flat_batch, num_nodes, dtype=torch.long, device=self.device)
-        # Flexibility tensor - stores numeric flexibility index per node
-        flexibility = torch.zeros(flat_batch, num_nodes, dtype=torch.float32, device=self.device)
-        # Trip metadata - store as list of dicts for each batch instance
-        # Each dict maps traveler_id -> trip metadata
-        trip_metadata_batch = []
+        # Allocate on CPU for fast batch filling; bulk-transfer to device after loop
+        h3_indices = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
+        locs = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
+        time_windows = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
+        demand = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
+        user_id = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
+        flexibility = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
+        trip_metadata_batch = [{} for _ in range(flat_batch)]
 
-        for instance_idx in range(flat_batch):
-            trip_metadata = {}  # Maps traveler_id -> metadata dict
-            for cust_idx, traveler_id in enumerate(self._traveler_ids):
-                trip = self._sample_trip(traveler_id)
-                # Store trip metadata for this traveler
-                trip_metadata[traveler_id] = {
+        # Vectorized: iterate over 30 customers, batch-sample all instances at once
+        for cust_idx, traveler_id in enumerate(self._traveler_ids):
+            trips = self._trips_by_traveler[traveler_id]
+            arr = self._trip_arrays[traveler_id]
+            n_trips = len(trips)
+
+            # Batch-sample trip indices for all instances
+            if n_trips == 1:
+                trip_indices = torch.zeros(flat_batch, dtype=torch.long)
+            else:
+                trip_indices = torch.randint(
+                    n_trips, (flat_batch,), generator=self.generator
+                )
+
+            # Gather sampled trip fields via batch indexing (all CPU)
+            sampled_origin_h3 = arr["origin_h3_idx"][trip_indices]
+            sampled_dest_h3 = arr["dest_h3_idx"][trip_indices]
+            sampled_pickup_tw = arr["pickup_tw"][trip_indices]    # [flat_batch, 2]
+            sampled_dropoff_tw = arr["dropoff_tw"][trip_indices]  # [flat_batch, 2]
+            sampled_origin_gps = arr["origin_gps"][trip_indices]  # [flat_batch, 2]
+            sampled_dest_gps = arr["dest_gps"][trip_indices]      # [flat_batch, 2]
+            sampled_flex = arr["flex_idx"][trip_indices]           # [flat_batch]
+
+            # Apply perturbation in batch
+            if self.perturbation >= 10:
+                pickup_deltas = self._sample_perturbation_batch(flat_batch)
+                dropoff_deltas = self._sample_perturbation_batch(flat_batch)
+                sampled_pickup_tw = self._shift_windows_batch(
+                    sampled_pickup_tw, "earlier", pickup_deltas
+                )
+                sampled_dropoff_tw = self._shift_windows_batch(
+                    sampled_dropoff_tw, "later", dropoff_deltas
+                )
+
+            pickup_idx = cust_idx * 2
+            dropoff_idx = pickup_idx + 1
+
+            h3_indices[:, pickup_idx] = sampled_origin_h3
+            h3_indices[:, dropoff_idx] = sampled_dest_h3
+            locs[:, pickup_idx] = sampled_origin_gps
+            locs[:, dropoff_idx] = sampled_dest_gps
+            time_windows[:, pickup_idx] = sampled_pickup_tw
+            time_windows[:, dropoff_idx] = sampled_dropoff_tw
+            demand[:, pickup_idx] = self.demand_per_customer
+            demand[:, dropoff_idx] = -self.demand_per_customer
+            user_id[:, pickup_idx] = traveler_id
+            user_id[:, dropoff_idx] = traveler_id
+            flexibility[:, pickup_idx] = sampled_flex
+            flexibility[:, dropoff_idx] = sampled_flex
+
+            # Build trip metadata (Python dicts — fast even in flat_batch loop)
+            indices_list = trip_indices.tolist()
+            for i, idx in enumerate(indices_list):
+                trip = trips[idx]
+                trip_metadata_batch[i][traveler_id] = {
                     "flexibility": trip["flexibility"],
                     "trip_purpose": trip["trip_purpose"],
                     "departure_location": trip["departure_location"],
@@ -199,44 +244,14 @@ class SFGenerator(Generator):
                     "departure_time_window": trip["departure_time_window"],
                     "arrival_time_window": trip["arrival_time_window"],
                 }
-                pickup_window = self._shift_window(
-                    trip["pickup_tw"],
-                    direction="earlier",
-                    delta=self._sample_perturbation_step(),
-                )
-                dropoff_window = self._shift_window(
-                    trip["dropoff_tw"],
-                    direction="later",
-                    delta=self._sample_perturbation_step(),
-                )
 
-                pickup_idx = cust_idx * 2
-                dropoff_idx = pickup_idx + 1
-
-                # Store H3 indices instead of GPS coordinates
-                h3_indices[instance_idx, pickup_idx] = self._h3_to_idx[trip["origin_h3"]]
-                h3_indices[instance_idx, dropoff_idx] = self._h3_to_idx[trip["destination_h3"]]
-
-                # Store GPS coordinates
-                locs[instance_idx, pickup_idx] = torch.tensor(trip["origin_gps"], device=self.device)
-                locs[instance_idx, dropoff_idx] = torch.tensor(trip["destination_gps"], device=self.device)
-
-                time_windows[instance_idx, pickup_idx] = torch.tensor(pickup_window, dtype=torch.float32, device=self.device)
-                time_windows[instance_idx, dropoff_idx] = torch.tensor(dropoff_window, dtype=torch.float32, device=self.device)
-                demand[instance_idx, pickup_idx] = self.demand_per_customer
-                demand[instance_idx, dropoff_idx] = -self.demand_per_customer
-
-                # Store user_id (traveler_id) for both pickup and dropoff nodes
-                user_id[instance_idx, pickup_idx] = traveler_id
-                user_id[instance_idx, dropoff_idx] = traveler_id
-
-                # Store flexibility index for both pickup and dropoff nodes
-                flex_idx = self._flexibility_to_index(trip["flexibility"])
-                flexibility[instance_idx, pickup_idx] = flex_idx
-                flexibility[instance_idx, dropoff_idx] = flex_idx
-
-            # Store trip metadata for this batch instance
-            trip_metadata_batch.append(trip_metadata)
+        # Bulk transfer to device
+        h3_indices = h3_indices.to(self.device)
+        locs = locs.to(self.device)
+        time_windows = time_windows.to(self.device)
+        demand = demand.to(self.device)
+        user_id = user_id.to(self.device)
+        flexibility = flexibility.to(self.device)
 
         if self.shuffle_pairs and self.num_customers > 1:
             h3_indices, time_windows, demand, locs, user_id, flexibility = self._shuffle_pairs(
@@ -489,6 +504,84 @@ class SFGenerator(Generator):
         if new_end <= new_start:
             new_end = min(self.day_minutes, new_start + max(duration, 10))
         return int(new_start), int(new_end)
+
+    def _precompute_trip_arrays(self):
+        """Pre-build CPU tensors for each traveler's trips for fast batch sampling."""
+        self._trip_arrays = {}
+        for traveler_id in self._traveler_ids:
+            trips = self._trips_by_traveler[traveler_id]
+            self._trip_arrays[traveler_id] = {
+                "origin_h3_idx": torch.tensor(
+                    [self._h3_to_idx[t["origin_h3"]] for t in trips], dtype=torch.long
+                ),
+                "dest_h3_idx": torch.tensor(
+                    [self._h3_to_idx[t["destination_h3"]] for t in trips], dtype=torch.long
+                ),
+                "pickup_tw": torch.tensor(
+                    [t["pickup_tw"] for t in trips], dtype=torch.float32
+                ),  # [n_trips, 2]
+                "dropoff_tw": torch.tensor(
+                    [t["dropoff_tw"] for t in trips], dtype=torch.float32
+                ),  # [n_trips, 2]
+                "origin_gps": torch.tensor(
+                    [t["origin_gps"] for t in trips], dtype=torch.float32
+                ),  # [n_trips, 2]
+                "dest_gps": torch.tensor(
+                    [t["destination_gps"] for t in trips], dtype=torch.float32
+                ),  # [n_trips, 2]
+                "flex_idx": torch.tensor(
+                    [self._flexibility_to_index(t["flexibility"]) for t in trips],
+                    dtype=torch.float32,
+                ),  # [n_trips]
+            }
+
+    def _sample_perturbation_batch(self, n: int) -> torch.Tensor:
+        """Sample perturbation deltas for *n* instances (CPU tensor)."""
+        if self.perturbation < 10:
+            return torch.zeros(n)
+        steps = torch.arange(10, self.perturbation + 1, 10)
+        indices = torch.randint(len(steps), (n,), generator=self.generator)
+        return steps[indices].float()
+
+    def _shift_windows_batch(
+        self,
+        windows: torch.Tensor,
+        direction: str,
+        deltas: torch.Tensor,
+    ) -> torch.Tensor:
+        """Batch version of _shift_window.
+
+        Args:
+            windows: [N, 2] time windows (start, end)
+            direction: "earlier" or "later"
+            deltas: [N] perturbation deltas
+
+        Returns:
+            [N, 2] shifted windows
+        """
+        starts = windows[:, 0]
+        ends = windows[:, 1]
+        duration = torch.clamp(ends - starts, min=0)
+
+        if direction == "earlier":
+            new_starts = torch.clamp(starts - deltas, min=0)
+            new_ends = torch.clamp(new_starts + duration, max=float(self.day_minutes))
+        elif direction == "later":
+            new_ends = torch.clamp(ends + deltas, max=float(self.day_minutes))
+            new_starts = torch.clamp(new_ends - duration, min=0)
+        else:
+            raise ValueError(f"Unknown direction '{direction}' for window shift.")
+
+        # Handle edge case: new_end <= new_start
+        too_small = new_ends <= new_starts
+        if too_small.any():
+            fix_ends = torch.clamp(
+                new_starts + torch.clamp(duration, min=10),
+                max=float(self.day_minutes),
+            )
+            new_ends = torch.where(too_small, fix_ends, new_ends)
+
+        return torch.stack([new_starts, new_ends], dim=-1)
 
     def _randint(self, high: int) -> int:
         if high <= 1:

@@ -54,14 +54,20 @@ class PDPTWEnv(nn.Module):
     - Even nodes (2, 4, 6, ...): Corresponding delivery locations
     - Pickup i is paired with delivery i+1
     
-    Masking Strategy:
-    - Immediate reachability: arrival must be within the candidate's time window
-    - One-step lookahead: after visiting a candidate, all onboard dropoffs 
-      (including the new pickup if applicable) must still be reachable within their time windows
+    Masking Strategy (simplified):
+    - Time window reachability: arrival must be within the candidate's time window
+    - Capacity constraint: vehicle must have room for pickup demand
+    - Precedence constraint: pickup must be visited before its delivery
+    - Forced delivery: if a vehicle has pending deliveries and their time windows
+      have expired, the mask is lifted to force completion by the same vehicle
+    - Depot blocked while pending: vehicle cannot return to depot with passengers onboard
+
+    Lateness Penalty:
+    - When a vehicle arrives at a node after its late time window, a penalty of
+      lateness_penalty_rate (default 10.0) per raw minute of lateness is accumulated
+    - The accumulated penalty is subtracted from the reward
+
     Dynamic Visitation Management:
-    - If a route segment returns to depot with pickups whose deliveries were not 
-      completed, those pickups are omitted from the effective visitation history
-    - Travel reward is computed on the effective route (omitting unresolved pickups)
     - Returning to depot starts a new vehicle with time reset to zero; vehicles used are counted
     """
     
@@ -70,6 +76,7 @@ class PDPTWEnv(nn.Module):
         generator: Optional[Callable] = None,
         vehicle_capacity: Optional[int] = None,
         vehicle_penalty: float = 0,
+        lateness_penalty_rate: float = 10.0,
         **kwargs
     ):
         super().__init__()
@@ -78,6 +85,7 @@ class PDPTWEnv(nn.Module):
             vehicle_capacity = getattr(generator, "vehicle_capacity")
         self.vehicle_capacity = vehicle_capacity
         self.vehicle_penalty = float(vehicle_penalty)
+        self.lateness_penalty_rate = float(lateness_penalty_rate)
         
     # =========================================================================
     # Core Environment Interface
@@ -198,6 +206,11 @@ class PDPTWEnv(nn.Module):
                 dtype=torch.int64,
                 device=device
             ),
+            "lateness_penalty": torch.zeros(
+                *batch_size, 1,
+                dtype=torch.float32,
+                device=device
+            ),
             "done": torch.zeros(
                 *batch_size,
                 dtype=torch.bool,
@@ -294,9 +307,21 @@ class PDPTWEnv(nn.Module):
             td, action, is_return_to_depot, batch_size, device
         )
         
+        # Lateness penalty: 10 * max(0, arrival - late_window) per raw minute
+        candidate_late_window = gather_by_index(td["time_windows"], action)[..., 1]  # [B, 1]
+        lateness_raw = torch.clamp(
+            arrival_time - candidate_late_window, min=0.0
+        )  # [B, 1]
+        # Don't penalize depot visits
+        lateness_raw = torch.where(
+            (action == 0).unsqueeze(-1), torch.zeros_like(lateness_raw), lateness_raw
+        )  # [B, 1]
+        step_penalty = self.lateness_penalty_rate * lateness_raw  # [B, 1]
+        new_lateness_penalty = td["lateness_penalty"] + step_penalty  # [B, 1]
+
         # Vehicle usage tracking
         vehicles_used = td["vehicles_used"] + is_return_to_depot.long().unsqueeze(-1)
-        
+
         # Build output state
         td_out = td.clone()
         td_out.update({
@@ -310,6 +335,7 @@ class PDPTWEnv(nn.Module):
             "previous_action": action.unsqueeze(-1),
             "i": td["i"] + 1,
             "vehicles_used": vehicles_used,
+            "lateness_penalty": new_lateness_penalty,
         })
         
         # Check termination conditions
@@ -353,18 +379,13 @@ class PDPTWEnv(nn.Module):
 
         td.set("cost", cost_tensor)
 
-        """
-        penalty = None
-        if "vehicles_used" in td.keys():
-            vehicles_used = td["vehicles_used"].squeeze(-1).float()
-            penalty = vehicles_used * self.vehicle_penalty
-            td.set("vehicle_penalty", penalty)
+        # Lateness penalty accumulated during the episode
+        lateness_penalty = td.get(
+            "lateness_penalty",
+            torch.zeros_like(cost_tensor).unsqueeze(-1)
+        ).squeeze(-1)
 
-        reward = -cost_tensor
-        if penalty is not None:
-            reward = reward + penalty
-        """
-        reward = -cost_tensor
+        reward = -cost_tensor - lateness_penalty
         return reward
     
     # =========================================================================
@@ -410,161 +431,83 @@ class PDPTWEnv(nn.Module):
     
     def _compute_action_mask(self, td: TensorDict) -> torch.Tensor:
         """
-        Compute action mask using immediate reachability and one-step lookahead.
-        
+        Compute action mask using time window reachability, capacity, and precedence.
+
+        No lookahead -- pending deliveries past their windows are force-unmasked
+        so the vehicle completes them (with a lateness penalty in step()).
+
         Args:
             td: Current state TensorDict
-            
+
         Returns:
             Boolean mask [batch_size, num_nodes] - True if action is valid
         """
         batch_size = td["h3_indices"].shape[0]
         num_nodes = td["h3_indices"].shape[1]
         device = td["h3_indices"].device
-        
+
         current_node = td["current_node"].squeeze(-1)
         current_time = td["current_time"]
         node_indices = torch.arange(num_nodes, device=device).expand(batch_size, -1)
-        
+
         is_depot = node_indices == 0
         is_pickup = (node_indices % 2 != 0) & ~is_depot
         is_dropoff = (node_indices % 2 == 0) & ~is_depot
-        
+
         # Track onboard pickups via pending schedule (stores dropoffs)
         pending_schedule = td["pending_schedule"]
         pending_mask = pending_schedule != 0
         onboard_pickups = torch.zeros_like(td["completed"])
         onboard_pickups.scatter_(1, torch.clamp(pending_schedule - 1, min=0), pending_mask)
-        
-        # Base availability
+
+        # Capacity constraint
         can_pickup = is_pickup & ~td["completed"] & ~onboard_pickups
         remaining_cap = td["vehicle_capacity"] - td["used_capacity"]
         demand_ok = (td["demand"] <= remaining_cap) | ~is_pickup
         can_pickup = can_pickup & demand_ok
-        
+
+        # Precedence constraint
         pickup_indices = torch.clamp(node_indices - 1, min=0)
         pickup_visited = td["visited"].gather(1, pickup_indices)
         can_dropoff = is_dropoff & pickup_visited & ~td["completed"]
-        
+
         current_not_depot = (td["current_node"].squeeze(-1) != 0).unsqueeze(-1)
         base_mask = (is_depot & current_not_depot) | can_pickup | can_dropoff
-        
-        # Immediate reachability
+
+        # Time window reachability (immediate check only, no lookahead)
         travel_time_to_candidate = self._get_travel_time(
-            td, 
-            current_node.unsqueeze(-1), 
+            td,
+            current_node.unsqueeze(-1),
             node_indices
         )
         arrival_at_candidate = current_time + travel_time_to_candidate
-        candidate_early = td["time_windows"][..., 0]
         candidate_late = td["time_windows"][..., 1]
-        time_at_candidate = torch.max(arrival_at_candidate, candidate_early)
-        
         time_feasible = arrival_at_candidate <= candidate_late
-        current_mask = base_mask & time_feasible
-        
-        
-        lookahead_valid = self._lookahead_validity(
-            td,
-            time_at_candidate,
-            node_indices,
-            num_nodes
-        )
-        
 
-        mask = current_mask & (~is_pickup | lookahead_valid)
-        #ask = current_mask & (~is_pickup)
+        mask = base_mask & time_feasible
 
-        # Mask depot if any dropoff is feasible; otherwise allow depot.
-        reachable_dropoff = (mask & is_dropoff).any(dim=-1, keepdim=True)
-        allow_depot = (~reachable_dropoff & current_not_depot).squeeze(-1)
-        mask[..., 0] = allow_depot
-        
-        return mask
-    
-    def _lookahead_validity(
-        self,
-        td: TensorDict,
-        time_at_candidate: torch.Tensor,
-        node_indices: torch.Tensor,
-        num_nodes: int
-    ) -> torch.Tensor:
-        """
-        Vectorized one-step lookahead: ensure every onboard dropoff (plus new pickup's
-        dropoff) can still be reached in time after choosing a candidate.
-
-        Vectorized version eliminates the capacity loop for 3-5x speedup.
-        """
-        batch_size = node_indices.shape[0]
-        device = node_indices.device
-        capacity = td["pending_schedule"].shape[1]
-
-        star_valid = torch.ones_like(time_at_candidate, dtype=torch.bool)
-
-        # === Vectorized check for existing onboard obligations ===
-        pending_targets = td["pending_schedule"]  # [B, capacity]
-        has_pending = pending_targets != 0  # [B, capacity]
-
+        # Forced delivery: if vehicle has pending deliveries whose time windows
+        # have expired, lift the mask to force completion by the same vehicle.
+        pending_targets = td["pending_schedule"]        # [B, capacity]
+        has_pending = pending_targets != 0               # [B, capacity]
         if has_pending.any():
-            # Get H3 indices and travel matrix
-            h3_indices = td["h3_indices"]  # [B, N]
-            travel_matrix = td["travel_time_matrix"]  # [B, H, H]
+            forced = torch.zeros_like(mask)              # [B, N]
+            forced.scatter_(1, pending_targets, has_pending)
+            forced[..., 0] = False                       # never force depot
+            forced = forced & ~td["completed"]           # only uncompleted
+            mask = mask | forced
 
-            # Get H3 for all candidates: [B, num_nodes] -> [B, num_nodes, capacity]
-            candidate_h3 = h3_indices.gather(1, node_indices)  # [B, num_nodes]
-            candidate_h3 = candidate_h3.unsqueeze(2).expand(-1, -1, capacity)
-
-            # Get H3 for all pending targets: [B, capacity] -> [B, num_nodes, capacity]
-            target_h3 = h3_indices.gather(1, pending_targets)  # [B, capacity]
-            target_h3 = target_h3.unsqueeze(1).expand(-1, num_nodes, -1)
-
-            # Lookup all travel times in parallel: [B, num_nodes, capacity]
-            batch_idx = torch.arange(batch_size, device=device).view(-1, 1, 1)
-            batch_idx = batch_idx.expand(batch_size, num_nodes, capacity)
-            travel_times = travel_matrix[batch_idx, candidate_h3, target_h3]
-
-            # Compute arrival times at all targets: [B, num_nodes, capacity]
-            time_at_candidate_exp = time_at_candidate.unsqueeze(2)  # [B, num_nodes, 1]
-            arrival_at_targets = time_at_candidate_exp + travel_times
-
-            # Get late time windows for all targets: [B, num_nodes, capacity]
-            time_windows = td["time_windows"]  # [B, N, 2]
-
-            # Gather time windows for pending targets: [B, capacity, 2]
-            pending_windows = time_windows.gather(
-                1,
-                pending_targets.unsqueeze(-1).expand(-1, -1, 2)
-            )  # [B, capacity, 2]
-
-            # Expand to [B, num_nodes, capacity, 2]
-            target_windows = pending_windows.unsqueeze(1).expand(-1, num_nodes, -1, -1)
-            target_late = target_windows[..., 1]  # [B, num_nodes, capacity]
-
-            # Check if any target would be missed: [B, num_nodes, capacity]
-            is_late = arrival_at_targets > target_late
-            has_pending_exp = has_pending.unsqueeze(1).expand(-1, num_nodes, -1)
-
-            # A candidate is invalid if it makes ANY pending target late
-            makes_target_late = is_late & has_pending_exp  # [B, num_nodes, capacity]
-            any_target_late = makes_target_late.any(dim=2)  # [B, num_nodes]
-
-            star_valid = star_valid & ~any_target_late
-
-        # === Check potential new dropoff if candidate is a pickup ===
-        candidate_dropoff = torch.where(
-            (node_indices % 2 != 0) & (node_indices != 0),
-            torch.clamp(node_indices + 1, max=num_nodes - 1),
-            torch.zeros_like(node_indices)
+        # Depot: allow only if no reachable dropoff AND no pending deliveries
+        has_any_pending = has_pending.any(dim=-1)        # [B]
+        reachable_dropoff = (mask & is_dropoff).any(dim=-1, keepdim=True)
+        allow_depot = (
+            ~reachable_dropoff.squeeze(-1)
+            & current_not_depot.squeeze(-1)
+            & ~has_any_pending
         )
-        has_new_drop = candidate_dropoff != 0
+        mask[..., 0] = allow_depot
 
-        if has_new_drop.any():
-            travel_new = self._get_travel_time(td, node_indices, candidate_dropoff)
-            arrival_new = time_at_candidate + travel_new
-            drop_late = gather_by_index(td["time_windows"], candidate_dropoff)[..., 1]
-            star_valid = star_valid & ~(has_new_drop & (arrival_new > drop_late))
-
-        return star_valid
+        return mask
     
     # =========================================================================
     # Schedule Management
@@ -654,14 +597,12 @@ class PDPTWEnv(nn.Module):
             mask: [B, T] boolean mask, True for valid actions to include in cost
         """
         B, T = actions.shape
-        device = actions.device
 
         # Start with all valid
         valid_mask = torch.ones_like(actions, dtype=torch.bool)
 
-        # Identify node types
+        # Identify depot positions
         is_depot = (actions == 0)
-        is_pickup = (actions % 2 == 1) & ~is_depot
 
         # For each pickup, find if its delivery appears before next depot
         # This requires per-batch processing due to sequential dependencies
@@ -706,10 +647,10 @@ class PDPTWEnv(nn.Module):
         valid_mask: torch.Tensor
     ) -> torch.Tensor:
         """
-        Vectorized: Compute travel costs for all routes in parallel.
+        Fully-batched travel cost computation — no Python loop over B.
 
-        When nodes are filtered out, we need to compute transitions between
-        consecutive VALID nodes, not just mask original transitions.
+        Strategy: stable-sort valid actions to the front, prepend depot,
+        batch-index H3 lookups and the travel-time matrix, then mask-sum.
 
         Args:
             td: TensorDict with h3_indices and travel_time_matrix
@@ -719,45 +660,46 @@ class PDPTWEnv(nn.Module):
         Returns:
             costs: [B] total travel time per batch instance
         """
-        B, T = actions.shape
+        B = actions.shape[0]
         device = actions.device
 
-        h3_indices = td["h3_indices"]  # [B, N]
+        h3_indices = td["h3_indices"]       # [B, N]
         travel_matrix = td["travel_time_matrix"]  # [B, H, H]
 
-        # For efficiency with variable-length valid sequences, process per batch
-        # (still much faster than legacy due to vectorized travel time lookups)
-        costs = []
+        # Number of valid actions per batch element
+        valid_counts = valid_mask.sum(dim=1)  # [B]
+        max_valid = int(valid_counts.max().item())
 
-        for b in range(B):
-            # Get valid actions for this batch
-            valid_actions = actions[b][valid_mask[b]]  # [T_valid]
+        if max_valid == 0:
+            return torch.zeros(B, device=device)
 
-            # Prepend depot (node 0) to match legacy behavior
-            # The vehicle always starts at the depot
-            depot_node = torch.tensor([0], dtype=valid_actions.dtype, device=device)
-            valid_actions = torch.cat([depot_node, valid_actions])  # [T_valid+1]
+        # Compact valid actions to the front via stable descending sort on mask
+        _, sort_indices = valid_mask.float().sort(dim=1, descending=True, stable=True)
+        compacted = actions.gather(1, sort_indices)[:, :max_valid]  # [B, max_valid]
 
-            if len(valid_actions) < 2:
-                # No transitions to compute
-                costs.append(torch.tensor(0.0, device=device))
-                continue
+        # Prepend depot (node 0) to form full route
+        depot = torch.zeros(B, 1, dtype=actions.dtype, device=device)
+        route = torch.cat([depot, compacted], dim=1)  # [B, max_valid + 1]
 
-            # Get H3 indices for valid actions
-            valid_h3 = h3_indices[b, valid_actions]  # [T_valid+1]
+        # Map node indices → H3 cell indices
+        batch_idx = torch.arange(B, device=device).unsqueeze(1)
+        route_h3 = h3_indices[batch_idx, route]  # [B, max_valid + 1]
 
-            # Compute all transitions
-            from_h3 = valid_h3[:-1]  # [T_valid]
-            to_h3 = valid_h3[1:]      # [T_valid]
+        # Consecutive transition pairs
+        from_h3 = route_h3[:, :-1]  # [B, max_valid]
+        to_h3   = route_h3[:, 1:]   # [B, max_valid]
 
-            # Lookup travel times - vectorized across all transitions
-            travel_times = travel_matrix[b, from_h3, to_h3]  # [T_valid]
+        # Transition t is valid when t < valid_counts (depot + t-th action exists)
+        trans_idx = torch.arange(max_valid, device=device).unsqueeze(0)  # [1, max_valid]
+        trans_mask = trans_idx < valid_counts.unsqueeze(1)  # [B, max_valid]
 
-            # Sum total cost
-            total_cost = travel_times.sum()
-            costs.append(total_cost)
+        # Batch travel-time lookup
+        batch_idx_2d = batch_idx.expand_as(from_h3)  # [B, max_valid]
+        travel_times = travel_matrix[batch_idx_2d, from_h3, to_h3]  # [B, max_valid]
 
-        return torch.stack(costs)
+        # Mask out invalid transitions and sum
+        costs = (travel_times * trans_mask.float()).sum(dim=1)  # [B]
+        return costs
 
     def _build_effective_routes(self, actions: torch.Tensor) -> list[list[int]]:
         """
