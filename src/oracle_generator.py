@@ -85,6 +85,7 @@ class SFGenerator(Generator):
         depot_h3: Optional[str] = None,
         shuffle_pairs: bool = False,
         seed: Optional[int] = None,
+        device: torch.device | str = "cpu",
         **kwargs,
     ):
         """
@@ -100,6 +101,12 @@ class SFGenerator(Generator):
             seed: Optional deterministic seed for sampling.
         """
         super().__init__(**kwargs)
+
+        # Normalize device to ensure it has an index
+        self.device = torch.device(device) if isinstance(device, str) else device
+        if self.device.type in ("mps", "cuda") and self.device.index is None:
+            self.device = torch.device(f"{self.device.type}:0")
+
         self.num_customers = num_customers
         self.perturbation = max(0, perturbation)
         self.vehicle_capacity = vehicle_capacity
@@ -166,15 +173,15 @@ class SFGenerator(Generator):
         num_nodes = self.num_customers * 2
 
         # H3 indices instead of GPS coordinates
-        h3_indices = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
+        h3_indices = torch.zeros(flat_batch, num_nodes, dtype=torch.long, device=self.device)
         # We also store GPS coordinates for rendering
-        locs = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
-        time_windows = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
-        demand = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
+        locs = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32, device=self.device)
+        time_windows = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32, device=self.device)
+        demand = torch.zeros(flat_batch, num_nodes, dtype=torch.float32, device=self.device)
         # User ID tensor - tracks which traveler each node belongs to
-        user_id = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
+        user_id = torch.zeros(flat_batch, num_nodes, dtype=torch.long, device=self.device)
         # Flexibility tensor - stores numeric flexibility index per node
-        flexibility = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
+        flexibility = torch.zeros(flat_batch, num_nodes, dtype=torch.float32, device=self.device)
         # Trip metadata - store as list of dicts for each batch instance
         # Each dict maps traveler_id -> trip metadata
         trip_metadata_batch = []
@@ -209,13 +216,13 @@ class SFGenerator(Generator):
                 # Store H3 indices instead of GPS coordinates
                 h3_indices[instance_idx, pickup_idx] = self._h3_to_idx[trip["origin_h3"]]
                 h3_indices[instance_idx, dropoff_idx] = self._h3_to_idx[trip["destination_h3"]]
-                
-                # Store GPS coordinates
-                locs[instance_idx, pickup_idx] = torch.tensor(trip["origin_gps"])
-                locs[instance_idx, dropoff_idx] = torch.tensor(trip["destination_gps"])
 
-                time_windows[instance_idx, pickup_idx] = torch.tensor(pickup_window, dtype=torch.float32)
-                time_windows[instance_idx, dropoff_idx] = torch.tensor(dropoff_window, dtype=torch.float32)
+                # Store GPS coordinates
+                locs[instance_idx, pickup_idx] = torch.tensor(trip["origin_gps"], device=self.device)
+                locs[instance_idx, dropoff_idx] = torch.tensor(trip["destination_gps"], device=self.device)
+
+                time_windows[instance_idx, pickup_idx] = torch.tensor(pickup_window, dtype=torch.float32, device=self.device)
+                time_windows[instance_idx, dropoff_idx] = torch.tensor(dropoff_window, dtype=torch.float32, device=self.device)
                 demand[instance_idx, pickup_idx] = self.demand_per_customer
                 demand[instance_idx, dropoff_idx] = -self.demand_per_customer
 
@@ -237,32 +244,32 @@ class SFGenerator(Generator):
             )
 
         # Add depot time window
-        depot_tw = torch.zeros(flat_batch, 1, 2, dtype=time_windows.dtype)
+        depot_tw = torch.zeros(flat_batch, 1, 2, dtype=time_windows.dtype, device=self.device)
         depot_tw[:, 0, 1] = float(self.day_minutes)
         time_windows = torch.cat([depot_tw, time_windows], dim=1)
 
         # Add depot H3 index at position 0
-        depot_h3_indices = torch.full((flat_batch, 1), self.depot_h3_idx, dtype=torch.long)
+        depot_h3_indices = torch.full((flat_batch, 1), self.depot_h3_idx, dtype=torch.long, device=self.device)
         h3_indices = torch.cat([depot_h3_indices, h3_indices], dim=1)
-        
+
         # Add depot GPS coordinates at position 0
         depot_gps = self._h3_to_gps.get(self.depot_h3, (37.7833, -122.4167)) # Default to downtown SF if not found
-        depot_locs = torch.tensor(depot_gps, dtype=torch.float32).expand(flat_batch, 1, 2)
+        depot_locs = torch.tensor(depot_gps, dtype=torch.float32, device=self.device).expand(flat_batch, 1, 2)
         locs = torch.cat([depot_locs, locs], dim=1)
 
         # Add depot user_id (0 for depot)
-        depot_user_id = torch.zeros(flat_batch, 1, dtype=torch.long)
+        depot_user_id = torch.zeros(flat_batch, 1, dtype=torch.long, device=self.device)
         user_id = torch.cat([depot_user_id, user_id], dim=1)
 
         # Add depot demand (0 for depot)
-        depot_demand = torch.zeros(flat_batch, 1, dtype=torch.float32)
+        depot_demand = torch.zeros(flat_batch, 1, dtype=torch.float32, device=self.device)
         demand = torch.cat([depot_demand, demand], dim=1)
 
         # Add depot flexibility (0 for depot)
-        depot_flexibility = torch.zeros(flat_batch, 1, dtype=torch.float32)
+        depot_flexibility = torch.zeros(flat_batch, 1, dtype=torch.float32, device=self.device)
         flexibility = torch.cat([depot_flexibility, flexibility], dim=1)
 
-        capacity = torch.full((flat_batch,), float(self.vehicle_capacity), dtype=torch.float32)
+        capacity = torch.full((flat_batch,), float(self.vehicle_capacity), dtype=torch.float32, device=self.device)
 
         # Reshape for batch dimensions
         h3_indices = h3_indices.view(*batch_shape, num_nodes + 1)
@@ -314,7 +321,7 @@ class SFGenerator(Generator):
         idx_to_h3 = {idx: h3 for idx, h3 in enumerate(h3_cells)}
 
         # Convert to tensor and convert seconds to minutes
-        travel_time_matrix = torch.tensor(df.values, dtype=torch.float32) / 60.0
+        travel_time_matrix = torch.tensor(df.values, dtype=torch.float32, device=self.device) / 60.0
 
         log.info(f"Loaded travel time matrix with {len(h3_cells)} H3 cells")
 

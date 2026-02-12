@@ -1,0 +1,16 @@
+2026-02-11 22:55:04 [INFO] Using device: mps:0
+2026-02-11 22:55:04 [WARNING] Note: MPS may be slower than CPU for RL due to frequent CPU-GPU transfers during env.step(). Consider using --device cpu
+2026-02-11 22:55:04 [INFO] Note: NumExpr detected 11 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2026-02-11 22:55:04 [INFO] NumExpr defaulting to 8 threads.
+2026-02-11 22:55:04 [INFO] Loaded travel time matrix with 31 H3 cells
+2026-02-11 22:55:04 [INFO] Policy parameters: 1575040
+2026-02-11 22:55:04 [INFO] Policy device: mps:0
+2026-02-11 22:55:08 [INFO] Generating validation dataset (50 instances)...
+2026-02-11 22:55:10 [INFO] ============================================================
+2026-02-11 22:55:10 [INFO] Epoch 1 / 1
+Epoch 0:   0%|          | 0/4 [00:00<?, ?batch/s]Epoch 0:  25%|██▌       | 1/4 [00:26<01:20, 26.96s/batch]Epoch 0:  50%|█████     | 2/4 [00:53<00:53, 26.84s/batch]Epoch 0:  75%|███████▌  | 3/4 [01:19<00:26, 26.38s/batch]Epoch 0: 100%|██████████| 4/4 [01:25<00:00, 18.41s/batch]                                                         2026-02-11 22:56:39 [INFO]   Train - loss: 217.9943  reward: -883.7396 +/- 75.6091  advantage: 32.6659  lr: 0.000100  (88.8s)
+2026-02-11 22:57:17 [INFO]   Val   - reward: -840.2286 +/- 65.7354  best: -804.8090  (38.0s)
+2026-02-11 22:57:17 [INFO] Checkpoint saved to checkpoints/pomo_reinforce/latest.pt
+2026-02-11 22:57:17 [INFO] Checkpoint saved to checkpoints/pomo_reinforce/best.pt
+2026-02-11 22:57:17 [INFO]   >> New best validation reward: -804.8090
+2026-02-11 22:57:17 [INFO] Training complete. Best val reward: -804.8090
