@@ -179,11 +179,11 @@ def train(
     # print(f"{tt_matrix=}")
     agent = PPOAgent(
         travel_time_matrix=tt_matrix,
-        gcn_hidden=32,
+        gcn_hidden=128,
         gcn_out=32,
         time_embed_dim=16,
         time_vocab_size=1500,
-        transformer_embed_dim=64,
+        transformer_embed_dim=128,
         action_dim=16,
         hidden_dim=512,
         policy_lr=1e-4,
@@ -229,10 +229,12 @@ def train(
         epoch_improvement = torch.zeros(num_envs, device=device)
         epoch_accepted = torch.zeros(num_envs, device=device)
 
-        epsilon = initial_epsilon - (initial_epsilon - final_epsilon) * (epoch - 1) / max(num_epochs - 1, 1)
+        epsilon = 0 #initial_epsilon - (initial_epsilon - final_epsilon) * (epoch - 1) / max(num_epochs - 1, 1)
         if epoch < 5:
-            epsilon = 1
-        action_epsilon = 0.0
+            epsilon = 0
+            action_epsilon = 1
+        else:
+            action_epsilon = 0.0
 
         base_info = None
 
@@ -266,12 +268,12 @@ def train(
                 #print(action_np)
 
                 action_tensor = torch.tensor(action_np, device=device, dtype=torch.long)
-                next_obs, env_reward, term, trunc, info = env.step(action_tensor)
+                next_obs, env_reward, baseline_reward, term, trunc, info = env.step(action_tensor)
 
                 #print(info)
 
                 base_action = torch.full((num_envs,), 12, dtype=torch.long, device=device) # action 0
-                _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+                _, baseline_reward_old, _, _, _, base_info = baseline_env.step(base_action)
 
                 adjusted_reward = env_reward - baseline_reward
 
@@ -327,9 +329,9 @@ def train(
         # --- End of Episode: Updates ---
 
         stats = agent.update(
-            num_value_epochs=5,
+            num_value_epochs=100,
             num_policy_epochs=3,
-            batch_size=64,
+            batch_size=100,
             num_envs=num_envs,
             num_steps=num_customers
         )
@@ -580,4 +582,4 @@ def main():
     )
 
 if __name__ == "__main__":
-    test_online_dataset()
+    main() #test_online_dataset()

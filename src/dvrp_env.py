@@ -19,6 +19,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import sys
 from pathlib import Path
+import copy
 
 # Add parent directory to sys.path to import rl4co
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -459,14 +460,18 @@ class DVRPEnv(gym.Env):
         )
 
         # Append to current/real requests
+        self.current_requests_copy = self.current_requests.clone() #copy.deepcopy(self.current_requests)
         self.current_requests = self._append_to_current(self.current_requests, perturbed_request)
+        self.current_requests_copy = self._append_to_current(self.current_requests_copy, new_request)
         self.real_requests = self._append_to_current(self.real_requests, new_request)
 
         # Evaluate costs
         new_costs = torch.zeros(self.batch_size, device=self.device)
+        new_costs_baseline = torch.zeros(self.batch_size, device=self.device)
         solver_failures = torch.zeros(self.batch_size, dtype=torch.bool, device=self.device)
 
         solver_input = self._get_solver_input(self.current_requests)
+        solver_input_baseline = self._get_solver_input(self.current_requests_copy)
 
         if self.policy is not None:
             with torch.no_grad():
@@ -486,14 +491,27 @@ class DVRPEnv(gym.Env):
                     max_vehicles=self.max_vehicles,
                     time_limit_seconds=self.solver_time_limit,
                 )
-                cost = result["total_time"]
+                cost = float(result["total_time"])
                 if cost == float("inf"):
                     solver_failures[b] = True
                     new_costs[b] = cost
                 else:
                     new_costs[b] = cost
+                single_td_baseline = solver_input_baseline[b:b+1]
+                result_baseline = darp_solver(
+                    single_td_baseline,
+                    max_vehicles=self.max_vehicles,
+                    time_limit_seconds=self.solver_time_limit,
+                )
+                cost_baseline = float(result_baseline["total_time"])
+                if cost_baseline == float("inf"):
+                    solver_failures[b] = True
+                    new_costs_baseline[b] = cost_baseline
+                else:
+                    new_costs_baseline[b] = cost_baseline
 
         rewards = self.previous_cost - new_costs - patience_penalties
+        rewards_baseline = self.previous_cost - new_costs_baseline - patience_penalties
         rewards = torch.where(
             solver_failures,
             torch.tensor(-5000.0, device=self.device),
@@ -520,7 +538,7 @@ class DVRPEnv(gym.Env):
             "solver_failed": solver_failures,
         }
 
-        return observation, rewards, terminated, truncated, info
+        return observation, rewards, rewards_baseline, terminated, truncated, info
 
     def _encode_location_onehot(self, location_idx: int) -> np.ndarray:
         """

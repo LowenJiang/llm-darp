@@ -334,6 +334,8 @@ class SFGenerator(Generator):
         if missing_cols:
             raise ValueError(f"Missing columns {missing_cols} in {self.csv_path}")
 
+        df = df[(df["departure_time_window"] >= "14:00-14:00") & (df["departure_time_window"] <= "19:00-19:00")]
+
         trips: Dict[int, List[Dict[str, Tuple[int, int] | H3Index]]] = {}
         for traveler_id, group in df.groupby("traveler_id"):
             processed: List[Dict[str, Tuple[int, int] | H3Index]] = []

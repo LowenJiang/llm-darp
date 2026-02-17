@@ -1,0 +1,100 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-80.9607)
+tensor(-2167.0522)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.55it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.40it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {7: 44, 11: 42, 1: 41, 15: 40, 9: 39}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.306s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8999999761581421, 0.9300000071525574, 0.7900000214576721, 0.9200000166893005]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 171.2094
+    Epoch 100/100, Loss: 17.0953
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [0, 3, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['1.000', '0.000', '0.000', '0.000']
+    Customer 2: ['0.000', '0.000', '0.000', '1.000']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 1/1250] Rewards: -80.96 | Cost: 2166.77 | Acc: 26.83% | Loss: -0.0049
+tensor(-5.9347)
+tensor(-2137.1062)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.56it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.48it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 1200 samples...
+  [Embedding Update] Training on 1200 samples from 30 customers
+  [Embedding Update] Action distribution: {4: 92, 15: 85, 14: 83, 7: 83, 0: 80}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.306s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8999999761581421, 0.9300000071525574, 0.7900000214576721, 0.9200000166893005]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 31.0005
+    Epoch 100/100, Loss: 5.7460
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [0, 3, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['1.000', '0.000', '0.000', '0.000']
+    Customer 2: ['0.000', '0.000', '0.014', '0.986']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 2/1250] Rewards: -5.93 | Cost: 2136.84 | Acc: 25.67% | Loss: -0.0041
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 220, in step
+    decision = self._get_acceptance_decision(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 469, in _get_acceptance_decision
+    (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/common.py", line 76, in new_method
+    return method(self, other)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/arraylike.py", line 40, in __eq__
+    return self._cmp_method(other, operator.eq)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 6138, in _cmp_method
+    res_values = ops.comparison_op(lvalues, rvalues, op)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 344, in comparison_op
+    res_values = comp_method_OBJECT_ARRAY(op, lvalues, rvalues)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 129, in comp_method_OBJECT_ARRAY
+    result = libops.scalar_compare(x.ravel(), y, op)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 220, in step
+    decision = self._get_acceptance_decision(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 469, in _get_acceptance_decision
+    (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/common.py", line 76, in new_method
+    return method(self, other)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/arraylike.py", line 40, in __eq__
+    return self._cmp_method(other, operator.eq)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 6138, in _cmp_method
+    res_values = ops.comparison_op(lvalues, rvalues, op)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 344, in comparison_op
+    res_values = comp_method_OBJECT_ARRAY(op, lvalues, rvalues)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 129, in comp_method_OBJECT_ARRAY
+    result = libops.scalar_compare(x.ravel(), y, op)
+KeyboardInterrupt

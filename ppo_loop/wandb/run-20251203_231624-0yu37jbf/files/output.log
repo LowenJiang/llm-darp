@@ -1,0 +1,98 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-106.2784)
+tensor(-2142.1226)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.54it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.43it/s]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {7: 43, 13: 42, 11: 41, 0: 40, 1: 40}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.314s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 30)
+  [Embedding Update] Error: 'NoneType' object has no attribute 'get'
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 384, in update_embedding_model
+    dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 128, in __init__
+    self.ind_matrix = self._compute_indicator_matrix(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 294, in _compute_indicator_matrix
+    flex_would_accept = self._would_accept_action_csv(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 248, in _would_accept_action_csv
+    decision = decisions.get(flex_column)
+AttributeError: 'NoneType' object has no attribute 'get'
+[Epoch 1/1250] Rewards: -106.28 | Cost: 2141.84 | Acc: 26.50% | Loss: -0.0040
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 259, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 377, in _load_trips
+    trip_purpose = str(row["trip_purpose"]).strip()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 1133, in __getitem__
+    return self._get_value(key)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 1252, in _get_value
+    return self._values[loc]
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 834, in _values
+    @property
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 259, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 377, in _load_trips
+    trip_purpose = str(row["trip_purpose"]).strip()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 1133, in __getitem__
+    return self._get_value(key)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 1252, in _get_value
+    return self._values[loc]
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 834, in _values
+    @property
+KeyboardInterrupt

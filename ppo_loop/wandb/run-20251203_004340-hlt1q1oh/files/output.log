@@ -1,0 +1,32 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-81.6601)
+tensor(-81.6601)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:29<00:00, 14.25s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:26<00:00,  8.82s/it]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 0 samples...
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 528, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 515, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 453, in train
+    embedding_model = update_embedding_model(
+TypeError: update_embedding_model() got an unexpected keyword argument 'device'
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 528, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 515, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 453, in train
+    embedding_model = update_embedding_model(
+TypeError: update_embedding_model() got an unexpected keyword argument 'device'

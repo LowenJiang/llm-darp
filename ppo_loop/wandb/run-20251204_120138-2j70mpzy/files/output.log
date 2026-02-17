@@ -1,0 +1,126 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-87.2055)
+tensor(-2195.7363)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.60it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.51it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {7: 44, 11: 42, 15: 41, 1: 41, 13: 40}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.280s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8700000047683716, 0.9100000262260437, 0.800000011920929, 0.8899999856948853]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 175.4351
+    Epoch 100/100, Loss: 12.0036
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [0, 1, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.967', '0.000', '0.032', '0.000']
+    Customer 2: ['0.000', '1.000', '0.000', '0.000']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 1/1250] Rewards: -87.21 | Cost: 2195.44 | Acc: 27.83% | Loss: -0.0050
+tensor(-169.6572)
+tensor(-2249.8521)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.56it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.41it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 1200 samples...
+  [Embedding Update] Training on 1200 samples from 30 customers
+  [Embedding Update] Action distribution: {15: 87, 2: 84, 7: 83, 0: 83, 4: 82}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.311s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8700000047683716, 0.9100000262260437, 0.800000011920929, 0.8899999856948853]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 34.5726
+    Epoch 100/100, Loss: -1.6340
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [0, 1, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.960', '0.000', '0.040', '0.000']
+    Customer 2: ['0.000', '0.989', '0.011', '0.000']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 2/1250] Rewards: -169.66 | Cost: 2249.55 | Acc: 26.33% | Loss: -0.0041
+tensor(-15.0400)
+tensor(-1987.2559)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.59it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.47it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 1800 samples...
+  [Embedding Update] Training on 1800 samples from 30 customers
+  [Embedding Update] Action distribution: {9: 135, 2: 128, 7: 122, 0: 119, 12: 119}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.297s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8700000047683716, 0.9100000262260437, 0.800000011920929, 0.8899999856948853]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: -0.6033
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 452, in train
+    embedding_model = update_embedding_model(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 443, in update_embedding_model
+    optimizer.step()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 516, in wrapper
+    out = func(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 81, in _use_grad
+    ret = func(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/adam.py", line 221, in step
+    self._cuda_graph_capture_health_check()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 457, in _cuda_graph_capture_health_check
+    and torch.cuda.is_available()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 177, in is_available
+    return device_count() > 0
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 1035, in device_count
+    nvml_count = _device_count_amdsmi() if torch.version.hip else _device_count_nvml()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 986, in _device_count_nvml
+    raw_cnt = _raw_device_count_nvml()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 827, in _raw_device_count_nvml
+    rc = nvml_h.nvmlInit()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 452, in train
+    embedding_model = update_embedding_model(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 443, in update_embedding_model
+    optimizer.step()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 516, in wrapper
+    out = func(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 81, in _use_grad
+    ret = func(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/adam.py", line 221, in step
+    self._cuda_graph_capture_health_check()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 457, in _cuda_graph_capture_health_check
+    and torch.cuda.is_available()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 177, in is_available
+    return device_count() > 0
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 1035, in device_count
+    nvml_count = _device_count_amdsmi() if torch.version.hip else _device_count_nvml()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 986, in _device_count_nvml
+    raw_cnt = _raw_device_count_nvml()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py", line 827, in _raw_device_count_nvml
+    rc = nvml_h.nvmlInit()
+KeyboardInterrupt

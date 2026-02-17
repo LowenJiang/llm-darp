@@ -1,0 +1,37 @@
+{
+  "os": "Linux-5.14.0-427.40.1.el9_4.x86_64-x86_64-with-glibc2.34",
+  "python": "CPython 3.9.21",
+  "startedAt": "2025-12-04T23:27:00.701788Z",
+  "args": [
+    "--episodes",
+    "25_000",
+    "--num-envs",
+    "20"
+  ],
+  "program": "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py",
+  "codePath": "ppo_loop/meta_train.py",
+  "codePathLocal": "meta_train.py",
+  "git": {
+    "remote": "git@github.com:zhangz73/llm-darp.git",
+    "commit": "14a7c2cd955b65112e81d0590ab9a886786ed703"
+  },
+  "email": "zz564@cornell.edu",
+  "root": "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop",
+  "host": "alpha1",
+  "executable": "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/bin/python3",
+  "cpu_count": 96,
+  "cpu_count_logical": 192,
+  "disk": {
+    "/": {
+      "total": "942379323392",
+      "used": "84217798656"
+    }
+  },
+  "memory": {
+    "total": "1081865527296"
+  },
+  "slurm": {
+    "conf": "/cm/shared/apps/slurm/var/etc/slurm/slurm.conf"
+  },
+  "writerId": "16jpnwk2p1hpuald7hap47miuoli7n3b"
+}

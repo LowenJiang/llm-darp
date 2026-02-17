@@ -1,0 +1,121 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-36.7440)
+tensor(-2045.8776)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.43it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.33it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 300 samples...
+  [Embedding Update] Training on 300 samples from 30 customers
+  [Embedding Update] Action distribution: {10: 28, 9: 27, 13: 25, 11: 23, 6: 22}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.310s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.9100000262260437, 0.9300000071525574, 0.800000011920929, 0.9100000262260437]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/20, Loss: 130.2268
+    Epoch 20/20, Loss: 21.6398
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 3, 2]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.002', '0.002', '0.004', '0.993']
+    Customer 2: ['0.000', '0.001', '0.001', '0.998']
+    Customer 3: ['0.004', '0.000', '0.980', '0.016']
+[Epoch 1/2500] Rewards: -36.74 | Cost: 2045.64 | Acc: 27.00% | Loss: -0.0075
+tensor(-94.4846)
+tensor(-2228.2166)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.44it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.60it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {9: 53, 10: 47, 11: 42, 7: 41, 5: 40}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.323s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.9100000262260437, 0.9300000071525574, 0.800000011920929, 0.9100000262260437]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/20, Loss: 44.0471
+    Epoch 20/20, Loss: 19.2437
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 3, 3]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.000', '1.000']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 2/2500] Rewards: -94.48 | Cost: 2227.90 | Acc: 28.33% | Loss: -0.0067
+tensor(-87.0147)
+tensor(-2354.1731)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.41it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.56it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 900 samples...
+  [Embedding Update] Training on 900 samples from 30 customers
+  [Embedding Update] Action distribution: {9: 87, 0: 60, 13: 59, 11: 58, 10: 58}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 0.839s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.9100000262260437, 0.9300000071525574, 0.800000011920929, 0.9100000262260437]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/20, Loss: 23.0534
+    Epoch 20/20, Loss: 14.4869
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 3, 3]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.023', '0.977']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 3/2500] Rewards: -87.01 | Cost: 2353.91 | Acc: 25.33% | Loss: -0.0071
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 259, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 237, in forward
+    td = env.step(td)["next"]
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/common/base.py", line 129, in step
+    td = self._step(td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 155, in _step
+    pending_count = torch.clamp(pending_count - is_dropoff.long().unsqueeze(-1), min=0)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 259, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 237, in forward
+    td = env.step(td)["next"]
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/common/base.py", line 129, in step
+    td = self._step(td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 155, in _step
+    pending_count = torch.clamp(pending_count - is_dropoff.long().unsqueeze(-1), min=0)
+KeyboardInterrupt

@@ -1,0 +1,56 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(87.2684)
+tensor(-2465.8486)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:07<00:00,  5.09it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  6.65it/s]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 60 samples...
+  [Embedding Update] Insufficient data: 60 < 256. Skipping update.
+[Epoch 1/50] Rewards: 87.27 | Cost: 2464.11 | Acc: 96.67% | Loss: -0.0127
+tensor(-284.1316)
+tensor(-2744.3323)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:07<00:00,  5.20it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  6.36it/s]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 60 samples...
+  [Embedding Update] Insufficient data: 60 < 256. Skipping update.
+[Epoch 2/50] Rewards: -284.13 | Cost: 2742.74 | Acc: 90.00% | Loss: -0.0102
+tensor(28.2232)
+tensor(-2380.9688)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+ 32%|████████████████████████████████▌                                                                   | 13/40 [00:02<00:04,  5.41it/s]
+Traceback (most recent call last):                                                                                                       
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 440, in train
+    train_stats = agent.update(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 682, in update
+    batch_rewards = rewards[batch_idx]
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 440, in train
+    train_stats = agent.update(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 682, in update
+    batch_rewards = rewards[batch_idx]
+KeyboardInterrupt

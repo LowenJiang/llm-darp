@@ -1,0 +1,570 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-73.7116)
+tensor(-73.7116)
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 26 customers
+  [Embedding Update] Action distribution: {8: 898, 14: 893, 13: 860, 7: 824, 4: 820}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 0.759s
+  [Embedding Update] Indicator matrix mean per flexibility type: [1.0, 0.9800000190734863, 0.9300000071525574, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/50, Loss: 64.5775
+    Epoch 50/50, Loss: -1440.3986
+  [Embedding Update] Sample predictions for customers [np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]: [0, 2, 1, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 5: ['1.000', '0.000', '0.000', '0.000']
+    Customer 6: ['0.000', '0.000', '0.996', '0.004']
+    Customer 7: ['0.000', '0.978', '0.019', '0.003']
+	Training value network...
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:31<00:00, 15.19s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:28<00:00, 14.02s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 1/50] Rewards: -73.71 | Cost: 2531.87 | Acc: 26.23% | Loss: -0.0007
+tensor(-83.4299)
+tensor(-83.4299)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:34<00:00, 15.48s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:24<00:00, 12.19s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 2/50] Rewards: -83.43 | Cost: 2574.04 | Acc: 94.49% | Loss: 0.2148
+tensor(-62.3019)
+tensor(-62.3019)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:29<00:00, 14.98s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:25<00:00, 12.91s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 3/50] Rewards: -62.30 | Cost: 2539.53 | Acc: 94.65% | Loss: 0.2057
+tensor(-86.4752)
+tensor(-86.4752)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:25<00:00, 14.58s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.85s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 4/50] Rewards: -86.48 | Cost: 2548.48 | Acc: 94.60% | Loss: 0.1978
+tensor(-78.2664)
+tensor(-78.2664)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:29<00:00, 14.92s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.78s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 5/50] Rewards: -78.27 | Cost: 2547.72 | Acc: 94.68% | Loss: 0.1910
+tensor(-57.0143)
+tensor(-57.0143)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.76s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.64s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 6/50] Rewards: -57.01 | Cost: 2579.16 | Acc: 94.86% | Loss: 0.1757
+tensor(-55.7938)
+tensor(-55.7938)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.74s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.80s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 7/50] Rewards: -55.79 | Cost: 2571.96 | Acc: 95.03% | Loss: 0.1590
+tensor(-53.0232)
+tensor(-53.0232)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:30<00:00, 15.06s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:26<00:00, 13.49s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 8/50] Rewards: -53.02 | Cost: 2525.52 | Acc: 95.39% | Loss: 0.1401
+tensor(-47.0382)
+tensor(-47.0382)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.27s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.74s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 9/50] Rewards: -47.04 | Cost: 2544.04 | Acc: 95.87% | Loss: 0.1143
+tensor(-35.4663)
+tensor(-35.4663)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:26<00:00, 14.70s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.76s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML        
+[Epoch 10/50] Rewards: -35.47 | Cost: 2489.67 | Acc: 96.50% | Loss: 0.0866
+  warnings.warn("Can't initialize NVML")
+
+[Eval Epoch 10] Batch 1000:
+  Avg Cost:     2499.75 (Base: 2481.74)
+  Improvement:  -3.61% (-18.02 cost units)
+  Acceptance:   97.0%
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-13.9196)
+tensor(-13.9196)
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 26 customers
+  [Embedding Update] Action distribution: {12: 9728, 13: 1351, 8: 791, 9: 277, 10: 164}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.287s
+  [Embedding Update] Indicator matrix mean per flexibility type: [1.0, 1.0, 0.8500000238418579, 1.0]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/50, Loss: -1449.9894
+    Epoch 50/50, Loss: -2945.7679
+  [Embedding Update] Sample predictions for customers [np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]: [0, 2, 1, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 5: ['1.000', '0.000', '0.000', '0.000']
+    Customer 6: ['0.000', '0.000', '1.000', '0.000']
+    Customer 7: ['0.000', '0.656', '0.344', '0.000']
+	Training value network...
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.22s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.81s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 11/50] Rewards: -13.92 | Cost: 2538.00 | Acc: 96.97% | Loss: 0.0664
+tensor(-14.1687)
+tensor(-14.1687)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.72s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.76s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 12/50] Rewards: -14.17 | Cost: 2482.44 | Acc: 96.99% | Loss: 0.0492
+tensor(-34.3445)
+tensor(-34.3445)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.79s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.94s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 13/50] Rewards: -34.34 | Cost: 2546.49 | Acc: 97.37% | Loss: 0.0349
+tensor(-14.7093)
+tensor(-14.7093)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:35<00:00, 15.53s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.67s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 14/50] Rewards: -14.71 | Cost: 2514.11 | Acc: 97.51% | Loss: 0.0252
+tensor(-15.5588)
+tensor(-15.5588)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.79s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.75s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 15/50] Rewards: -15.56 | Cost: 2493.50 | Acc: 97.95% | Loss: 0.0190
+tensor(-20.2360)
+tensor(-20.2360)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:26<00:00, 14.60s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.73s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 16/50] Rewards: -20.24 | Cost: 2543.12 | Acc: 98.13% | Loss: 0.0148
+tensor(-21.3253)
+tensor(-21.3253)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:29<00:00, 14.93s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:28<00:00, 14.01s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 17/50] Rewards: -21.33 | Cost: 2522.86 | Acc: 98.37% | Loss: 0.0125
+tensor(-2.1396)
+tensor(-2.1396)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.75s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.76s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 18/50] Rewards: -2.14 | Cost: 2518.84 | Acc: 98.30% | Loss: 0.0113
+tensor(-14.5598)
+tensor(-14.5598)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.22s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.89s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 19/50] Rewards: -14.56 | Cost: 2507.84 | Acc: 98.41% | Loss: 0.0096
+tensor(-6.3585)
+tensor(-6.3585)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:34<00:00, 15.44s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:28<00:00, 14.06s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML        
+[Epoch 20/50] Rewards: -6.36 | Cost: 2514.90 | Acc: 98.50% | Loss: 0.0089
+  warnings.warn("Can't initialize NVML")
+
+[Eval Epoch 20] Batch 1000:
+  Avg Cost:     2482.40 (Base: 2478.58)
+  Improvement:  -3.26% (-3.83 cost units)
+  Acceptance:   98.4%
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-4.5750)
+tensor(-4.5750)
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 26 customers
+  [Embedding Update] Action distribution: {12: 11615, 13: 681, 8: 251, 9: 102, 10: 37}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 0.753s
+  [Embedding Update] Indicator matrix mean per flexibility type: [1.0, 1.0, 0.949999988079071, 1.0]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/50, Loss: -2969.5755
+    Epoch 50/50, Loss: -4810.0149
+  [Embedding Update] Sample predictions for customers [np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]: [0, 2, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 5: ['1.000', '0.000', '0.000', '0.000']
+    Customer 6: ['0.000', '0.000', '1.000', '0.000']
+    Customer 7: ['0.000', '0.016', '0.984', '0.000']
+	Training value network...
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:30<00:00, 15.03s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.72s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 21/50] Rewards: -4.58 | Cost: 2526.82 | Acc: 98.44% | Loss: 0.0068
+tensor(-18.9291)
+tensor(-18.9291)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:38<00:00, 15.83s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:28<00:00, 14.10s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 22/50] Rewards: -18.93 | Cost: 2497.49 | Acc: 99.15% | Loss: 0.0081
+tensor(-23.0622)
+tensor(-23.0622)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:30<00:00, 15.03s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.72s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 23/50] Rewards: -23.06 | Cost: 2517.78 | Acc: 99.21% | Loss: 0.0073
+tensor(-15.8099)
+tensor(-15.8099)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:29<00:00, 15.00s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.70s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 24/50] Rewards: -15.81 | Cost: 2486.64 | Acc: 99.13% | Loss: 0.0047
+tensor(-19.3708)
+tensor(-19.3708)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:25<00:00, 14.58s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.63s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 25/50] Rewards: -19.37 | Cost: 2527.42 | Acc: 99.15% | Loss: 0.0030
+tensor(-16.2530)
+tensor(-16.2530)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:31<00:00, 15.15s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.69s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 26/50] Rewards: -16.25 | Cost: 2490.57 | Acc: 99.27% | Loss: 0.0035
+tensor(3.1293)
+tensor(3.1293)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:26<00:00, 14.68s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.59s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 27/50] Rewards: 3.13 | Cost: 2454.81 | Acc: 99.22% | Loss: 0.0021
+tensor(-6.1181)
+tensor(-6.1181)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:25<00:00, 14.52s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.66s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 28/50] Rewards: -6.12 | Cost: 2478.02 | Acc: 99.32% | Loss: 0.0035
+tensor(-10.7115)
+tensor(-10.7115)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:31<00:00, 15.20s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.68s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 29/50] Rewards: -10.71 | Cost: 2488.92 | Acc: 99.43% | Loss: 0.0012
+tensor(-7.4209)
+tensor(-7.4209)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:33<00:00, 15.38s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:28<00:00, 14.23s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML        
+[Epoch 30/50] Rewards: -7.42 | Cost: 2530.83 | Acc: 99.41% | Loss: 0.0013
+  warnings.warn("Can't initialize NVML")
+
+[Eval Epoch 30] Batch 1000:
+  Avg Cost:     2473.20 (Base: 2506.65)
+  Improvement:  -1.84% (33.45 cost units)
+  Acceptance:   99.5%
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-7.8098)
+tensor(-7.8098)
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 26 customers
+  [Embedding Update] Action distribution: {12: 12154, 13: 394, 8: 124, 9: 40, 10: 25}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 0.736s
+  [Embedding Update] Indicator matrix mean per flexibility type: [1.0, 1.0, 0.949999988079071, 0.9900000095367432]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/50, Loss: -4859.0167
+    Epoch 50/50, Loss: -6121.9630
+  [Embedding Update] Sample predictions for customers [np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]: [0, 2, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 5: ['1.000', '0.000', '0.000', '0.000']
+    Customer 6: ['0.009', '0.001', '0.990', '0.000']
+    Customer 7: ['0.000', '0.000', '1.000', '0.000']
+	Training value network...
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.20s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.77s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 31/50] Rewards: -7.81 | Cost: 2500.53 | Acc: 99.45% | Loss: 0.0006
+tensor(-7.7985)
+tensor(-7.7985)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:26<00:00, 14.70s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.64s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 32/50] Rewards: -7.80 | Cost: 2507.31 | Acc: 99.16% | Loss: 0.0011
+tensor(-1.6050)
+tensor(-1.6050)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:35<00:00, 15.51s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.75s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 33/50] Rewards: -1.60 | Cost: 2500.57 | Acc: 99.11% | Loss: -0.0007
+tensor(-4.9285)
+tensor(-4.9285)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:29<00:00, 14.92s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:26<00:00, 13.48s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 34/50] Rewards: -4.93 | Cost: 2533.92 | Acc: 99.16% | Loss: 0.0001
+tensor(-6.4066)
+tensor(-6.4066)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:24<00:00, 14.45s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.61s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 35/50] Rewards: -6.41 | Cost: 2453.51 | Acc: 99.24% | Loss: -0.0007
+tensor(-0.9870)
+tensor(-0.9870)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:27<00:00, 14.70s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.70s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 36/50] Rewards: -0.99 | Cost: 2502.48 | Acc: 99.21% | Loss: -0.0002
+tensor(-2.9359)
+tensor(-2.9359)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:26<00:00, 14.67s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.76s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 37/50] Rewards: -2.94 | Cost: 2517.13 | Acc: 99.19% | Loss: 0.0001
+tensor(-11.5091)
+tensor(-11.5091)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:30<00:00, 15.00s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.89s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 38/50] Rewards: -11.51 | Cost: 2516.79 | Acc: 99.35% | Loss: -0.0003
+tensor(-9.9978)
+tensor(-9.9978)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:35<00:00, 15.59s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.95s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 39/50] Rewards: -10.00 | Cost: 2527.51 | Acc: 99.41% | Loss: -0.0011
+tensor(0.4368)
+tensor(0.4368)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.29s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.56s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML        
+[Epoch 40/50] Rewards: 0.44 | Cost: 2487.06 | Acc: 99.16% | Loss: -0.0001
+  warnings.warn("Can't initialize NVML")
+
+[Eval Epoch 40] Batch 1000:
+  Avg Cost:     2533.21 (Base: 2482.80)
+  Improvement:  -5.70% (-50.41 cost units)
+  Acceptance:   99.2%
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(3.4290)
+tensor(3.4290)
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 26 customers
+  [Embedding Update] Action distribution: {12: 12295, 13: 324, 8: 81, 9: 37, 4: 13}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 0.738s
+  [Embedding Update] Indicator matrix mean per flexibility type: [1.0, 1.0, 0.949999988079071, 1.0]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/50, Loss: -6136.8968
+    Epoch 50/50, Loss: -6470.9260
+  [Embedding Update] Sample predictions for customers [np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]: [0, 0, 0, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 5: ['1.000', '0.000', '0.000', '0.000']
+    Customer 6: ['1.000', '0.000', '0.000', '0.000']
+    Customer 7: ['1.000', '0.000', '0.000', '0.000']
+	Training value network...
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.25s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.77s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 41/50] Rewards: 3.43 | Cost: 2525.04 | Acc: 99.24% | Loss: -0.0006
+tensor(-4.1285)
+tensor(-4.1285)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:35<00:00, 15.51s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:28<00:00, 14.01s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 42/50] Rewards: -4.13 | Cost: 2488.29 | Acc: 99.10% | Loss: 0.0003
+tensor(1.8994)
+tensor(1.8994)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:34<00:00, 15.47s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.91s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 43/50] Rewards: 1.90 | Cost: 2488.71 | Acc: 99.07% | Loss: 0.0003
+tensor(0.9191)
+tensor(0.9191)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:30<00:00, 15.09s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.86s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 44/50] Rewards: 0.92 | Cost: 2488.70 | Acc: 99.05% | Loss: -0.0006
+tensor(-24.7127)
+tensor(-24.7127)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:33<00:00, 15.32s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.68s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 45/50] Rewards: -24.71 | Cost: 2513.15 | Acc: 99.14% | Loss: -0.0005
+tensor(-3.2009)
+tensor(-3.2009)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:23<00:00, 14.38s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.66s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 46/50] Rewards: -3.20 | Cost: 2481.45 | Acc: 99.06% | Loss: 0.0005
+tensor(-13.1604)
+tensor(-13.1604)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:32<00:00, 15.21s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.75s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 47/50] Rewards: -13.16 | Cost: 2521.92 | Acc: 99.23% | Loss: -0.0002
+tensor(-15.6413)
+tensor(-15.6413)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:36<00:00, 15.64s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.71s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 48/50] Rewards: -15.64 | Cost: 2485.39 | Acc: 99.13% | Loss: 0.0004
+tensor(-3.9887)
+tensor(-3.9887)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:19<00:00, 13.92s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.75s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/10 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 49/50] Rewards: -3.99 | Cost: 2502.92 | Acc: 99.38% | Loss: -0.0003
+tensor(-7.2032)
+tensor(-7.2032)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [02:31<00:00, 15.16s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:27<00:00, 13.62s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML        
+[Epoch 50/50] Rewards: -7.20 | Cost: 2464.69 | Acc: 99.39% | Loss: -0.0009
+  warnings.warn("Can't initialize NVML")
+
+[Eval Epoch 50] Batch 1000:
+  Avg Cost:     2500.48 (Base: 2497.98)
+  Improvement:  -3.57% (-2.50 cost units)
+  Acceptance:   99.2%
+Training Complete.

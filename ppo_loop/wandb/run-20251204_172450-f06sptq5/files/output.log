@@ -1,0 +1,56 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-22.5277)
+tensor(-2040.5745)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.58it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.41it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {7: 45, 11: 40, 0: 40, 4: 40, 15: 40}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.290s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9200000166893005, 0.7799999713897705, 0.8899999856948853]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 175.2594
+    Epoch 100/100, Loss: 11.1196
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [0, 3, 2, 1, 0]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['1.000', '0.000', '0.000', '0.000']
+    Customer 2: ['0.000', '0.000', '0.032', '0.968']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 1/1250] Rewards: -22.53 | Cost: 2040.27 | Acc: 27.17% | Loss: -0.0050
+7 work workplace home 17:30-18:00 17:55-18:25 1
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 521, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 508, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 347, in train
+    masks = get_batch_masks(env, user_ids_np, predicted_flexs, device)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 91, in get_batch_masks
+    mask_list = env._get_mask_from_flex(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 532, in _get_mask_from_flex
+    assert False
+AssertionError
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 521, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 508, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 347, in train
+    masks = get_batch_masks(env, user_ids_np, predicted_flexs, device)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 91, in get_batch_masks
+    mask_list = env._get_mask_from_flex(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 532, in _get_mask_from_flex
+    assert False
+AssertionError

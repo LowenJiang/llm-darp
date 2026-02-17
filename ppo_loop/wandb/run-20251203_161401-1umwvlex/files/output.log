@@ -1,0 +1,138 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-95.4233)
+tensor(-2646.3569)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.43it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.47it/s]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 300 samples...
+  [Embedding Update] Training on 300 samples from 30 customers
+  [Embedding Update] Action distribution: {10: 27, 9: 26, 13: 25, 6: 24, 11: 23}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.308s
+  [Embedding Update] Error: 'NoneType' object has no attribute 'get'
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 384, in update_embedding_model
+    dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 128, in __init__
+    self.ind_matrix = self._compute_indicator_matrix(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 294, in _compute_indicator_matrix
+    flex_would_accept = self._would_accept_action_csv(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 246, in _would_accept_action_csv
+    decision = decisions.get(flex_column)
+AttributeError: 'NoneType' object has no attribute 'get'
+[Epoch 1/2500] Rewards: -95.42 | Cost: 2644.83 | Acc: 87.00% | Loss: -0.0071
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-274.6997)
+tensor(-2857.6917)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.40it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.49it/s]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {13: 49, 11: 48, 9: 46, 10: 43, 6: 42}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.305s
+  [Embedding Update] Error: 'NoneType' object has no attribute 'get'
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 384, in update_embedding_model
+    dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 128, in __init__
+    self.ind_matrix = self._compute_indicator_matrix(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 294, in _compute_indicator_matrix
+    flex_would_accept = self._would_accept_action_csv(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 246, in _would_accept_action_csv
+    decision = decisions.get(flex_column)
+AttributeError: 'NoneType' object has no attribute 'get'
+[Epoch 2/2500] Rewards: -274.70 | Cost: 2856.06 | Acc: 90.00% | Loss: -0.0056
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 342, in _load_trips
+    for _, row in group.iterrows():
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 1563, in iterrows
+    s = klass(v, index=columns, name=k).__finalize__(self)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 587, in __init__
+    data = sanitize_array(data, index, dtype, copy)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/construction.py", line 604, in sanitize_array
+    subarr = maybe_infer_to_datetimelike(data)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/dtypes/cast.py", line 1200, in maybe_infer_to_datetimelike
+    return lib.maybe_convert_objects(  # type: ignore[return-value]
+  File "pandas/_libs/lib.pyx", line 2560, in pandas._libs.lib.maybe_convert_objects
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/numpy/_core/numeric.py", line 362, in full
+    multiarray.copyto(a, fill_value, casting='unsafe')
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/numpy/_core/multiarray.py", line 1089, in copyto
+    @array_function_from_c_func_and_dispatcher(_multiarray_umath.copyto)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 342, in _load_trips
+    for _, row in group.iterrows():
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 1563, in iterrows
+    s = klass(v, index=columns, name=k).__finalize__(self)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 587, in __init__
+    data = sanitize_array(data, index, dtype, copy)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/construction.py", line 604, in sanitize_array
+    subarr = maybe_infer_to_datetimelike(data)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/dtypes/cast.py", line 1200, in maybe_infer_to_datetimelike
+    return lib.maybe_convert_objects(  # type: ignore[return-value]
+  File "pandas/_libs/lib.pyx", line 2560, in pandas._libs.lib.maybe_convert_objects
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/numpy/_core/numeric.py", line 362, in full
+    multiarray.copyto(a, fill_value, casting='unsafe')
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/numpy/_core/multiarray.py", line 1089, in copyto
+    @array_function_from_c_func_and_dispatcher(_multiarray_umath.copyto)
+KeyboardInterrupt

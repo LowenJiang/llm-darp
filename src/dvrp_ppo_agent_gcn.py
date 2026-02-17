@@ -425,15 +425,15 @@ class PPOAgent:
         action_dim: int = 16,
         hidden_dim: int = 512,   # MLP Hidden Layer Size
         num_heads: int = 4,
-        num_layers: int = 1,
+        num_layers: int = 2,
         value_lr: Dict[str, float] | float | None = None,
         policy_lr: Dict[str, float] | float | None = None,
         gamma: float = 0.99,
-        gae_lambda: float = 0.90,
-        clip_epsilon: float = 0.05,
+        gae_lambda: float = 0.95,
+        clip_epsilon: float = 0.1,
         value_coef: float = 0.5,
         entropy_coef: float = 0.01,
-        max_grad_norm: float = 0.5,
+        max_grad_norm: float = 1,
         device: str = "cpu",
     ):
         self.device = torch.device(device)

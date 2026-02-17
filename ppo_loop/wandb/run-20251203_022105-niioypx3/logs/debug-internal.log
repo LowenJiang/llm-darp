@@ -1,0 +1,11 @@
+{"time":"2025-12-03T02:21:06.601903331-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-12-03T02:21:07.003227759-05:00","level":"INFO","msg":"stream: created new stream","id":"niioypx3"}
+{"time":"2025-12-03T02:21:07.003340625-05:00","level":"INFO","msg":"handler: started","stream_id":"niioypx3"}
+{"time":"2025-12-03T02:21:07.007340439-05:00","level":"INFO","msg":"stream: started","id":"niioypx3"}
+{"time":"2025-12-03T02:21:07.007503316-05:00","level":"INFO","msg":"writer: started","stream_id":"niioypx3"}
+{"time":"2025-12-03T02:21:07.007602095-05:00","level":"INFO","msg":"sender: started","stream_id":"niioypx3"}
+{"time":"2025-12-03T02:44:51.224120172-05:00","level":"INFO","msg":"stream: closing","id":"niioypx3"}
+{"time":"2025-12-03T02:44:51.669890504-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-03T02:44:51.872617811-05:00","level":"INFO","msg":"handler: closed","stream_id":"niioypx3"}
+{"time":"2025-12-03T02:44:51.876472067-05:00","level":"INFO","msg":"sender: closed","stream_id":"niioypx3"}
+{"time":"2025-12-03T02:44:51.876511322-05:00","level":"INFO","msg":"stream: closed","id":"niioypx3"}

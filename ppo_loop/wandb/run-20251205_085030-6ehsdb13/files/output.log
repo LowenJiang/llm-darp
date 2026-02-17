@@ -1,0 +1,168 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-58.1873)
+tensor(-58.1873)
+	Training value network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [10:02<00:00, 15.06s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.51s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 1/50] Rewards: -58.19 | Cost: 2186.64 | Acc: 26.36% | Loss: 0.0015
+tensor(-67.6131)
+tensor(-67.6131)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [10:16<00:00, 15.40s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.59s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 2/50] Rewards: -67.61 | Cost: 2173.55 | Acc: 58.28% | Loss: 0.2302
+tensor(-59.2913)
+tensor(-59.2913)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:52<00:00, 14.81s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.31s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 3/50] Rewards: -59.29 | Cost: 2170.04 | Acc: 75.96% | Loss: 0.3755
+tensor(-90.2433)
+tensor(-90.2433)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:56<00:00, 14.90s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.30s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 4/50] Rewards: -90.24 | Cost: 2159.41 | Acc: 84.41% | Loss: 0.4241
+tensor(-101.7072)
+tensor(-101.7072)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [10:05<00:00, 15.14s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.60s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 5/50] Rewards: -101.71 | Cost: 2186.33 | Acc: 88.19% | Loss: 0.4210
+tensor(-93.8032)
+tensor(-93.8032)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [10:05<00:00, 15.14s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.60s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 6/50] Rewards: -93.80 | Cost: 2168.02 | Acc: 90.86% | Loss: 0.3809
+tensor(-59.5908)
+tensor(-59.5908)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:51<00:00, 14.80s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.15s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 7/50] Rewards: -59.59 | Cost: 2175.19 | Acc: 92.27% | Loss: 0.3730
+tensor(-60.4982)
+tensor(-60.4982)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [10:05<00:00, 15.15s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.44s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 8/50] Rewards: -60.50 | Cost: 2152.90 | Acc: 93.02% | Loss: 0.3375
+tensor(-33.5026)
+tensor(-33.5026)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:01<00:00, 13.54s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:06<00:00,  6.48s/it]
+	Training policy network...
+  0%|                                                                                                                | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+[Epoch 9/50] Rewards: -33.50 | Cost: 2133.69 | Acc: 94.52% | Loss: 0.3406
+tensor(-22.5776)
+tensor(-22.5776)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                             | 0/15 [00:00<?, ?it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:04<00:00, 13.60s/it]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:09<00:00,  9.10s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML        
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 26 customers
+  [Embedding Update] Action distribution: {12: 10489, 9: 616, 13: 584, 8: 332, 5: 252}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.243s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.9900000095367432, 0.949999988079071, 0.8399999737739563, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 93.9102
+    Epoch 100/100, Loss: -1543.9916
+  [Embedding Update] Sample predictions for customers [np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]: [3, 2, 3, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 5: ['0.000', '0.000', '0.024', '0.976']
+    Customer 6: ['0.000', '0.000', '1.000', '0.000']
+    Customer 7: ['0.000', '0.000', '0.014', '0.986']
+[Epoch 10/50] Rewards: -22.58 | Cost: 2159.47 | Acc: 96.03% | Loss: 0.2606
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x1553cb9c0dc0>
+Traceback (most recent call last):
+  File "/usr/lib64/python3.9/_weakrefset.py", line 39, in _remove
+    def _remove(item, selfref=ref(self)):
+KeyboardInterrupt:
+
+[Eval Epoch 10] Batch 1000:
+  Avg Cost:     2147.50 (Base: 2098.89)
+  Improvement:  -6.61% (-48.60 cost units)
+  Acceptance:   98.2%
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 522, in <module>
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 509, in main
+    num_episodes=args.episodes,
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 379, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 261, in step
+    accepted_mask[b] = self._get_acceptance_decision(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 549, in _get_acceptance_decision
+    (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/common.py", line 76, in new_method
+    return method(self, other)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/arraylike.py", line 40, in __eq__
+    return self._cmp_method(other, operator.eq)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 6138, in _cmp_method
+    res_values = ops.comparison_op(lvalues, rvalues, op)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 344, in comparison_op
+    res_values = comp_method_OBJECT_ARRAY(op, lvalues, rvalues)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 129, in comp_method_OBJECT_ARRAY
+    result = libops.scalar_compare(x.ravel(), y, op)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 522, in <module>
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 509, in main
+    num_episodes=args.episodes,
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 379, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 261, in step
+    accepted_mask[b] = self._get_acceptance_decision(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 549, in _get_acceptance_decision
+    (self.traveler_decisions_df["trip_purpose"] == trip_purpose) &
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/common.py", line 76, in new_method
+    return method(self, other)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/arraylike.py", line 40, in __eq__
+    return self._cmp_method(other, operator.eq)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/series.py", line 6138, in _cmp_method
+    res_values = ops.comparison_op(lvalues, rvalues, op)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 344, in comparison_op
+    res_values = comp_method_OBJECT_ARRAY(op, lvalues, rvalues)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/ops/array_ops.py", line 129, in comp_method_OBJECT_ARRAY
+    result = libops.scalar_compare(x.ravel(), y, op)
+KeyboardInterrupt

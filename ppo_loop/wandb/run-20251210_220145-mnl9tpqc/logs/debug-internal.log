@@ -1,0 +1,12 @@
+{"time":"2025-12-10T22:01:45.892420568-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-12-10T22:01:46.324785645-05:00","level":"INFO","msg":"stream: created new stream","id":"mnl9tpqc"}
+{"time":"2025-12-10T22:01:46.324906311-05:00","level":"INFO","msg":"handler: started","stream_id":"mnl9tpqc"}
+{"time":"2025-12-10T22:01:46.32925791-05:00","level":"INFO","msg":"stream: started","id":"mnl9tpqc"}
+{"time":"2025-12-10T22:01:46.329471866-05:00","level":"INFO","msg":"writer: started","stream_id":"mnl9tpqc"}
+{"time":"2025-12-10T22:01:46.3295584-05:00","level":"INFO","msg":"sender: started","stream_id":"mnl9tpqc"}
+{"time":"2025-12-11T00:26:17.349893443-05:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/zz564-cornell-university/dvrp-ppo-batched/mnl9tpqc/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-12-11T09:40:57.417617249-05:00","level":"INFO","msg":"stream: closing","id":"mnl9tpqc"}
+{"time":"2025-12-11T09:40:57.770565651-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-11T09:40:57.925085197-05:00","level":"INFO","msg":"handler: closed","stream_id":"mnl9tpqc"}
+{"time":"2025-12-11T09:40:57.930025347-05:00","level":"INFO","msg":"sender: closed","stream_id":"mnl9tpqc"}
+{"time":"2025-12-11T09:40:57.930066018-05:00","level":"INFO","msg":"stream: closed","id":"mnl9tpqc"}

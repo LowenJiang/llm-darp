@@ -1,0 +1,38 @@
+{"time":"2025-12-09T19:18:55.273064567-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-12-09T19:18:55.679555834-05:00","level":"INFO","msg":"stream: created new stream","id":"8mfuvvj7"}
+{"time":"2025-12-09T19:18:55.679693898-05:00","level":"INFO","msg":"handler: started","stream_id":"8mfuvvj7"}
+{"time":"2025-12-09T19:18:55.68457359-05:00","level":"INFO","msg":"stream: started","id":"8mfuvvj7"}
+{"time":"2025-12-09T19:18:55.684747341-05:00","level":"INFO","msg":"writer: started","stream_id":"8mfuvvj7"}
+{"time":"2025-12-09T19:18:55.684816377-05:00","level":"INFO","msg":"sender: started","stream_id":"8mfuvvj7"}
+{"time":"2025-12-09T19:26:04.476512615-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":340}
+{"time":"2025-12-09T19:26:05.108007285-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":5}
+{"time":"2025-12-09T19:32:19.578497052-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":2117}
+{"time":"2025-12-09T19:32:20.430264199-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":2}
+{"time":"2025-12-10T02:48:40.921333777-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":85581}
+{"time":"2025-12-10T02:48:54.230826138-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":51}
+{"time":"2025-12-10T02:50:24.801615223-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":85968}
+{"time":"2025-12-10T02:50:32.209316498-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":30}
+{"time":"2025-12-10T02:50:53.88540708-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":86079}
+{"time":"2025-12-10T02:51:05.948462403-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":42}
+{"time":"2025-12-10T02:53:08.09152195-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":86583}
+{"time":"2025-12-10T02:53:10.991436362-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":9}
+{"time":"2025-12-10T02:54:40.920333543-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":86927}
+{"time":"2025-12-10T02:54:55.620424236-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":27}
+{"time":"2025-12-10T02:55:22.175484396-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":87063}
+{"time":"2025-12-10T02:55:45.009289134-05:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": context deadline exceeded"}
+{"time":"2025-12-10T02:56:13.706030675-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":61}
+{"time":"2025-12-10T02:57:23.333196746-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":87214}
+{"time":"2025-12-10T02:57:31.899204125-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":35}
+{"time":"2025-12-10T02:58:25.920643523-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":87441}
+{"time":"2025-12-10T02:58:28.145134719-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":10}
+{"time":"2025-12-10T02:59:10.271597893-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":87609}
+{"time":"2025-12-10T02:59:24.964903795-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":57}
+{"time":"2025-12-10T02:59:54.233468217-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":87780}
+{"time":"2025-12-10T03:00:01.316133738-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":27}
+{"time":"2025-12-10T03:57:08.448294325-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":97541}
+{"time":"2025-12-10T03:57:11.934983504-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":12}
+{"time":"2025-12-10T05:42:17.400595875-05:00","level":"INFO","msg":"stream: closing","id":"8mfuvvj7"}
+{"time":"2025-12-10T05:42:17.752593086-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-10T05:42:17.902862172-05:00","level":"INFO","msg":"handler: closed","stream_id":"8mfuvvj7"}
+{"time":"2025-12-10T05:42:17.907638821-05:00","level":"INFO","msg":"sender: closed","stream_id":"8mfuvvj7"}
+{"time":"2025-12-10T05:42:17.90768155-05:00","level":"INFO","msg":"stream: closed","id":"8mfuvvj7"}

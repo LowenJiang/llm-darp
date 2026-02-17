@@ -1,0 +1,90 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(251.8216)
+tensor(-2510.3704)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:08<00:00,  4.90it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  5.75it/s]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 60 samples...
+  [Embedding Update] Insufficient data: 60 < 256. Skipping update.
+[Epoch 1/12500] Rewards: 251.82 | Cost: 2508.80 | Acc: 86.67% | Loss: -0.0141
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 342, in _load_trips
+    for _, row in group.iterrows():
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 1562, in iterrows
+    for k, v in zip(self.index, self.values):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 12691, in values
+    return self._mgr.as_array()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/internals/managers.py", line 1713, in as_array
+    arr = self._interleave(dtype=dtype, na_value=na_value)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/internals/managers.py", line 1754, in _interleave
+    arr = blk.get_values(dtype)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/internals/blocks.py", line 2661, in get_values
+    return self.values.astype(_dtype_obj)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 342, in _load_trips
+    for _, row in group.iterrows():
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 1562, in iterrows
+    for k, v in zip(self.index, self.values):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 12691, in values
+    return self._mgr.as_array()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/internals/managers.py", line 1713, in as_array
+    arr = self._interleave(dtype=dtype, na_value=na_value)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/internals/managers.py", line 1754, in _interleave
+    arr = blk.get_values(dtype)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/internals/blocks.py", line 2661, in get_values
+    return self.values.astype(_dtype_obj)
+KeyboardInterrupt

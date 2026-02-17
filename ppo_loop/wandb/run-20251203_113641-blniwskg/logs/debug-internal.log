@@ -1,0 +1,11 @@
+{"time":"2025-12-03T11:36:42.328694626-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-12-03T11:36:42.563933717-05:00","level":"INFO","msg":"stream: created new stream","id":"blniwskg"}
+{"time":"2025-12-03T11:36:42.563983544-05:00","level":"INFO","msg":"handler: started","stream_id":"blniwskg"}
+{"time":"2025-12-03T11:36:42.566991861-05:00","level":"INFO","msg":"stream: started","id":"blniwskg"}
+{"time":"2025-12-03T11:36:42.567007373-05:00","level":"INFO","msg":"writer: started","stream_id":"blniwskg"}
+{"time":"2025-12-03T11:36:42.567013067-05:00","level":"INFO","msg":"sender: started","stream_id":"blniwskg"}
+{"time":"2025-12-03T11:55:19.20915425-05:00","level":"INFO","msg":"stream: closing","id":"blniwskg"}
+{"time":"2025-12-03T11:55:19.583228777-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-03T11:55:19.728970591-05:00","level":"INFO","msg":"handler: closed","stream_id":"blniwskg"}
+{"time":"2025-12-03T11:55:19.731560648-05:00","level":"INFO","msg":"sender: closed","stream_id":"blniwskg"}
+{"time":"2025-12-03T11:55:19.731567396-05:00","level":"INFO","msg":"stream: closed","id":"blniwskg"}

@@ -1,0 +1,122 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-112.9515)
+tensor(-2645.3420)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [08:04<00:00, 12.11s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:17<00:00,  6.00s/it]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 30 customers
+  [Embedding Update] Action distribution: {0: 908, 11: 864, 7: 861, 4: 857, 13: 844}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.151s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.2199999988079071, 0.2800000011920929, 0.11999999731779099, 0.9100000262260437]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  [WARNING] 2 samples have all-zero indicator (no flexibility agrees)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/5, Loss: 145.9367
+    Epoch 5/5, Loss: 79.6202
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 3, 3, 3]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.136', '0.864']
+    Customer 2: ['0.000', '0.000', '0.097', '0.903']
+    Customer 3: ['0.000', '0.000', '0.092', '0.908']
+[Epoch 1/50] Rewards: -112.95 | Cost: 2643.71 | Acc: 90.23% | Loss: -0.0021
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 237, in forward
+    td = env.step(td)["next"]
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/common/base.py", line 129, in step
+    td = self._step(td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 181, in _step
+    td_out = td.clone()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 12497, in clone
+    result = self._clone(recurse=recurse, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 3263, in _clone
+    return self._clone_recurse()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 10753, in _clone_recurse
+    result = self._fast_apply(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 9398, in _fast_apply
+    result = func(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 1447, in _apply_nest
+    item_trsf = item._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2262, in _apply_nest
+    results = [
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2263, in <listcomp>
+    td._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3519, in _apply_nest
+    return self.empty(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3505, in empty
+    return type(self)(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 1274, in wrapper
+    __init__(self, **kwargs)
+  File "<string>", line 3, in __init__
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 1752, in _setattr
+    out = self.set(key, value)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 2335, in _set
+    def set_tensor(
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 237, in forward
+    td = env.step(td)["next"]
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/common/base.py", line 129, in step
+    td = self._step(td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 181, in _step
+    td_out = td.clone()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 12497, in clone
+    result = self._clone(recurse=recurse, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 3263, in _clone
+    return self._clone_recurse()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 10753, in _clone_recurse
+    result = self._fast_apply(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 9398, in _fast_apply
+    result = func(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 1447, in _apply_nest
+    item_trsf = item._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2262, in _apply_nest
+    results = [
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2263, in <listcomp>
+    td._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3519, in _apply_nest
+    return self.empty(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3505, in empty
+    return type(self)(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 1274, in wrapper
+    __init__(self, **kwargs)
+  File "<string>", line 3, in __init__
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 1752, in _setattr
+    out = self.set(key, value)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 2335, in _set
+    def set_tensor(
+KeyboardInterrupt

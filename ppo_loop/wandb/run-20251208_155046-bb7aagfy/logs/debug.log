@@ -1,0 +1,270 @@
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_setup.py:_flush():80] Current SDK version is 0.23.0
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_setup.py:_flush():80] Configure stats pid to 4067266
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_setup.py:_flush():80] Loading settings from /mnt/home/zz564/.config/wandb/settings
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_setup.py:_flush():80] Loading settings from /mnt/home/zz564/LLMOR/llm-darp/ppo_loop/wandb/settings
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_init.py:setup_run_log_directory():713] Logging user logs to /mnt/home/zz564/LLMOR/llm-darp/ppo_loop/wandb/run-20251208_155046-bb7aagfy/logs/debug.log
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_init.py:setup_run_log_directory():714] Logging internal logs to /mnt/home/zz564/LLMOR/llm-darp/ppo_loop/wandb/run-20251208_155046-bb7aagfy/logs/debug-internal.log
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_init.py:init():840] calling init triggers
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_init.py:init():845] wandb.init called with sweep_config: {}
+config: {'num_envs': 500, 'total_episodes': 25000, 'customers_per_episode': 30, 'device': 'cpu', '_wandb': {}}
+2025-12-08 15:50:46,711 INFO    MainThread:4067266 [wandb_init.py:init():888] starting backend
+2025-12-08 15:50:47,137 INFO    MainThread:4067266 [wandb_init.py:init():891] sending inform_init request
+2025-12-08 15:50:47,158 INFO    MainThread:4067266 [wandb_init.py:init():899] backend started and connected
+2025-12-08 15:50:47,163 INFO    MainThread:4067266 [wandb_init.py:init():969] updated telemetry
+2025-12-08 15:50:47,211 INFO    MainThread:4067266 [wandb_init.py:init():993] communicating run to backend with 90.0 second timeout
+2025-12-08 15:50:47,686 INFO    MainThread:4067266 [wandb_init.py:init():1040] starting run threads in backend
+2025-12-08 15:50:48,506 INFO    MainThread:4067266 [wandb_run.py:_console_start():2504] atexit reg
+2025-12-08 15:50:48,506 INFO    MainThread:4067266 [wandb_run.py:_redirect():2352] redirect: wrap_raw
+2025-12-08 15:50:48,506 INFO    MainThread:4067266 [wandb_run.py:_redirect():2421] Wrapping output streams.
+2025-12-08 15:50:48,506 INFO    MainThread:4067266 [wandb_run.py:_redirect():2444] Redirects installed.
+2025-12-08 15:50:48,514 INFO    MainThread:4067266 [wandb_init.py:init():1080] run started, returning control to user process
+2025-12-08 21:15:52,952 INFO    wandb-AsyncioManager-main:4067266 [service_client.py:_forward_responses():80] Reached EOF.
+2025-12-08 21:15:52,952 INFO    wandb-AsyncioManager-main:4067266 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.
+2025-12-08 21:15:53,572 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,585 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,586 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,586 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,586 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,586 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,586 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,587 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,587 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,587 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,587 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,587 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,588 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,588 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,588 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,588 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,588 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,593 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-08 21:15:53,632 ERROR   wandb-AsyncioManager-main:4067266 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 387, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib64/python3.9/asyncio/streams.py", line 190, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost

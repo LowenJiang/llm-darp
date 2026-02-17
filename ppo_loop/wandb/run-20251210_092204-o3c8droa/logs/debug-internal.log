@@ -1,0 +1,30 @@
+{"time":"2025-12-10T09:22:05.085118205-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-12-10T09:22:05.487910623-05:00","level":"INFO","msg":"stream: created new stream","id":"o3c8droa"}
+{"time":"2025-12-10T09:22:05.488031549-05:00","level":"INFO","msg":"handler: started","stream_id":"o3c8droa"}
+{"time":"2025-12-10T09:22:05.49218548-05:00","level":"INFO","msg":"stream: started","id":"o3c8droa"}
+{"time":"2025-12-10T09:22:05.492336864-05:00","level":"INFO","msg":"writer: started","stream_id":"o3c8droa"}
+{"time":"2025-12-10T09:22:05.492418837-05:00","level":"INFO","msg":"sender: started","stream_id":"o3c8droa"}
+{"time":"2025-12-10T13:00:00.166217103-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":35413}
+{"time":"2025-12-10T13:00:02.034525685-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":8}
+{"time":"2025-12-10T13:05:16.450820631-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":35833}
+{"time":"2025-12-10T13:05:17.696029049-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":5}
+{"time":"2025-12-10T13:10:31.967984936-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":37055}
+{"time":"2025-12-10T13:10:42.438361783-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":33}
+{"time":"2025-12-10T13:11:16.37338532-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":37223}
+{"time":"2025-12-10T13:11:17.178939048-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":2}
+{"time":"2025-12-10T13:11:31.404157-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":37280}
+{"time":"2025-12-10T13:11:32.435417689-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":5}
+{"time":"2025-12-10T13:12:31.430857777-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":37505}
+{"time":"2025-12-10T13:12:37.079420962-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":18}
+{"time":"2025-12-10T13:12:46.061458878-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":37562}
+{"time":"2025-12-10T13:12:52.649888967-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":32}
+{"time":"2025-12-10T13:13:32.062497917-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":37741}
+{"time":"2025-12-10T13:13:32.482459015-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":3}
+{"time":"2025-12-10T13:35:33.131928914-05:00","level":"INFO","msg":"flowcontrol: backed up, offloading to disk","recordNumber":41577}
+{"time":"2025-12-10T13:35:35.858691391-05:00","level":"INFO","msg":"flowcontrol: unblocked","totalOffloaded":24}
+{"time":"2025-12-10T15:01:22.726985343-05:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/zz564-cornell-university/dvrp-ppo-batched/o3c8droa/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-12-10T19:10:33.353059864-05:00","level":"INFO","msg":"stream: closing","id":"o3c8droa"}
+{"time":"2025-12-10T19:10:33.738407064-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-10T19:10:34.098072098-05:00","level":"INFO","msg":"handler: closed","stream_id":"o3c8droa"}
+{"time":"2025-12-10T19:10:34.102201353-05:00","level":"INFO","msg":"sender: closed","stream_id":"o3c8droa"}
+{"time":"2025-12-10T19:10:34.102240928-05:00","level":"INFO","msg":"stream: closed","id":"o3c8droa"}

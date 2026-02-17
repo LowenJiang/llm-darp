@@ -1,0 +1,128 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-141.1554)
+tensor(-2675.9348)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:56<00:00, 14.90s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:29<00:00,  9.77s/it]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 30 customers
+  [Embedding Update] Action distribution: {11: 871, 7: 870, 0: 868, 9: 857, 2: 820}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.281s
+  [Embedding Update] Error: 'NoneType' object has no attribute 'get'
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 381, in update_embedding_model
+    dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 128, in __init__
+    self.ind_matrix = self._compute_indicator_matrix(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 291, in _compute_indicator_matrix
+    flex_would_accept = self._would_accept_action_csv(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 246, in _would_accept_action_csv
+    decision = decisions.get(flex_column)
+AttributeError: 'NoneType' object has no attribute 'get'
+[Epoch 1/50] Rewards: -141.16 | Cost: 2671.62 | Acc: 90.25% | Loss: -0.0029
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-156.2042)
+tensor(-2667.3250)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [10:08<00:00, 15.21s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:27<00:00,  9.09s/it]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 12800 samples...
+  [Embedding Update] Training on 12800 samples from 30 customers
+  [Embedding Update] Action distribution: {14: 866, 9: 866, 5: 860, 4: 857, 7: 843}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.298s
+  [Embedding Update] Error: 'NoneType' object has no attribute 'get'
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 381, in update_embedding_model
+    dataset = OnlineTravelerDataset(df_online, flexibility_personalities, action_space_map)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 128, in __init__
+    self.ind_matrix = self._compute_indicator_matrix(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 291, in _compute_indicator_matrix
+    flex_would_accept = self._would_accept_action_csv(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/embedding.py", line 246, in _would_accept_action_csv
+    decision = decisions.get(flex_column)
+AttributeError: 'NoneType' object has no attribute 'get'
+[Epoch 2/50] Rewards: -156.20 | Cost: 2659.41 | Acc: 89.87% | Loss: -0.0026
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 230, in forward
+    logits, mask = self.decoder(td, hidden, num_starts)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/zoo/am/decoder.py", line 186, in forward
+    glimpse_q = self._compute_q(cached, td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/zoo/am/decoder.py", line 140, in _compute_q
+    step_context = self.context_embedding(node_embeds_cache, td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/nn/env_embeddings/context.py", line 73, in forward
+    cur_node_embedding = self._cur_node_embedding(embeddings, td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/nn/env_embeddings/context.py", line 65, in _cur_node_embedding
+    cur_node_embedding = gather_by_index(embeddings, td["current_node"])
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/utils/ops.py", line 69, in gather_by_index
+    return src.gather(dim, idx).squeeze(dim) if squeeze else src.gather(dim, idx)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 230, in forward
+    logits, mask = self.decoder(td, hidden, num_starts)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/zoo/am/decoder.py", line 186, in forward
+    glimpse_q = self._compute_q(cached, td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/zoo/am/decoder.py", line 140, in _compute_q
+    step_context = self.context_embedding(node_embeds_cache, td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/nn/env_embeddings/context.py", line 73, in forward
+    cur_node_embedding = self._cur_node_embedding(embeddings, td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/nn/env_embeddings/context.py", line 65, in _cur_node_embedding
+    cur_node_embedding = gather_by_index(embeddings, td["current_node"])
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/utils/ops.py", line 69, in gather_by_index
+    return src.gather(dim, idx).squeeze(dim) if squeeze else src.gather(dim, idx)
+KeyboardInterrupt

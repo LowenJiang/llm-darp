@@ -1,0 +1,418 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-21.5360)
+tensor(-2254.1194)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.48it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.53it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 300 samples...
+  [Embedding Update] Training on 300 samples from 30 customers
+  [Embedding Update] Action distribution: {9: 26, 10: 25, 13: 24, 11: 23, 6: 22}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.300s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: 127.3462
+    Epoch 40/40, Loss: 4.7781
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.001', '0.999']
+    Customer 2: ['0.000', '0.000', '0.000', '0.999']
+    Customer 3: ['0.001', '0.000', '0.999', '0.000']
+[Epoch 1/2500] Rewards: -21.54 | Cost: 2253.90 | Acc: 26.67% | Loss: -0.0067
+tensor(135.2824)
+tensor(-2423.9312)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.48it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.56it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {13: 53, 11: 44, 3: 40, 7: 40, 4: 40}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.319s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: 27.0176
+    Epoch 40/40, Loss: 14.6999
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.000', '1.000']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 2/2500] Rewards: 135.28 | Cost: 2423.64 | Acc: 28.67% | Loss: -0.0070
+tensor(-35.6563)
+tensor(-2298.4631)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.47it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.61it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 900 samples...
+  [Embedding Update] Training on 900 samples from 30 customers
+  [Embedding Update] Action distribution: {13: 77, 9: 73, 2: 63, 11: 63, 4: 58}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.326s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: 33.0082
+    Epoch 40/40, Loss: 17.2276
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.021', '0.979']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 3/2500] Rewards: -35.66 | Cost: 2298.21 | Acc: 25.67% | Loss: -0.0088
+tensor(-38.2687)
+tensor(-2212.9722)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.47it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.44it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 1200 samples...
+  [Embedding Update] Training on 1200 samples from 30 customers
+  [Embedding Update] Action distribution: {9: 101, 13: 92, 11: 91, 2: 90, 0: 83}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.335s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: 22.8999
+    Epoch 40/40, Loss: 7.8918
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.043', '0.957']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 4/2500] Rewards: -38.27 | Cost: 2212.65 | Acc: 28.00% | Loss: -0.0061
+tensor(-41.0553)
+tensor(-2213.5688)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:15<00:00,  2.52it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.65it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 1500 samples...
+  [Embedding Update] Training on 1500 samples from 30 customers
+  [Embedding Update] Action distribution: {11: 130, 9: 128, 2: 116, 13: 106, 0: 104}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.326s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: 13.6814
+    Epoch 40/40, Loss: 0.6698
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 2, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.028', '0.972']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 5/2500] Rewards: -41.06 | Cost: 2213.32 | Acc: 25.00% | Loss: -0.0073
+tensor(31.2830)
+tensor(-2056.4556)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.47it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.67it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 1800 samples...
+  [Embedding Update] Training on 1800 samples from 30 customers
+  [Embedding Update] Action distribution: {11: 154, 9: 143, 2: 135, 3: 129, 13: 120}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.316s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: -1.6296
+    Epoch 40/40, Loss: -19.2111
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.008', '0.992']
+    Customer 2: ['0.000', '0.000', '0.021', '0.979']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 6/2500] Rewards: 31.28 | Cost: 2056.20 | Acc: 25.33% | Loss: -0.0060
+tensor(-210.3223)
+tensor(-2291.5259)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:15<00:00,  2.54it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.57it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 2100 samples...
+  [Embedding Update] Training on 2100 samples from 30 customers
+  [Embedding Update] Action distribution: {11: 174, 9: 167, 2: 152, 3: 145, 0: 144}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.321s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: -16.8055
+    Epoch 40/40, Loss: -40.6041
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.006', '0.994']
+    Customer 2: ['0.000', '0.000', '0.017', '0.983']
+    Customer 3: ['0.000', '0.000', '1.000', '0.000']
+[Epoch 7/2500] Rewards: -210.32 | Cost: 2291.24 | Acc: 27.33% | Loss: -0.0074
+tensor(-153.9234)
+tensor(-2130.2800)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:16<00:00,  2.48it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  3.63it/s]
+	Training policy network...
+                                                                                                                                         
+
+[Embedding] Updating model with 2400 samples...
+  [Embedding Update] Training on 2400 samples from 30 customers
+  [Embedding Update] Action distribution: {11: 198, 9: 188, 2: 172, 0: 164, 3: 164}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.323s
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 10)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 30, 20)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+(9, 'work meeting', 'university', 'Financial District', '09:00-09:30', '09:15-09:45', 10, 0)
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.8899999856948853, 0.9300000071525574, 0.7799999713897705, 0.9399999976158142]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/40, Loss: -38.8337
+    Epoch 40/40, Loss: -68.2697
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 2, 1, 1]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.011', '0.989']
+    Customer 2: ['0.000', '0.000', '0.017', '0.983']
+    Customer 3: ['0.000', '0.000', '0.999', '0.000']
+[Epoch 8/2500] Rewards: -153.92 | Cost: 2129.98 | Acc: 26.67% | Loss: -0.0074
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 259, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 342, in _load_trips
+    for _, row in group.iterrows():
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 1563, in iterrows
+    s = klass(v, index=columns, name=k).__finalize__(self)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/generic.py", line 6286, in __finalize__
+    for name in set(self._metadata) & set(other._metadata):
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 527, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 514, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 377, in train
+    _, baseline_reward, _, _, base_info = baseline_env.step(base_action)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 259, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 201, in forward
+    env = get_env(env_name)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/__init__.py", line 85, in get_env
+    return env_cls(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torchrl/envs/common.py", line 263, in __call__
+    instance: EnvBase = super().__call__(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 39, in __init__
+    generator = SFGenerator(**generator_params)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 145, in __init__
+    self._trips_by_traveler = self._load_trips()
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/sf_generator.py", line 342, in _load_trips
+    for _, row in group.iterrows():
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/frame.py", line 1563, in iterrows
+    s = klass(v, index=columns, name=k).__finalize__(self)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/pandas/core/generic.py", line 6286, in __finalize__
+    for name in set(self._metadata) & set(other._metadata):
+KeyboardInterrupt

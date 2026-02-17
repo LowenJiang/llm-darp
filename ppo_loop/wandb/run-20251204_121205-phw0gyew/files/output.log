@@ -1,0 +1,51 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+TensorDict(
+    fields={
+        action_mask: Tensor(shape=torch.Size([20, 61]), device=cpu, dtype=torch.bool, is_shared=False),
+        capacity: Tensor(shape=torch.Size([20]), device=cpu, dtype=torch.float32, is_shared=False),
+        current_node: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.int64, is_shared=False),
+        current_time: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.float32, is_shared=False),
+        demand: Tensor(shape=torch.Size([20, 61]), device=cpu, dtype=torch.float32, is_shared=False),
+        done: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.bool, is_shared=False),
+        flexibility: Tensor(shape=torch.Size([20, 61]), device=cpu, dtype=torch.float32, is_shared=False),
+        h3_indices: Tensor(shape=torch.Size([20, 61]), device=cpu, dtype=torch.int64, is_shared=False),
+        i: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.int64, is_shared=False),
+        locs: Tensor(shape=torch.Size([20, 61, 2]), device=cpu, dtype=torch.float32, is_shared=False),
+        pending_count: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.int64, is_shared=False),
+        pending_schedule: Tensor(shape=torch.Size([20, 8]), device=cpu, dtype=torch.int64, is_shared=False),
+        previous_action: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.int64, is_shared=False),
+        terminated: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.bool, is_shared=False),
+        time_windows: Tensor(shape=torch.Size([20, 61, 2]), device=cpu, dtype=torch.float32, is_shared=False),
+        travel_time_matrix: Tensor(shape=torch.Size([20, 31, 31]), device=cpu, dtype=torch.float32, is_shared=False),
+        trip_metadata: NonTensorStack(
+            [{1: {'flexibility': 'flexible for late dropoff, b...,
+            batch_size=torch.Size([20]),
+            device=cpu),
+        used_capacity: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.float32, is_shared=False),
+        user_id: Tensor(shape=torch.Size([20, 61]), device=cpu, dtype=torch.int64, is_shared=False),
+        vehicle_capacity: Tensor(shape=torch.Size([20, 1]), device=cpu, dtype=torch.int64, is_shared=False),
+        visited: Tensor(shape=torch.Size([20, 61]), device=cpu, dtype=torch.bool, is_shared=False)},
+    batch_size=torch.Size([20]),
+    device=cpu,
+    is_shared=False)
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 529, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 516, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 339, in train
+    assert False
+AssertionError
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 529, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 516, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 339, in train
+    assert False
+AssertionError

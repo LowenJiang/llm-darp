@@ -1,0 +1,13 @@
+{"time":"2025-12-08T15:50:47.161650406-05:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-12-08T15:50:47.394115847-05:00","level":"INFO","msg":"stream: created new stream","id":"bb7aagfy"}
+{"time":"2025-12-08T15:50:47.394186934-05:00","level":"INFO","msg":"handler: started","stream_id":"bb7aagfy"}
+{"time":"2025-12-08T15:50:47.397424757-05:00","level":"INFO","msg":"stream: started","id":"bb7aagfy"}
+{"time":"2025-12-08T15:50:47.397463173-05:00","level":"INFO","msg":"writer: started","stream_id":"bb7aagfy"}
+{"time":"2025-12-08T15:50:47.397491614-05:00","level":"INFO","msg":"sender: started","stream_id":"bb7aagfy"}
+{"time":"2025-12-08T16:53:03.833076956-05:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": net/http: request canceled (Client.Timeout exceeded while awaiting headers)"}
+{"time":"2025-12-08T16:57:21.223593147-05:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/zz564-cornell-university/dvrp-ppo-batched/bb7aagfy/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-12-08T21:15:52.952944981-05:00","level":"INFO","msg":"stream: closing","id":"bb7aagfy"}
+{"time":"2025-12-08T21:15:53.404904336-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-08T21:15:53.565155121-05:00","level":"INFO","msg":"handler: closed","stream_id":"bb7aagfy"}
+{"time":"2025-12-08T21:15:53.570680039-05:00","level":"INFO","msg":"sender: closed","stream_id":"bb7aagfy"}
+{"time":"2025-12-08T21:15:53.570741224-05:00","level":"INFO","msg":"stream: closed","id":"bb7aagfy"}

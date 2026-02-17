@@ -1,0 +1,63 @@
+_wandb:
+    value:
+        cli_version: 0.23.0
+        e:
+            wlg74xovgx3sm28u9m4xet3c302v176a:
+                args:
+                    - --episodes
+                    - "25_000"
+                    - --num-envs
+                    - "500"
+                codePath: ppo_loop/meta_train.py
+                codePathLocal: meta_train.py
+                cpu_count: 96
+                cpu_count_logical: 192
+                disk:
+                    /:
+                        total: "942379323392"
+                        used: "84020289536"
+                email: zz564@cornell.edu
+                executable: /mnt/home/zz564/LLMOR/llm-darp/llm_venv/bin/python3
+                git:
+                    commit: 1684763d24319413c1cd4a7df608c8c4de167170
+                    remote: git@github.com:zhangz73/llm-darp.git
+                host: alpha1
+                memory:
+                    total: "1081865527296"
+                os: Linux-5.14.0-427.40.1.el9_4.x86_64-x86_64-with-glibc2.34
+                program: /mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py
+                python: CPython 3.9.21
+                root: /mnt/home/zz564/LLMOR/llm-darp/ppo_loop
+                slurm:
+                    conf: /cm/shared/apps/slurm/var/etc/slurm/slurm.conf
+                startedAt: "2025-12-03T18:13:41.708933Z"
+                writerId: wlg74xovgx3sm28u9m4xet3c302v176a
+        m: []
+        python_version: 3.9.21
+        t:
+            "1":
+                - 1
+                - 50
+                - 95
+                - 105
+                - 106
+            "2":
+                - 1
+                - 50
+                - 95
+                - 105
+                - 106
+            "3":
+                - 16
+            "4": 3.9.21
+            "5": 0.23.0
+            "12": 0.23.0
+            "13": linux-x86_64
+customers_per_episode:
+    value: 30
+device:
+    value: cpu
+num_envs:
+    value: 500
+total_episodes:
+    value: 25000

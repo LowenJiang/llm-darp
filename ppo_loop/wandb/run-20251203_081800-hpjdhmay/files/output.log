@@ -1,0 +1,154 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(-172.2495)
+tensor(-2679.9045)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [07:53<00:00, 11.84s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:28<00:00,  9.65s/it]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 0 samples...
+  [Embedding Update] Insufficient data: 0 < 256. Skipping update.
+[Epoch 1/50] Rewards: -172.25 | Cost: 2675.57 | Acc: 90.24% | Loss: -0.0023
+tensor(-133.3363)
+tensor(-2652.1135)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [08:37<00:00, 12.93s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:17<00:00,  5.79s/it]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 0 samples...
+  [Embedding Update] Insufficient data: 0 < 256. Skipping update.
+[Epoch 2/50] Rewards: -133.34 | Cost: 2650.48 | Acc: 90.11% | Loss: -0.0016
+tensor(-125.8802)
+tensor(-2638.1431)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [08:21<00:00, 12.55s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:28<00:00,  9.49s/it]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 0 samples...
+  [Embedding Update] Insufficient data: 0 < 256. Skipping update.
+[Epoch 3/50] Rewards: -125.88 | Cost: 2636.53 | Acc: 89.79% | Loss: -0.0013
+tensor(-141.2914)
+tensor(-2657.6904)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [08:42<00:00, 13.07s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:19<00:00,  6.65s/it]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 0 samples...
+  [Embedding Update] Insufficient data: 0 < 256. Skipping update.
+[Epoch 4/50] Rewards: -141.29 | Cost: 2652.72 | Acc: 90.23% | Loss: -0.0007
+tensor(-157.6147)
+tensor(-2646.7542)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [08:20<00:00, 12.52s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:28<00:00,  9.59s/it]
+	Training policy network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+
+[Embedding] Updating model with 0 samples...
+  [Embedding Update] Insufficient data: 0 < 256. Skipping update.
+[Epoch 5/50] Rewards: -157.61 | Cost: 2636.16 | Acc: 89.89% | Loss: -0.0018
+tensor(-116.1171)
+tensor(-2626.8975)
+	Training value network...
+  warnings.warn("Can't initialize NVML")                                                                          | 0/15 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [09:09<00:00, 13.75s/it]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:18<00:00,  6.27s/it]
+	Training policy network...
+Traceback (most recent call last):                                                                                                       
+
+[Embedding] Updating model with 0 samples...
+  [Embedding Update] Insufficient data: 0 < 256. Skipping update.
+[Epoch 6/50] Rewards: -116.12 | Cost: 2622.52 | Acc: 89.97% | Loss: -0.0016
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 528, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 515, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 237, in forward
+    td = env.step(td)["next"]
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/common/base.py", line 129, in step
+    td = self._step(td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 181, in _step
+    td_out = td.clone()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 12497, in clone
+    result = self._clone(recurse=recurse, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 3263, in _clone
+    return self._clone_recurse()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 10753, in _clone_recurse
+    result = self._fast_apply(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 9398, in _fast_apply
+    result = func(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 1447, in _apply_nest
+    item_trsf = item._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2262, in _apply_nest
+    results = [
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2263, in <listcomp>
+    td._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3519, in _apply_nest
+    return self.empty(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3504, in empty
+    names = self._maybe_names()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 528, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 515, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 384, in train
+    next_obs, env_reward, term, trunc, info = env.step(action_tensor) # env_reward negative
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 270, in step
+    out = self.policy(solver_input, phase='test', decode_type="greedy", return_actions=True)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/models/common/constructive/base.py", line 237, in forward
+    td = env.step(td)["next"]
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/common/base.py", line 129, in step
+    td = self._step(td)
+  File "/mnt/home/zz564/LLMOR/llm-darp/rl4co/envs/routing/pdptw/env.py", line 181, in _step
+    td_out = td.clone()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 12497, in clone
+    result = self._clone(recurse=recurse, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 3263, in _clone
+    return self._clone_recurse()
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 10753, in _clone_recurse
+    result = self._fast_apply(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/base.py", line 9398, in _fast_apply
+    result = func(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_td.py", line 1447, in _apply_nest
+    item_trsf = item._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2262, in _apply_nest
+    results = [
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/_lazy.py", line 2263, in <listcomp>
+    td._apply_nest(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3519, in _apply_nest
+    return self.empty(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/tensordict/tensorclass.py", line 3504, in empty
+    names = self._maybe_names()
+KeyboardInterrupt

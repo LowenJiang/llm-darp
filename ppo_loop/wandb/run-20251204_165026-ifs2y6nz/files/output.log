@@ -1,0 +1,172 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+tensor(2.4371)
+tensor(-2206.5278)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 40/40 [00:25<00:00,  1.56it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:01<00:00,  2.60it/s]
+	Training policy network...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML     
+
+[Embedding] Updating model with 600 samples...
+  [Embedding Update] Training on 600 samples from 30 customers
+  [Embedding Update] Action distribution: {7: 44, 11: 42, 15: 42, 4: 40, 13: 40}
+  [Embedding Dataset] Built lookup cache: 25040 rows → 20688 unique keys in 1.312s
+  [Embedding Update] Indicator matrix mean per flexibility type: [0.9100000262260437, 0.9700000286102295, 0.800000011920929, 0.9599999785423279]
+  [Embedding Update] Using O(1) hash table lookup (20688 cached keys)
+  warnings.warn("Can't initialize NVML")
+    Epoch 1/100, Loss: 171.8260
+    Epoch 100/100, Loss: 8.9160
+  [Embedding Update] Sample predictions for customers [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)]: [3, 3, 3, 1, 3]
+  [Embedding Update] Sample probability distributions:
+    Customer 1: ['0.000', '0.000', '0.000', '1.000']
+    Customer 2: ['0.000', '0.000', '0.000', '1.000']
+    Customer 3: ['0.000', '0.000', '0.121', '0.879']
+[Epoch 1/1250] Rewards: 2.44 | Cost: 2206.24 | Acc: 27.83% | Loss: -0.0052
+[ERROR] Categorical sampling failed: probability tensor contains either `inf`, `nan` or element < 0
+  Max Prob: 0.08427195996046066, Min Prob: 0.046691231429576874
+  NaNs: False
+tensor([[0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.2812,
+         0.0312, 0.0312, 0.0312, 0.2812, 0.0312, 0.0312, 0.0312],
+        [0.1979, 0.0312, 0.0312, 0.0312, 0.1979, 0.0312, 0.0312, 0.0312, 0.1979,
+         0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1979, 0.0312, 0.0312, 0.0312, 0.1979,
+         0.0312, 0.0312, 0.0312, 0.1979, 0.0312, 0.0312, 0.0312],
+        [0.0312, 0.1027, 0.0312, 0.0312, 0.1027, 0.1027, 0.0312, 0.0312, 0.1027,
+         0.1027, 0.0312, 0.0312, 0.1027, 0.1027, 0.0312, 0.0312],
+        [   nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,
+            nan,    nan,    nan,    nan,    nan,    nan,    nan],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.2812,
+         0.0312, 0.0312, 0.0312, 0.2812, 0.0312, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312, 0.1146,
+         0.1146, 0.1146, 0.0312, 0.1146, 0.0312, 0.0312, 0.0312],
+        [0.0312, 0.1027, 0.0312, 0.0312, 0.1027, 0.1027, 0.0312, 0.0312, 0.1027,
+         0.1027, 0.0312, 0.0312, 0.1027, 0.1027, 0.0312, 0.0312],
+        [0.0312, 0.1027, 0.0312, 0.0312, 0.1027, 0.1027, 0.0312, 0.0312, 0.1027,
+         0.1027, 0.0312, 0.0312, 0.1027, 0.1027, 0.0312, 0.0312],
+        [0.0312, 0.0767, 0.0767, 0.0312, 0.0767, 0.0767, 0.0767, 0.0312, 0.0767,
+         0.0767, 0.0767, 0.0312, 0.0767, 0.0767, 0.0767, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312, 0.1146,
+         0.1146, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1312, 0.0312, 0.0312, 0.0312, 0.1312,
+         0.1312, 0.0312, 0.0312, 0.1312, 0.1312, 0.0312, 0.0312],
+        [0.0312, 0.0767, 0.0767, 0.0312, 0.0767, 0.0767, 0.0767, 0.0312, 0.0767,
+         0.0767, 0.0767, 0.0312, 0.0767, 0.0767, 0.0767, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312, 0.1146,
+         0.1146, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1312, 0.1312, 0.0312, 0.0312, 0.1312,
+         0.1312, 0.0312, 0.0312, 0.1312, 0.0312, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312, 0.1146,
+         0.1146, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312],
+        [0.0729, 0.0729, 0.0729, 0.0312, 0.0729, 0.0729, 0.0729, 0.0312, 0.0729,
+         0.0729, 0.0729, 0.0312, 0.0729, 0.0729, 0.0729, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312, 0.1146,
+         0.1146, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.0312, 0.2812,
+         0.0312, 0.0312, 0.0312, 0.2812, 0.0312, 0.0312, 0.0312],
+        [0.0312, 0.0312, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312, 0.1146,
+         0.1146, 0.0312, 0.0312, 0.1146, 0.1146, 0.0312, 0.0312]])
+tensor(-61.6178)
+tensor(-2055.7302)
+	Training value network...
+  0%|                                                                                                             | 0/40 [00:00<?, ?it/s]/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")                                                                           | 0/1 [00:00<?, ?it/s]
+ 35%|███████████████████████████████████                                                                 | 14/40 [00:09<00:17,  1.45it/s]
+Traceback (most recent call last):                                                                                                       
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 525, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 512, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 438, in train
+    train_stats = agent.update(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 701, in update
+    _, predicted_values = self.policy.forward(batch_states)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 293, in forward
+    action_logits = self.policy_network(state)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 197, in forward
+    state_vector = self.backbone(states)  # (B, C, D)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 153, in forward
+    out = self.transformer(trip_emb, src_key_padding_mask=padding_mask)  # (B,C,transformer_dim)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/transformer.py", line 524, in forward
+    output = mod(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/transformer.py", line 937, in forward
+    x = self.norm2(x + self._ff_block(x))
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/transformer.py", line 963, in _ff_block
+    return self.dropout2(x)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/dropout.py", line 70, in forward
+    return F.dropout(input, self.p, self.training, self.inplace)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/functional.py", line 1422, in dropout
+    _VF.dropout_(input, p, training) if inplace else _VF.dropout(input, p, training)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 525, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 512, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 438, in train
+    train_stats = agent.update(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 701, in update
+    _, predicted_values = self.policy.forward(batch_states)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 293, in forward
+    action_logits = self.policy_network(state)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 197, in forward
+    state_vector = self.backbone(states)  # (B, C, D)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/ppo_agent_v2.py", line 153, in forward
+    out = self.transformer(trip_emb, src_key_padding_mask=padding_mask)  # (B,C,transformer_dim)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/transformer.py", line 524, in forward
+    output = mod(
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/transformer.py", line 937, in forward
+    x = self.norm2(x + self._ff_block(x))
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/transformer.py", line 963, in _ff_block
+    return self.dropout2(x)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/modules/dropout.py", line 70, in forward
+    return F.dropout(input, self.p, self.training, self.inplace)
+  File "/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/nn/functional.py", line 1422, in dropout
+    _VF.dropout_(input, p, training) if inplace else _VF.dropout(input, p, training)
+KeyboardInterrupt

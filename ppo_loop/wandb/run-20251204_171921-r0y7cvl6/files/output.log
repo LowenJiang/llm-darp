@@ -1,0 +1,31 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Starting training loop...
+/mnt/home/zz564/LLMOR/llm-darp/llm_venv/lib64/python3.9/site-packages/torch/cuda/__init__.py:829: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+10 dining home North Beach 19:00-19:30 19:25-19:55 2
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 521, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 508, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 347, in train
+    masks = get_batch_masks(env, user_ids_np, predicted_flexs, device)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 91, in get_batch_masks
+    mask_list = env._get_mask_from_flex(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 591, in _get_mask_from_flex
+    assert False
+AssertionError
+Traceback (most recent call last):
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 521, in <module>
+    main()
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 508, in main
+    train(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 347, in train
+    masks = get_batch_masks(env, user_ids_np, predicted_flexs, device)
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/meta_train.py", line 91, in get_batch_masks
+    mask_list = env._get_mask_from_flex(
+  File "/mnt/home/zz564/LLMOR/llm-darp/ppo_loop/dvrp_env.py", line 591, in _get_mask_from_flex
+    assert False
+AssertionError
