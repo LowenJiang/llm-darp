@@ -54,18 +54,14 @@ class PDPTWEnv(nn.Module):
     - Even nodes (2, 4, 6, ...): Corresponding delivery locations
     - Pickup i is paired with delivery i+1
     
-    Masking Strategy (simplified):
+    Masking Strategy (one-step lookahead):
     - Time window reachability: arrival must be within the candidate's time window
     - Capacity constraint: vehicle must have room for pickup demand
     - Precedence constraint: pickup must be visited before its delivery
-    - Forced delivery: if a vehicle has pending deliveries and their time windows
-      have expired, the mask is lifted to force completion by the same vehicle
-    - Depot blocked while pending: vehicle cannot return to depot with passengers onboard
-
-    Lateness Penalty:
-    - When a vehicle arrives at a node after its late time window, a penalty of
-      lateness_penalty_rate (default 10.0) per raw minute of lateness is accumulated
-    - The accumulated penalty is subtracted from the reward
+    - Lookahead: visiting candidate must still allow all onboard deliveries
+      (and, for pickups, their own delivery) to be reached within time windows
+    - Depot allowed when no reachable dropoff exists (replaces forced delivery)
+    - Safety valve: if all actions masked, depot is allowed as escape
 
     Dynamic Visitation Management:
     - Returning to depot starts a new vehicle with time reset to zero; vehicles used are counted
@@ -75,8 +71,8 @@ class PDPTWEnv(nn.Module):
         self,
         generator: Optional[Callable] = None,
         vehicle_capacity: Optional[int] = None,
-        vehicle_penalty: float = 0,
-        lateness_penalty_rate: float = 10.0,
+        vehicle_penalty: float = 50.0,
+        free_vehicles: int = 5,
         **kwargs
     ):
         super().__init__()
@@ -85,7 +81,7 @@ class PDPTWEnv(nn.Module):
             vehicle_capacity = getattr(generator, "vehicle_capacity")
         self.vehicle_capacity = vehicle_capacity
         self.vehicle_penalty = float(vehicle_penalty)
-        self.lateness_penalty_rate = float(lateness_penalty_rate)
+        self.free_vehicles = int(free_vehicles)
         
     # =========================================================================
     # Core Environment Interface
@@ -206,11 +202,6 @@ class PDPTWEnv(nn.Module):
                 dtype=torch.int64,
                 device=device
             ),
-            "lateness_penalty": torch.zeros(
-                *batch_size, 1,
-                dtype=torch.float32,
-                device=device
-            ),
             "done": torch.zeros(
                 *batch_size,
                 dtype=torch.bool,
@@ -307,23 +298,20 @@ class PDPTWEnv(nn.Module):
             td, action, is_return_to_depot, batch_size, device
         )
         
-        # Lateness penalty: 10 * max(0, arrival - late_window) per raw minute
-        candidate_late_window = gather_by_index(td["time_windows"], action)[..., 1]  # [B, 1]
-        lateness_raw = torch.clamp(
-            arrival_time - candidate_late_window, min=0.0
-        )  # [B, 1]
-        # Don't penalize depot visits
-        lateness_raw = torch.where(
-            (action == 0).unsqueeze(-1), torch.zeros_like(lateness_raw), lateness_raw
-        )  # [B, 1]
-        step_penalty = self.lateness_penalty_rate * lateness_raw  # [B, 1]
-        new_lateness_penalty = td["lateness_penalty"] + step_penalty  # [B, 1]
-
         # Vehicle usage tracking
         vehicles_used = td["vehicles_used"] + is_return_to_depot.long().unsqueeze(-1)
 
-        # Build output state
-        td_out = td.clone()
+        # Build output state — share static tensors, only copy dynamic ones
+        td_out = td.empty()  # shallow shell, no tensor copies
+        # Static data: share references (never mutated)
+        for key in ("h3_indices", "travel_time_matrix", "time_windows",
+                     "demand", "flexibility", "vehicle_capacity"):
+            td_out.set(key, td[key])
+        # Optional static fields
+        for key in ("locs", "user_id", "trip_metadata"):
+            if key in td.keys():
+                td_out.set(key, td[key])
+        # Dynamic state: new tensors computed above
         td_out.update({
             "current_node": action.unsqueeze(-1),
             "current_time": service_start_time,
@@ -335,7 +323,6 @@ class PDPTWEnv(nn.Module):
             "previous_action": action.unsqueeze(-1),
             "i": td["i"] + 1,
             "vehicles_used": vehicles_used,
-            "lateness_penalty": new_lateness_penalty,
         })
         
         # Check termination conditions
@@ -350,7 +337,8 @@ class PDPTWEnv(nn.Module):
         self,
         td: TensorDict,
         actions: torch.Tensor,
-        use_vectorized: bool = True
+        use_vectorized: bool = True,
+        raw_cost: bool = False,
     ) -> torch.Tensor:
         """
         Compute reward for completed episode.
@@ -359,13 +347,19 @@ class PDPTWEnv(nn.Module):
             td: TensorDict with problem data
             actions: Sequence of actions taken [batch_size, seq_len]
             use_vectorized: Use fast vectorized implementation (default: True)
+            raw_cost: If True, compute cost from the full action sequence
+                      (including retracted pickups and wasted depot returns).
+                      This penalises inefficient exploration directly.
 
         Returns:
             Reward tensor [batch_size]
         """
         if use_vectorized:
             # Fast vectorized path - all batches in parallel
-            valid_mask = self._build_valid_action_mask(actions)
+            if raw_cost:
+                valid_mask = torch.ones_like(actions, dtype=torch.bool)
+            else:
+                valid_mask = self._build_valid_action_mask(actions)
             cost_tensor = self._compute_route_costs_vectorized(td, actions, valid_mask)
         else:
             # Legacy sequential path - kept for validation/debugging
@@ -379,13 +373,15 @@ class PDPTWEnv(nn.Module):
 
         td.set("cost", cost_tensor)
 
-        # Lateness penalty accumulated during the episode
-        lateness_penalty = td.get(
-            "lateness_penalty",
-            torch.zeros_like(cost_tensor).unsqueeze(-1)
-        ).squeeze(-1)
+        # Vehicle penalty: charge for each vehicle beyond the free allowance
+        vehicles_used = td.get(
+            "vehicles_used",
+            torch.ones_like(cost_tensor).unsqueeze(-1)
+        ).squeeze(-1).float()
+        excess_vehicles = torch.clamp(vehicles_used - self.free_vehicles, min=0)
+        vehicle_penalty = self.vehicle_penalty * excess_vehicles
 
-        reward = -cost_tensor - lateness_penalty
+        reward = -cost_tensor - vehicle_penalty
         return reward
     
     # =========================================================================
@@ -429,12 +425,69 @@ class PDPTWEnv(nn.Module):
     # Action Masking
     # =========================================================================
     
+    def _lookahead_validity(
+        self,
+        td: TensorDict,
+        time_at_candidate: torch.Tensor,
+        node_indices: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        One-step lookahead: for each candidate node, check that ALL onboard
+        deliveries (in pending_schedule) can still be reached within their late
+        time windows after visiting the candidate.  If the candidate is a pickup,
+        also check that its corresponding delivery is reachable.
+
+        Args:
+            td: Current state TensorDict
+            time_at_candidate: [B, N] service-start time at each candidate
+            node_indices: [B, N] arange node indices
+
+        Returns:
+            valid: [B, N] bool — True if visiting candidate keeps all
+                   obligations feasible
+        """
+        pending_schedule = td["pending_schedule"]       # [B, capacity]
+        pending_mask = pending_schedule != 0             # [B, capacity]
+        late_windows = td["time_windows"][..., 1]       # [B, N]
+        num_nodes = node_indices.shape[1]
+
+        valid = torch.ones_like(node_indices, dtype=torch.bool)  # [B, N]
+
+        # --- Check each onboard delivery ----------------------------------
+        for slot in range(pending_schedule.shape[1]):
+            target = pending_schedule[:, slot]            # [B]
+            active = pending_mask[:, slot]                # [B]
+            if not active.any():
+                continue
+
+            # travel from candidate -> onboard delivery target
+            target_exp = target.unsqueeze(-1).expand_as(node_indices)  # [B, N]
+            travel = self._get_travel_time(td, node_indices, target_exp)  # [B, N]
+            arrival = time_at_candidate + travel          # [B, N]
+
+            target_late = late_windows.gather(1, target.unsqueeze(-1))  # [B, 1]
+            feasible = arrival <= target_late              # [B, N]
+            # only constrain batches that actually have this slot occupied
+            valid = valid & (feasible | ~active.unsqueeze(-1))
+
+        # --- If candidate is a pickup, also check its delivery reachable ---
+        is_pickup = (node_indices % 2 != 0) & (node_indices != 0)
+        delivery_node = torch.clamp(node_indices + 1, max=num_nodes - 1)  # [B, N]
+        travel_to_delivery = self._get_travel_time(td, node_indices, delivery_node)
+        arrival_at_delivery = time_at_candidate + travel_to_delivery
+        delivery_late = late_windows.gather(1, delivery_node)
+        delivery_feasible = arrival_at_delivery <= delivery_late
+        valid = valid & (delivery_feasible | ~is_pickup)
+
+        return valid
+
     def _compute_action_mask(self, td: TensorDict) -> torch.Tensor:
         """
-        Compute action mask using time window reachability, capacity, and precedence.
+        Compute action mask using time window reachability, capacity,
+        precedence, and one-step lookahead validity.
 
-        No lookahead -- pending deliveries past their windows are force-unmasked
-        so the vehicle completes them (with a lateness penalty in step()).
+        Lookahead prevents infeasible pickups at the source, removing the
+        need for forced delivery or lateness penalties.
 
         Args:
             td: Current state TensorDict
@@ -474,38 +527,41 @@ class PDPTWEnv(nn.Module):
         current_not_depot = (td["current_node"].squeeze(-1) != 0).unsqueeze(-1)
         base_mask = (is_depot & current_not_depot) | can_pickup | can_dropoff
 
-        # Time window reachability (immediate check only, no lookahead)
+        # Time window reachability
         travel_time_to_candidate = self._get_travel_time(
             td,
             current_node.unsqueeze(-1),
             node_indices
         )
         arrival_at_candidate = current_time + travel_time_to_candidate
+        candidate_early = td["time_windows"][..., 0]
         candidate_late = td["time_windows"][..., 1]
         time_feasible = arrival_at_candidate <= candidate_late
 
+        # Service starts at max(arrival, early_window)
+        time_at_candidate = torch.max(arrival_at_candidate, candidate_early)
+
         mask = base_mask & time_feasible
 
-        # Forced delivery: if vehicle has pending deliveries whose time windows
-        # have expired, lift the mask to force completion by the same vehicle.
-        pending_targets = td["pending_schedule"]        # [B, capacity]
-        has_pending = pending_targets != 0               # [B, capacity]
-        if has_pending.any():
-            forced = torch.zeros_like(mask)              # [B, N]
-            forced.scatter_(1, pending_targets, has_pending)
-            forced[..., 0] = False                       # never force depot
-            forced = forced & ~td["completed"]           # only uncompleted
-            mask = mask | forced
+        # Identify scheduled dropoffs (deliveries whose pickups are onboard)
+        scheduled = torch.zeros_like(mask)                        # [B, N]
+        scheduled.scatter_(1, pending_schedule, pending_mask)
+        scheduled[..., 0] = False
 
-        # Depot: allow only if no reachable dropoff AND no pending deliveries
-        has_any_pending = has_pending.any(dim=-1)        # [B]
-        reachable_dropoff = (mask & is_dropoff).any(dim=-1, keepdim=True)
-        allow_depot = (
-            ~reachable_dropoff.squeeze(-1)
-            & current_not_depot.squeeze(-1)
-            & ~has_any_pending
-        )
+        # One-step lookahead: prune candidates that make obligations infeasible
+        # Exempt scheduled dropoffs — they are mandatory obligations that must
+        # be delivered; filtering them causes depot-return loops.
+        lookahead_valid = self._lookahead_validity(td, time_at_candidate, node_indices)
+        mask = mask & (lookahead_valid | scheduled)
+
+        # Depot rule: allow depot only if no scheduled dropoff is reachable
+        reachable_scheduled = (mask & scheduled).any(dim=-1, keepdim=True)
+        allow_depot = (~reachable_scheduled & current_not_depot).squeeze(-1)
         mask[..., 0] = allow_depot
+
+        # Safety valve: if no action is valid, allow depot as escape
+        no_valid = ~mask.any(dim=-1)
+        mask[no_valid, 0] = True
 
         return mask
     
@@ -783,50 +839,138 @@ class PDPTWEnv(nn.Module):
 # =============================================================================
 
 if __name__ == "__main__":
-    # Example using SFGenerator for data and random actions
+    import argparse
     from oracle_generator import SFGenerator
 
-    batch_size = 3
+    parser = argparse.ArgumentParser(description="PDPTWEnv test runner")
+    parser.add_argument(
+        "--policy", type=str, default=None,
+        help="Path to a policy checkpoint (.pt). If omitted, uses random actions.",
+    )
+    parser.add_argument(
+        "--decode", type=str, default="greedy", choices=["greedy", "sampling"],
+        help="Decode strategy when using a policy (default: greedy).",
+    )
+    parser.add_argument("--batch-size", type=int, default=3)
+    parser.add_argument("--max-steps", type=int, default=200)
+    parser.add_argument("--num-customers", type=int, default=30)
+    # Model architecture (must match checkpoint)
+    parser.add_argument("--embed-dim", type=int, default=128)
+    parser.add_argument("--num-encoder-layers", type=int, default=3)
+    parser.add_argument("--num-heads", type=int, default=8)
+    parser.add_argument("--ff-hidden", type=int, default=256)
+    args = parser.parse_args()
+
+    batch_size = args.batch_size
     csv_path = Path(__file__).with_name("traveler_trip_types_res_7.csv")
     ttm_path = Path(__file__).with_name("travel_time_matrix_res_7.csv")
 
     generator = SFGenerator(
         csv_path=csv_path,
-        travel_time_matrix_path=ttm_path
+        travel_time_matrix_path=ttm_path,
+        num_customers=args.num_customers
     )
 
     env = PDPTWEnv(generator=generator)
 
-    state = env.reset(batch_size=[batch_size])
-    print(f"Initial action mask counts: {state['action_mask'].sum(dim=-1)}")
+    # --- Load policy if provided ---
+    policy = None
+    if args.policy is not None:
+        from trial_gnn_policy import DARPPolicy
 
-    actions_taken = []
-    max_steps = 50
-    for step in range(max_steps):
-        mask = state["action_mask"]
-        probs = mask.float() / mask.float().sum(dim=-1, keepdim=True)
-        probs_flat = probs.view(-1, probs.shape[-1])
-        try: 
-            action_flat = torch.multinomial(probs_flat, 1).squeeze(-1)
-        except RuntimeError as e:
-            raise RuntimeError("At least one environment has finished - invalid probability distribution") from e
-
-        action = action_flat.view(*probs.shape[:-1])
-        actions_taken.append(action)
-
-        state["action"] = action
-        state = env.step(state)["next"]
-
-        print(
-            f"Step {step+1}: action={action.tolist()}, "
-            f"done={state['done'].tolist()}, "
-            f"vehicles_used={state['vehicles_used'].squeeze(-1).tolist()}, "
-            f"valid_next={state['action_mask'].sum(dim=-1).tolist()}"
+        policy = DARPPolicy(
+            embed_dim=args.embed_dim,
+            num_encoder_layers=args.num_encoder_layers,
+            num_heads=args.num_heads,
+            ff_hidden=args.ff_hidden,
         )
+        checkpoint = torch.load(args.policy, map_location="cpu", weights_only=False)
+        state_dict = checkpoint.get("policy_state_dict", checkpoint)
+        policy.load_state_dict(state_dict)
+        policy.eval()
+        print(f"Loaded policy from {args.policy}  (decode={args.decode})")
 
-        if state["done"].all():
-            break
+    # --- Run with policy (full rollout handled by policy.forward) ---
+    if policy is not None:
+        td = generator(batch_size=[batch_size])
+        with torch.no_grad():
+            outputs = policy(
+                td,
+                env,
+                phase="val",
+                decode_type=args.decode,
+                max_steps=args.max_steps,
+                calc_reward=True,
+            )
 
-    actions_tensor = torch.stack(actions_taken, dim=1)
-    reward = env.get_reward(state, actions_tensor)
-    print(f"Episode reward for given steps: {reward.tolist()}")
+        reward = outputs["reward"]
+        actions_tensor = outputs["actions"]
+        # Recover final state cost by re-running get_reward on reset state
+        state = env.reset(td)
+        _ = env.get_reward(state, actions_tensor)
+        cost = state["cost"]
+
+    # --- Run with random actions ---
+    else:
+        state = env.reset(batch_size=[batch_size])
+        print(f"Initial action mask counts: {state['action_mask'].sum(dim=-1)}")
+
+        actions_taken = []
+        done = torch.zeros(batch_size, dtype=torch.bool)
+        for step in range(args.max_steps):
+            mask = state["action_mask"]
+
+            # For done envs: set depot as the only valid action to avoid NaN
+            safe_mask = mask.clone()
+            safe_mask[done] = False
+            safe_mask[done, 0] = True
+
+            probs = safe_mask.float() / safe_mask.float().sum(dim=-1, keepdim=True)
+            probs_flat = probs.view(-1, probs.shape[-1])
+            action_flat = torch.multinomial(probs_flat, 1).squeeze(-1)
+
+            action = action_flat.view(*probs.shape[:-1])
+            actions_taken.append(action)
+
+            state["action"] = action
+            state = env.step(state)["next"]
+
+            done = done | state["done"]
+            if done.all():
+                break
+
+        actions_tensor = torch.stack(actions_taken, dim=1)
+        reward = env.get_reward(state, actions_tensor)
+        cost = state["cost"]
+
+    # --- Print results per batch instance ---
+    print("\n" + "=" * 60)
+    for b in range(batch_size):
+        actions_list = actions_tensor[b].tolist()
+
+        # Split action sequence into per-vehicle routes at depot visits
+        routes = []
+        current_route = [0]
+        for a in actions_list:
+            if a == 0 and len(current_route) > 1:
+                current_route.append(0)
+                routes.append(current_route)
+                current_route = [0]
+            elif a != 0:
+                current_route.append(a)
+        if len(current_route) > 1:
+            current_route.append(0)
+            routes.append(current_route)
+
+        n_vehicles = len(routes)
+        excess = max(0, n_vehicles - env.free_vehicles)
+        veh_pen = env.vehicle_penalty * excess
+
+        print(f"\nBatch {b}:")
+        print(f"  Vehicles used: {n_vehicles}")
+        for v_idx, route in enumerate(routes):
+            print(f"  Vehicle {v_idx + 1}: {route}")
+        print(f"  Routing cost:     {cost[b].item():.2f}")
+        print(f"  Vehicle penalty:  {veh_pen:.2f}  ({excess} excess x {env.vehicle_penalty})")
+        print(f"  Total reward:     {reward[b].item():.2f}")
+    print("=" * 60)

@@ -133,7 +133,7 @@ def quick_test(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate instance-action dataset for PDPTW.")
-    parser.add_argument("--dataset-size", type=int, default=64, help="Number of instances to generate.")
+    parser.add_argument("--dataset-size", type=int, default=50000, help="Number of instances to generate.")
     parser.add_argument("--batch-size", type=int, default=32, help="Batch size for generation.")
     parser.add_argument("--max-vehicles", type=int, default=5, help="Max vehicles for OR-Tools solver.")
     parser.add_argument("--time-limit-seconds", type=int, default=1, help="OR-Tools time limit.")
@@ -159,7 +159,13 @@ def main() -> None:
 
     csv_path = Path(__file__).with_name("traveler_trip_types_res_7.csv")
     ttm_path = Path(__file__).with_name("travel_time_matrix_res_7.csv")
-    generator = SFGenerator(csv_path=csv_path, travel_time_matrix_path=ttm_path)
+    generator = SFGenerator(
+        csv_path=csv_path,
+        travel_time_matrix_path=ttm_path,
+        perturbation=30,
+        pickup_earliest_min=7 * 60,   # 7:00 AM
+        dropoff_latest_min=17 * 60,   # 5:00 PM
+    )
     env = PDPTWEnv(generator=generator)
 
     quick_test(
