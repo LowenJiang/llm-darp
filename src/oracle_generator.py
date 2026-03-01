@@ -86,6 +86,8 @@ class SFGenerator(Generator):
         shuffle_pairs: bool = False,
         seed: Optional[int] = None,
         device: torch.device | str = "cpu",
+        pickup_earliest_min: Optional[int] = None,
+        dropoff_latest_min: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -99,6 +101,10 @@ class SFGenerator(Generator):
             depot_h3: Optional H3 index for the depot; defaults to a central SF H3 cell.
             shuffle_pairs: Whether to shuffle pickup/dropoff pairs in the output.
             seed: Optional deterministic seed for sampling.
+            pickup_earliest_min: If set, only keep CSV trips whose pickup window
+                start >= this value (minutes after midnight).
+            dropoff_latest_min: If set, only keep CSV trips whose dropoff window
+                end <= this value (minutes after midnight).
         """
         super().__init__(**kwargs)
 
@@ -110,6 +116,8 @@ class SFGenerator(Generator):
         self.num_customers = num_customers
         self.perturbation = max(0, perturbation)
         self.vehicle_capacity = vehicle_capacity
+        self.pickup_earliest_min = pickup_earliest_min
+        self.dropoff_latest_min = dropoff_latest_min
         self.demand_per_customer = demand_per_customer
         self.shuffle_pairs = shuffle_pairs
         self.csv_path = (
@@ -378,6 +386,12 @@ class SFGenerator(Generator):
                     origin_gps = parse_gps(origin_gps_str)
                     destination_gps = parse_gps(destination_gps_str)
 
+                    # Filter by time-window bounds (prune pool before sampling)
+                    if self.pickup_earliest_min is not None and pickup_tw[0] < self.pickup_earliest_min:
+                        continue
+                    if self.dropoff_latest_min is not None and dropoff_tw[1] > self.dropoff_latest_min:
+                        continue
+
                     # Validate H3 indices exist in the travel time matrix
                     if origin_h3 not in self._h3_to_idx:
                         log.warning(f"Origin H3 {origin_h3} not found in travel time matrix, skipping trip")
@@ -539,7 +553,7 @@ class SFGenerator(Generator):
         """Sample perturbation deltas for *n* instances (CPU tensor)."""
         if self.perturbation < 10:
             return torch.zeros(n)
-        steps = torch.arange(10, self.perturbation + 1, 10)
+        steps = torch.arange(0, self.perturbation + 1, 10)
         indices = torch.randint(len(steps), (n,), generator=self.generator)
         return steps[indices].float()
 

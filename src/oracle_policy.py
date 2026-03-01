@@ -319,16 +319,30 @@ class GraphAttentionNetwork(nn.Module):
 # =============================================================================
 
 class PDPTWInitEmbedding(nn.Module):
-    """Initial embedding: H3 travel times + demand + time windows."""
-    def __init__(self, embed_dim: int, num_h3: int = 31):
+    """Initial embedding: normalised GPS coordinates + normalised time windows + demand."""
+    def __init__(self, embed_dim: int):
         super().__init__()
-        self.project = nn.Linear(num_h3 + 3, embed_dim)
+        # 2 (coords) + 2 (time window) + 1 (demand) = 5
+        self.project = nn.Linear(5, embed_dim)
 
     def forward(self, td: TensorDict) -> Tensor:
-        h3_feats = gather_by_index(td["travel_time_matrix"], td["h3_indices"], dim=1)
-        demand = td["demand"].unsqueeze(-1)
-        time_windows = td["time_windows"]
-        return self.project(torch.cat([h3_feats, demand, time_windows], dim=-1))
+        locs = td["locs"]  # [B, 2N+1, 2] -- includes depot at index 0
+        # Instance-wise min-max normalisation of coordinates to [0, 1]
+        loc_min = locs.min(dim=1, keepdim=True).values
+        loc_max = locs.max(dim=1, keepdim=True).values
+        loc_range = (loc_max - loc_min).clamp(min=1e-6)
+        norm_locs = (locs - loc_min) / loc_range  # [B, 2N+1, 2]
+
+        time_windows = td["time_windows"]  # [B, 2N+1, 2] (minutes)
+        # Normalise time windows to [0, 1] using instance min/max
+        tw_min = time_windows.min(dim=1, keepdim=True).values.min(dim=-1, keepdim=True).values
+        tw_max = time_windows.max(dim=1, keepdim=True).values.max(dim=-1, keepdim=True).values
+        tw_range = (tw_max - tw_min).clamp(min=1e-6)
+        norm_tw = (time_windows - tw_min) / tw_range  # [B, 2N+1, 2]
+
+        demand = td["demand"].unsqueeze(-1)  # [B, 2N+1, 1]
+
+        return self.project(torch.cat([norm_locs, norm_tw, demand], dim=-1))
 
 
 class PDPTWContextEmbedding(nn.Module):
@@ -384,13 +398,12 @@ class PrecomputedCache:
 class PDPTWAttentionPolicy(nn.Module):
     """
     Attention Model Policy for PDPTW.
-    
+
     Args:
         embed_dim: Embedding dimension
-        num_encoder_layers: Number of encoder layers  
+        num_encoder_layers: Number of encoder layers
         num_heads: Number of attention heads
         feedforward_hidden: FFN hidden dimension
-        num_h3: Number of H3 cells
         temperature: Softmax temperature
         tanh_clipping: Logit clipping
         train_decode_type: Training decode strategy
@@ -405,7 +418,6 @@ class PDPTWAttentionPolicy(nn.Module):
         num_heads: int = 8,
         feedforward_hidden: int = 512,
         normalization: str = "batch",
-        num_h3: int = 31,
         use_graph_context: bool = True,
         temperature: float = 1.0,
         tanh_clipping: float = 10.0,
@@ -414,9 +426,10 @@ class PDPTWAttentionPolicy(nn.Module):
         val_decode_type: str = "greedy",
         test_decode_type: str = "greedy",
         check_nan: bool = True,
+        **kwargs,
     ):
         super().__init__()
-        
+
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.use_graph_context = use_graph_context
@@ -428,7 +441,7 @@ class PDPTWAttentionPolicy(nn.Module):
         self.test_decode_type = test_decode_type
 
         # Encoder
-        self.init_embedding = PDPTWInitEmbedding(embed_dim, num_h3)
+        self.init_embedding = PDPTWInitEmbedding(embed_dim)
         self.encoder = GraphAttentionNetwork(num_heads, embed_dim, num_encoder_layers, normalization, feedforward_hidden)
 
         # Decoder
