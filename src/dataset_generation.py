@@ -179,16 +179,47 @@ def main() -> None:
         log.info("No output path provided; skipping dataset save.")
         return
 
-    dataset = generate_instance_action_dataset(
-        env=env,
-        dataset_size=args.dataset_size,
-        batch_size=args.batch_size,
-        max_vehicles=args.max_vehicles,
-        time_limit_seconds=args.time_limit_seconds,
-        run_until_solution=args.run_until_solution,
-    )
-    torch.save(dataset, args.output)
-    log.info("Saved dataset to %s", args.output)
+    output_path = Path(args.output)
+    num_chunks = 10
+    chunk_sizes = [args.dataset_size // num_chunks] * num_chunks
+    chunk_sizes[-1] += args.dataset_size % num_chunks  # remainder goes to last chunk
+
+    temp_paths = []
+    for i, chunk_size in enumerate(chunk_sizes):
+        temp_path = output_path.with_suffix(f".part_{i}.pt")
+        log.info("Generating chunk %d/%d (%d instances) ...", i + 1, num_chunks, chunk_size)
+        chunk = generate_instance_action_dataset(
+            env=env,
+            dataset_size=chunk_size,
+            batch_size=args.batch_size,
+            max_vehicles=args.max_vehicles,
+            time_limit_seconds=args.time_limit_seconds,
+            run_until_solution=args.run_until_solution,
+        )
+        torch.save(chunk, temp_path)
+        log.info("Saved chunk %d to %s", i + 1, temp_path)
+        temp_paths.append(temp_path)
+
+    # Combine all chunks
+    log.info("Combining %d chunks ...", num_chunks)
+    chunks = [torch.load(p, weights_only=False) for p in temp_paths]
+
+    # expert_actions may have different sequence lengths across chunks — re-pad to global max
+    max_len = max(c["expert_actions"].shape[1] for c in chunks)
+    for c in chunks:
+        ea = c["expert_actions"]
+        if ea.shape[1] < max_len:
+            pad = torch.zeros(ea.shape[0], max_len - ea.shape[1], dtype=torch.long)
+            c.set("expert_actions", torch.cat([ea, pad], dim=1))
+
+    dataset = TensorDict.cat(chunks, dim=0)
+    torch.save(dataset, output_path)
+    log.info("Saved combined dataset (%d instances) to %s", dataset.batch_size[0], output_path)
+
+    # Remove temp files
+    for p in temp_paths:
+        p.unlink()
+        log.info("Removed temp file %s", p)
 
 
 if __name__ == "__main__":
