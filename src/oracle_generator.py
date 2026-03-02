@@ -155,6 +155,11 @@ class SFGenerator(Generator):
         
         self._h3_to_gps = {} # To store GPS coordinates for rendering
 
+        # Precompute H3 cell centroids [num_cells, 2] — (lat, lng)
+        # All nodes sharing an H3 cell get identical spatial embeddings,
+        # matching the granularity of the travel-time cost function.
+        self._h3_centroids = self._build_centroid_table()
+
         self._trips_by_traveler = self._load_trips()
         expected_ids = set(range(1, self.num_customers + 1))
         if not expected_ids.issubset(self._trips_by_traveler):
@@ -275,9 +280,8 @@ class SFGenerator(Generator):
         depot_h3_indices = torch.full((flat_batch, 1), self.depot_h3_idx, dtype=torch.long, device=self.device)
         h3_indices = torch.cat([depot_h3_indices, h3_indices], dim=1)
 
-        # Add depot GPS coordinates at position 0
-        depot_gps = self._h3_to_gps.get(self.depot_h3, (37.7833, -122.4167)) # Default to downtown SF if not found
-        depot_locs = torch.tensor(depot_gps, dtype=torch.float32, device=self.device).expand(flat_batch, 1, 2)
+        # Add depot GPS coordinates at position 0 (H3 centroid)
+        depot_locs = self._h3_centroids[self.depot_h3_idx].view(1, 1, 2).expand(flat_batch, 1, 2)
         locs = torch.cat([depot_locs, locs], dim=1)
 
         # Add depot user_id (0 for depot)
@@ -349,6 +353,16 @@ class SFGenerator(Generator):
         log.info(f"Loaded travel time matrix with {len(h3_cells)} H3 cells")
 
         return h3_to_idx, idx_to_h3, travel_time_matrix
+
+    def _build_centroid_table(self) -> torch.Tensor:
+        """Build a [num_h3_cells, 2] tensor mapping cell index → (lat, lng) centroid."""
+        num_cells = len(self._idx_to_h3)
+        centroids = torch.zeros(num_cells, 2, dtype=torch.float32, device=self.device)
+        for idx, h3_str in self._idx_to_h3.items():
+            lat, lng = h3.cell_to_latlng(h3_str)
+            centroids[idx, 0] = lat
+            centroids[idx, 1] = lng
+        return centroids
 
     def _load_trips(self) -> Dict[int, List[Dict[str, Tuple[int, int] | H3Index]]]:
         if not self.csv_path.exists():
@@ -521,28 +535,29 @@ class SFGenerator(Generator):
 
     def _precompute_trip_arrays(self):
         """Pre-build CPU tensors for each traveler's trips for fast batch sampling."""
+        # H3 centroids are on self.device; move to CPU for batch construction
+        centroids_cpu = self._h3_centroids.cpu()
         self._trip_arrays = {}
         for traveler_id in self._traveler_ids:
             trips = self._trips_by_traveler[traveler_id]
+            origin_h3_idx = torch.tensor(
+                [self._h3_to_idx[t["origin_h3"]] for t in trips], dtype=torch.long
+            )
+            dest_h3_idx = torch.tensor(
+                [self._h3_to_idx[t["destination_h3"]] for t in trips], dtype=torch.long
+            )
             self._trip_arrays[traveler_id] = {
-                "origin_h3_idx": torch.tensor(
-                    [self._h3_to_idx[t["origin_h3"]] for t in trips], dtype=torch.long
-                ),
-                "dest_h3_idx": torch.tensor(
-                    [self._h3_to_idx[t["destination_h3"]] for t in trips], dtype=torch.long
-                ),
+                "origin_h3_idx": origin_h3_idx,
+                "dest_h3_idx": dest_h3_idx,
                 "pickup_tw": torch.tensor(
                     [t["pickup_tw"] for t in trips], dtype=torch.float32
                 ),  # [n_trips, 2]
                 "dropoff_tw": torch.tensor(
                     [t["dropoff_tw"] for t in trips], dtype=torch.float32
                 ),  # [n_trips, 2]
-                "origin_gps": torch.tensor(
-                    [t["origin_gps"] for t in trips], dtype=torch.float32
-                ),  # [n_trips, 2]
-                "dest_gps": torch.tensor(
-                    [t["destination_gps"] for t in trips], dtype=torch.float32
-                ),  # [n_trips, 2]
+                # Use H3 cell centroids instead of raw GPS — matches cost granularity
+                "origin_gps": centroids_cpu[origin_h3_idx],   # [n_trips, 2]
+                "dest_gps": centroids_cpu[dest_h3_idx],       # [n_trips, 2]
                 "flex_idx": torch.tensor(
                     [self._flexibility_to_index(t["flexibility"]) for t in trips],
                     dtype=torch.float32,

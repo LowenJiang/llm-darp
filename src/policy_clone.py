@@ -172,7 +172,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dataset-path",
         type=str,
-        default="dataset/size_128.pt",
+        default="dataset/size_40000.pt",
         help="Path to the instance-action dataset.",
     )
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
