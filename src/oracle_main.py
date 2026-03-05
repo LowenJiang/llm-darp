@@ -176,7 +176,7 @@ def train(args: argparse.Namespace) -> None:
     # Initialize generator and environment
     csv_path = Path(__file__).with_name("traveler_trip_types_res_7.csv")
     ttm_path = Path(__file__).with_name("travel_time_matrix_res_7.csv")
-    generator = SFGenerator(csv_path=csv_path, travel_time_matrix_path=ttm_path)
+    generator = SFGenerator(csv_path=csv_path, travel_time_matrix_path=ttm_path, perturbation=30)
     env = PDPTWEnv(generator=generator, 
                    vehicle_penalty=0)       # Here to adjust vehicular penalty
 
