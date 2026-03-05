@@ -165,10 +165,14 @@ class MeanBaseline(ExponentialBaseline):
 class RolloutBaseline(REINFORCEBaseline):
     """Greedy rollout baseline using a frozen copy of the policy."""
 
-    def __init__(self, bl_alpha: float = 0.05, eval_batch_size: int = 256):
+    def __init__(self, bl_alpha: float = 0.05, eval_batch_size: int = 256,
+                 free_vehicles: int = DEFAULT_FREE_VEHICLES,
+                 penalty_per_extra: float = DEFAULT_EXTRA_VEHICLE_PENALTY):
         super().__init__()
         self.bl_alpha = bl_alpha
         self.eval_batch_size = eval_batch_size
+        self.free_vehicles = free_vehicles
+        self.penalty_per_extra = penalty_per_extra
         self.policy = None
         self.eval_batch = None
         self.bl_vals = None
@@ -207,7 +211,11 @@ class RolloutBaseline(REINFORCEBaseline):
         reward = out["reward"]
         actions = out.get("actions")
         if actions is not None:
-            reward, _, _, _ = apply_vehicle_penalty(reward, actions)
+            reward, _, _, _ = apply_vehicle_penalty(
+                reward, actions,
+                free_vehicles=self.free_vehicles,
+                penalty_per_extra=self.penalty_per_extra,
+            )
         return reward.detach(), torch.tensor(0.0, device=reward.device)
 
     def epoch_callback(
@@ -364,7 +372,11 @@ class RolloutBaseline(REINFORCEBaseline):
         reward = out["reward"]
         actions = out.get("actions")
         if actions is not None:
-            reward, _, _, _ = apply_vehicle_penalty(reward, actions)
+            reward, _, _, _ = apply_vehicle_penalty(
+                reward, actions,
+                free_vehicles=self.free_vehicles,
+                penalty_per_extra=self.penalty_per_extra,
+            )
         return reward.detach()
 
 
@@ -501,9 +513,13 @@ class REINFORCE:
         baseline: Union[REINFORCEBaseline, str, None] = "mean",
         baseline_kwargs: Optional[Dict[str, Any]] = None,
         reward_scale: Optional[Union[str, int]] = None,
+        free_vehicles: int = DEFAULT_FREE_VEHICLES,
+        penalty_per_extra: float = DEFAULT_EXTRA_VEHICLE_PENALTY,
     ):
         self.env = env
         self.policy = policy
+        self.free_vehicles = free_vehicles
+        self.penalty_per_extra = penalty_per_extra
         baseline_kwargs = baseline_kwargs or {}
 
         if isinstance(baseline, str) or baseline is None:
@@ -512,7 +528,16 @@ class REINFORCE:
             log.warning("baseline_kwargs ignored because a baseline instance was provided.")
 
         self.baseline = baseline
+        self._propagate_penalty(self.baseline)
         self.advantage_scaler = RewardScaler(reward_scale)
+
+    def _propagate_penalty(self, baseline):
+        """Propagate vehicle penalty settings to baseline (and any wrapped inner baseline)."""
+        if hasattr(baseline, "free_vehicles"):
+            baseline.free_vehicles = self.free_vehicles
+            baseline.penalty_per_extra = self.penalty_per_extra
+        if hasattr(baseline, "baseline"):  # WarmupBaseline
+            self._propagate_penalty(baseline.baseline)
 
     def post_setup_hook(
         self, batch_size: int = 64, device: Union[str, torch.device] = "cpu", dataset_size: Optional[int] = None
@@ -549,7 +574,11 @@ class REINFORCE:
 
         actions = policy_out.get("actions")
         if actions is not None:
-            reward, vehicles_used, vehicle_penalty, feasibility = apply_vehicle_penalty(reward, actions)
+            reward, vehicles_used, vehicle_penalty, feasibility = apply_vehicle_penalty(
+                reward, actions,
+                free_vehicles=self.free_vehicles,
+                penalty_per_extra=self.penalty_per_extra,
+            )
             policy_out.update(
                 {
                     "reward": reward,
