@@ -116,7 +116,8 @@ def train_epoch(
     }
 
 
-def validate(policy, env, val_data, batch_size, max_steps, device):
+def validate(policy, env, val_data, batch_size, max_steps, device,
+             free_vehicles=5, penalty_per_extra=200.0):
     """Validate on validation dataset using greedy decoding."""
     policy.eval()
     num_instances = val_data.batch_size[0] if hasattr(val_data, 'batch_size') else val_data.shape[0]
@@ -143,7 +144,11 @@ def validate(policy, env, val_data, batch_size, max_steps, device):
                 decode_type="greedy",
                 max_steps=max_steps,
             )
-            outputs = apply_vehicle_penalty_to_outputs(outputs)
+            outputs = apply_vehicle_penalty_to_outputs(
+                outputs,
+                free_vehicles=free_vehicles,
+                penalty_per_extra=penalty_per_extra,
+            )
 
             val_reward += outputs["reward"].detach().mean().item()
             if "vehicles_used" in outputs:
@@ -192,7 +197,11 @@ def train(args: argparse.Namespace) -> None:
         log.info("Loaded policy weights from %s", checkpoint_path)
 
     # Initialize REINFORCE trainer with rollout baseline
-    trainer = REINFORCE(env, policy, baseline="rollout")
+    trainer = REINFORCE(
+        env, policy, baseline="rollout",
+        free_vehicles=args.free_vehicles,
+        penalty_per_extra=args.vehicle_penalty,
+    )
 
     # Setup baseline (creates initial baseline policy and evaluation dataset)
     log.info("Setting up baseline...")
@@ -252,7 +261,11 @@ def train(args: argparse.Namespace) -> None:
 
         # Validation
         log.info("Running validation...")
-        val_metrics = validate(policy, env, val_data, args.batch_size, args.max_steps, device)
+        val_metrics = validate(
+            policy, env, val_data, args.batch_size, args.max_steps, device,
+            free_vehicles=args.free_vehicles,
+            penalty_per_extra=args.vehicle_penalty,
+        )
 
         # Log validation metrics
         for key, value in val_metrics.items():
@@ -311,6 +324,10 @@ def parse_args() -> argparse.Namespace:
     # Optimization
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
     parser.add_argument("--grad-clip", type=float, default=1.0, help="Gradient clip norm.")
+
+    # Vehicle penalty
+    parser.add_argument("--free-vehicles", type=int, default=5, help="Number of free vehicles before penalty kicks in.")
+    parser.add_argument("--vehicle-penalty", type=float, default=200.0, help="Penalty per extra vehicle beyond free limit.")
 
     # Decoding
     parser.add_argument("--max-steps", type=int, default=300, help="Max decode steps.")
