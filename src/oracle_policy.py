@@ -346,71 +346,16 @@ class PDPTWInitEmbedding(nn.Module):
 
 
 class PDPTWContextEmbedding(nn.Module):
-    """
-    Decoder context composed of six signals:
-      1. Graph embedding        – mean of all node embeddings (global problem)
-      2. Last node embedding    – where the vehicle currently is
-      3. Depot node embedding   – route anchor / home base
-      4. Time signal            – current_time * learnable vector (temporal awareness)
-      5. Masked-node embedding  – mean of currently unavailable node embeddings
-      6. Pending-node embedding – mean of picked-up-but-not-yet-delivered node embeddings
-    """
-
+    """Context: current node + capacity + time + step."""
     def __init__(self, embed_dim: int):
         super().__init__()
-        self.embed_dim = embed_dim
-        # Learnable time-embedding vector (broadcast-multiplied by scalar current_time)
-        self.time_embed = nn.Parameter(torch.randn(embed_dim) * 0.01)
-        # 6 × embed_dim concatenated → MLP → embed_dim
-        self.project_context = nn.Sequential(
-            nn.Linear(6 * embed_dim, 2 * embed_dim, bias=True),
-            nn.ReLU(),
-            nn.Linear(2 * embed_dim, embed_dim, bias=True),
-        )
+        self.project_context = nn.Linear(embed_dim + 3, embed_dim, bias=True)
 
     def forward(self, embeddings: Tensor, td: TensorDict) -> Tensor:
-        """
-        Args:
-            embeddings: [B, N, D] encoder node embeddings
-            td: TensorDict with current decoding state
-        Returns:
-            context: [B, D] query vector for pointer attention
-        """
-        # 1. Graph embedding (mean over all nodes)
-        graph_emb = embeddings.mean(dim=1)  # [B, D]
-
-        # 2. Last node (current position)
-        last_node = gather_by_index(embeddings, td["current_node"])  # [B, D]
-
-        # 3. Depot node (index 0)
-        depot_emb = embeddings[:, 0, :]  # [B, D]
-
-        # 4. Current time × learnable vector
-        time_signal = td["current_time"] * self.time_embed  # [B, 1] * [D] → [B, D]
-
-        # 5. Mean embedding of masked (unavailable) nodes
-        action_mask = td["action_mask"]  # [B, N]
-        unavail = (~action_mask).float().unsqueeze(-1)  # [B, N, 1]
-        unavail_count = unavail.sum(dim=1).clamp(min=1.0)  # [B, 1]
-        masked_emb = (embeddings * unavail).sum(dim=1) / unavail_count  # [B, D]
-
-        # 6. Mean embedding of picked-up-but-not-delivered nodes
-        pending = td["pending_schedule"]  # [B, cap]
-        pending_mask = (pending != 0).float()  # [B, cap]
-        pending_count = pending_mask.sum(dim=1, keepdim=True).clamp(min=1.0)  # [B, 1]
-        pending_idx = pending.clamp(min=0)  # safe index (0 = depot, masked out)
-        pending_embs = gather_by_index(
-            embeddings, pending_idx, dim=1, squeeze=False
-        )  # [B, cap, D]
-        pending_emb = (
-            (pending_embs * pending_mask.unsqueeze(-1)).sum(dim=1) / pending_count
-        )  # [B, D]
-
-        context = torch.cat(
-            [graph_emb, last_node, depot_emb, time_signal, masked_emb, pending_emb],
-            dim=-1,
-        )  # [B, 6D]
-        return self.project_context(context)  # [B, D]
+        cur_node = gather_by_index(embeddings, td["current_node"])
+        remaining_cap = td["vehicle_capacity"] - td["used_capacity"]
+        context = torch.cat([cur_node, remaining_cap, td["current_time"], td["i"]], dim=-1)
+        return self.project_context(context)
 
 
 class StaticEmbedding(nn.Module):
@@ -473,6 +418,7 @@ class PDPTWAttentionPolicy(nn.Module):
         num_heads: int = 8,
         feedforward_hidden: int = 512,
         normalization: str = "batch",
+        use_graph_context: bool = True,
         temperature: float = 1.0,
         tanh_clipping: float = 10.0,
         mask_logits: bool = True,
@@ -486,6 +432,7 @@ class PDPTWAttentionPolicy(nn.Module):
 
         self.embed_dim = embed_dim
         self.num_heads = num_heads
+        self.use_graph_context = use_graph_context
         self.temperature = temperature
         self.tanh_clipping = tanh_clipping
         self.mask_logits = mask_logits
@@ -497,11 +444,12 @@ class PDPTWAttentionPolicy(nn.Module):
         self.init_embedding = PDPTWInitEmbedding(embed_dim)
         self.encoder = GraphAttentionNetwork(num_heads, embed_dim, num_encoder_layers, normalization, feedforward_hidden)
 
-        # Decoder (graph context is now inside PDPTWContextEmbedding)
+        # Decoder
         self.context_embedding = PDPTWContextEmbedding(embed_dim)
         self.dynamic_embedding = StaticEmbedding()
         self.pointer = PointerAttention(embed_dim, num_heads, check_nan=check_nan)
         self.project_node_embeddings = nn.Linear(embed_dim, 3 * embed_dim, bias=False)
+        self.project_fixed_context = nn.Linear(embed_dim, embed_dim, bias=False)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -521,11 +469,15 @@ class PDPTWAttentionPolicy(nn.Module):
     def _precompute_cache(self, embeddings: Tensor) -> PrecomputedCache:
         """Precompute K, V, logit_key."""
         k, v, l = self.project_node_embeddings(embeddings).chunk(3, dim=-1)
-        return PrecomputedCache(embeddings, 0, k, v, l)
+        ctx = self.project_fixed_context(embeddings.mean(1)) if self.use_graph_context else 0
+        return PrecomputedCache(embeddings, ctx, k, v, l)
 
     def _compute_query(self, cache: PrecomputedCache, td: TensorDict) -> Tensor:
-        """Compute query from 6-component context embedding."""
-        q = self.context_embedding(cache.node_embeddings, td)
+        """Compute query."""
+        ctx = cache.graph_context
+        if td.dim() == 2 and isinstance(ctx, Tensor):
+            ctx = ctx.unsqueeze(1)
+        q = self.context_embedding(cache.node_embeddings, td) + ctx
         return q.unsqueeze(1) if q.ndim == 2 else q
 
     def _compute_kv(self, cache: PrecomputedCache, td: TensorDict) -> Tuple[Tensor, Tensor, Tensor]:
