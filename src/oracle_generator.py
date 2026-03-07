@@ -221,34 +221,44 @@ class SFGenerator(Generator):
             sampled_dest_gps = arr["dest_gps"][trip_indices]      # [flat_batch, 2]
             sampled_flex = arr["flex_idx"][trip_indices]           # [flat_batch]
 
-            # Apply perturbation in batch (bidirectional +-perturbation minutes)
+            # Apply perturbation via rejection sampling (fully vectorized)
+            # Sample random deltas, keep only those that preserve the
+            # feasibility constraint: dropoff_early - pickup_late >= travel_time + 15
             if self.perturbation > 0:
-                pickup_deltas = self._sample_perturbation_batch(flat_batch)
-                dropoff_deltas = self._sample_perturbation_batch(flat_batch)
-                sampled_pickup_tw = self._shift_window_signed(sampled_pickup_tw, pickup_deltas)
-                sampled_dropoff_tw = self._shift_window_signed(sampled_dropoff_tw, dropoff_deltas)
-
-                # Feasibility: dropoff_early - pickup_late >= travel_time + 15
                 travel_time = self._travel_time_cpu[sampled_origin_h3, sampled_dest_h3]
                 min_gap = travel_time + 15.0
-                actual_gap = sampled_dropoff_tw[:, 0] - sampled_pickup_tw[:, 1]
-                deficit = min_gap - actual_gap
-                needs_fix = deficit > 0
 
-                if needs_fix.any():
-                    half = deficit[needs_fix] / 2.0
-                    # Push pickup earlier & dropoff later by half deficit each
-                    sampled_pickup_tw[needs_fix, 0] -= half
-                    sampled_pickup_tw[needs_fix, 1] -= half
-                    sampled_dropoff_tw[needs_fix, 0] += half
-                    sampled_dropoff_tw[needs_fix, 1] += half
-                    # Clamp to valid day range
-                    sampled_pickup_tw[needs_fix] = sampled_pickup_tw[needs_fix].clamp(
-                        min=0, max=float(self.day_minutes)
+                # Start with no shift applied
+                pickup_deltas = torch.zeros(flat_batch)
+                dropoff_deltas = torch.zeros(flat_batch)
+                unsettled = torch.ones(flat_batch, dtype=torch.bool)
+
+                for _attempt in range(10):
+                    if not unsettled.any():
+                        break
+                    n_open = int(unsettled.sum().item())
+                    # Sample candidate deltas for unsettled instances
+                    cand_p = self._sample_perturbation_batch(n_open)
+                    cand_d = self._sample_perturbation_batch(n_open)
+                    # Compute shifted windows
+                    cand_pickup_tw = self._shift_window_signed(
+                        sampled_pickup_tw[unsettled], cand_p
                     )
-                    sampled_dropoff_tw[needs_fix] = sampled_dropoff_tw[needs_fix].clamp(
-                        min=0, max=float(self.day_minutes)
+                    cand_dropoff_tw = self._shift_window_signed(
+                        sampled_dropoff_tw[unsettled], cand_d
                     )
+                    # Check feasibility: gap >= travel_time + 15
+                    gap = cand_dropoff_tw[:, 0] - cand_pickup_tw[:, 1]
+                    feasible = gap >= min_gap[unsettled]
+                    # Accept feasible candidates
+                    accept_idx = unsettled.nonzero(as_tuple=True)[0][feasible]
+                    pickup_deltas[accept_idx] = cand_p[feasible]
+                    dropoff_deltas[accept_idx] = cand_d[feasible]
+                    unsettled[accept_idx] = False
+
+                # unsettled instances keep delta=0 (original windows are feasible)
+                sampled_pickup_tw = self._shift_window_signed(sampled_pickup_tw, pickup_deltas)
+                sampled_dropoff_tw = self._shift_window_signed(sampled_dropoff_tw, dropoff_deltas)
 
             pickup_idx = cust_idx * 2
             dropoff_idx = pickup_idx + 1
