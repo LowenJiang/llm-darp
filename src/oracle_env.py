@@ -893,6 +893,7 @@ if __name__ == "__main__":
     # --- Run with policy (full rollout handled by policy.forward) ---
     if policy is not None:
         td = generator(batch_size=[batch_size])
+        td = env.reset(td)
         with torch.no_grad():
             outputs = policy(
                 td,
