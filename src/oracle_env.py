@@ -876,9 +876,9 @@ if __name__ == "__main__":
     # --- Load policy if provided ---
     policy = None
     if args.policy is not None:
-        from trial_gnn_policy import DARPPolicy
+        from oracle_policy import PDPTWAttentionPolicy
 
-        policy = DARPPolicy(
+        policy = PDPTWAttentionPolicy(
             embed_dim=args.embed_dim,
             num_encoder_layers=args.num_encoder_layers,
             num_heads=args.num_heads,
