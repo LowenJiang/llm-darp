@@ -79,7 +79,7 @@ class SFGenerator(Generator):
         csv_path: Optional[str | Path] = None,
         travel_time_matrix_path: Optional[str | Path] = None,
         num_customers: int = 30,
-        perturbation: int = 0,
+        perturbation: int = 30, # turn to 30 for enrichment; turn to 0 for off
         vehicle_capacity: int = 8,
         demand_per_customer: int = 1,
         depot_h3: Optional[str] = None,
@@ -160,6 +160,9 @@ class SFGenerator(Generator):
         # matching the granularity of the travel-time cost function.
         self._h3_centroids = self._build_centroid_table()
 
+        # CPU copy of travel-time matrix for fast perturbation feasibility checks
+        self._travel_time_cpu = self.travel_time_matrix.cpu()
+
         self._trips_by_traveler = self._load_trips()
         expected_ids = set(range(1, self.num_customers + 1))
         if not expected_ids.issubset(self._trips_by_traveler):
@@ -218,16 +221,34 @@ class SFGenerator(Generator):
             sampled_dest_gps = arr["dest_gps"][trip_indices]      # [flat_batch, 2]
             sampled_flex = arr["flex_idx"][trip_indices]           # [flat_batch]
 
-            # Apply perturbation in batch
-            if self.perturbation >= 10:
+            # Apply perturbation in batch (bidirectional +-perturbation minutes)
+            if self.perturbation > 0:
                 pickup_deltas = self._sample_perturbation_batch(flat_batch)
                 dropoff_deltas = self._sample_perturbation_batch(flat_batch)
-                sampled_pickup_tw = self._shift_windows_batch(
-                    sampled_pickup_tw, "earlier", pickup_deltas
-                )
-                sampled_dropoff_tw = self._shift_windows_batch(
-                    sampled_dropoff_tw, "later", dropoff_deltas
-                )
+                sampled_pickup_tw = self._shift_window_signed(sampled_pickup_tw, pickup_deltas)
+                sampled_dropoff_tw = self._shift_window_signed(sampled_dropoff_tw, dropoff_deltas)
+
+                # Feasibility: dropoff_early - pickup_late >= travel_time + 15
+                travel_time = self._travel_time_cpu[sampled_origin_h3, sampled_dest_h3]
+                min_gap = travel_time + 15.0
+                actual_gap = sampled_dropoff_tw[:, 0] - sampled_pickup_tw[:, 1]
+                deficit = min_gap - actual_gap
+                needs_fix = deficit > 0
+
+                if needs_fix.any():
+                    half = deficit[needs_fix] / 2.0
+                    # Push pickup earlier & dropoff later by half deficit each
+                    sampled_pickup_tw[needs_fix, 0] -= half
+                    sampled_pickup_tw[needs_fix, 1] -= half
+                    sampled_dropoff_tw[needs_fix, 0] += half
+                    sampled_dropoff_tw[needs_fix, 1] += half
+                    # Clamp to valid day range
+                    sampled_pickup_tw[needs_fix] = sampled_pickup_tw[needs_fix].clamp(
+                        min=0, max=float(self.day_minutes)
+                    )
+                    sampled_dropoff_tw[needs_fix] = sampled_dropoff_tw[needs_fix].clamp(
+                        min=0, max=float(self.day_minutes)
+                    )
 
             pickup_idx = cust_idx * 2
             dropoff_idx = pickup_idx + 1
@@ -565,51 +586,31 @@ class SFGenerator(Generator):
             }
 
     def _sample_perturbation_batch(self, n: int) -> torch.Tensor:
-        """Sample perturbation deltas for *n* instances (CPU tensor)."""
-        if self.perturbation < 10:
+        """Sample signed perturbation deltas uniform in [-perturbation, +perturbation] (CPU)."""
+        if self.perturbation <= 0:
             return torch.zeros(n)
-        steps = torch.arange(0, self.perturbation + 1, 10)
-        indices = torch.randint(len(steps), (n,), generator=self.generator)
-        return steps[indices].float()
+        return (torch.rand(n, generator=self.generator) * 2 - 1) * self.perturbation
 
-    def _shift_windows_batch(
+    def _shift_window_signed(
         self,
         windows: torch.Tensor,
-        direction: str,
         deltas: torch.Tensor,
     ) -> torch.Tensor:
-        """Batch version of _shift_window.
+        """Shift time windows by signed deltas, preserving window duration.
 
         Args:
             windows: [N, 2] time windows (start, end)
-            direction: "earlier" or "later"
-            deltas: [N] perturbation deltas
+            deltas: [N] signed perturbation (positive = later, negative = earlier)
 
         Returns:
-            [N, 2] shifted windows
+            [N, 2] shifted windows clamped to [0, day_minutes]
         """
-        starts = windows[:, 0]
-        ends = windows[:, 1]
-        duration = torch.clamp(ends - starts, min=0)
-
-        if direction == "earlier":
-            new_starts = torch.clamp(starts - deltas, min=0)
-            new_ends = torch.clamp(new_starts + duration, max=float(self.day_minutes))
-        elif direction == "later":
-            new_ends = torch.clamp(ends + deltas, max=float(self.day_minutes))
-            new_starts = torch.clamp(new_ends - duration, min=0)
-        else:
-            raise ValueError(f"Unknown direction '{direction}' for window shift.")
-
-        # Handle edge case: new_end <= new_start
-        too_small = new_ends <= new_starts
-        if too_small.any():
-            fix_ends = torch.clamp(
-                new_starts + torch.clamp(duration, min=10),
-                max=float(self.day_minutes),
-            )
-            new_ends = torch.where(too_small, fix_ends, new_ends)
-
+        duration = torch.clamp(windows[:, 1] - windows[:, 0], min=0)
+        new_starts = torch.clamp(windows[:, 0] + deltas, min=0,
+                                 max=float(self.day_minutes))
+        new_ends = torch.clamp(new_starts + duration, max=float(self.day_minutes))
+        # Ensure duration is preserved even when clamped at day end
+        new_starts = torch.clamp(new_ends - duration, min=0)
         return torch.stack([new_starts, new_ends], dim=-1)
 
     def _randint(self, high: int) -> int:
