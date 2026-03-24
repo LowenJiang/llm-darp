@@ -1,142 +1,205 @@
 """PPO agent for NDVRP perturbation optimisation.
 
-Uses a frozen attention encoder (from oracle_policy checkpoint) to build a
-fixed-dimensional state vector, then trains lightweight policy and value FFN
-heads with PPO.
+Uses a GCN-based encoder over the H3 travel-time graph, time-window
+embeddings, and a Transformer to produce per-request representations.
+Separate policy and value heads output over 16 discrete actions.
 
-State construction:
-    {h_1, …, h_t} = Enc_θ(ρ_1', …, ρ_t)
-    h̄_{<t} = 𝟙{t>1} · mean(h_1, …, h_{t-1})
-    s_t   = [ h̄_{<t} ‖ h_t ] ∈ ℝ^{2·d_h}
-
-where each h_j is the mean of the pickup and dropoff node embeddings for
-request j.
+State format: (B, C, 6) where each request row is
+    [origin_h3, pickup_tw_early, pickup_tw_late,
+     dest_h3,   dropoff_tw_early, dropoff_tw_late]
 """
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
-from tensordict import TensorDict
 from typing import Tuple
 
 from ndvrp_env import NUM_ACTIONS
 
 
-# --------------------------------------------------------------------------- #
-# Frozen encoder wrapper
-# --------------------------------------------------------------------------- #
-class FrozenEncoder(nn.Module):
-    """Loads init_embedding + encoder from an oracle_policy checkpoint and
-    freezes them.  Exposes ``encode_nodes`` (no grad) and ``build_state``
-    (differentiable through h0)."""
+# =========================================================================== #
+#   ENCODING BLOCK
+# =========================================================================== #
 
-    def __init__(self, checkpoint_path: str, embed_dim: int = 128, device: str = "cpu"):
+class GCN(nn.Module):
+    def __init__(self, in_dim, hidden_dim, out_dim, travel_time_matrix):
         super().__init__()
-        from oracle_policy import PDPTWAttentionPolicy
+        self.register_buffer("travel_time_matrix", travel_time_matrix)
+        self.register_buffer(
+            "travel_time_matrix_norm", self._normalize_adj(travel_time_matrix)
+        )
+        self.gc1 = nn.Linear(in_dim, hidden_dim, bias=False)
+        self.gc2 = nn.Linear(hidden_dim, out_dim, bias=False)
 
-        full = PDPTWAttentionPolicy(embed_dim=embed_dim)
-        ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
-        full.load_state_dict(ckpt["policy_state_dict"])
+    @staticmethod
+    def _normalize_adj(A):
+        A_hat = A + torch.eye(A.size(0), device=A.device)
+        deg_inv_sqrt = A_hat.sum(1).pow(-0.5)
+        deg_inv_sqrt[torch.isinf(deg_inv_sqrt)] = 0
+        D = torch.diag(deg_inv_sqrt)
+        return D @ A_hat @ D
 
-        self.init_embedding = full.init_embedding
-        self.encoder = full.encoder
-        for p in self.init_embedding.parameters():
-            p.requires_grad = False
-        for p in self.encoder.parameters():
-            p.requires_grad = False
+    def forward(self, X):
+        h = torch.relu(self.travel_time_matrix_norm @ self.gc1(X))
+        return self.travel_time_matrix_norm @ self.gc2(h)  # (N, out_dim)
 
-        self.embed_dim = embed_dim
 
-    @torch.no_grad()
-    def encode_nodes(self, td: TensorDict) -> torch.Tensor:
-        """Run frozen encoder → detached node embeddings [B, N, D]."""
-        self.init_embedding.eval()
-        self.encoder.eval()
-        init_h = self.init_embedding(td)
-        return self.encoder(init_h).detach()
+class TripRequestEmbeddingModel(nn.Module):
+    def __init__(
+        self,
+        travel_time_matrix,
+        gcn_hidden=32,
+        gcn_out=32,
+        time_embed_dim=16,
+        time_vocab_size=500,
+        num_heads=4,
+        num_layers=3,
+        transformer_embed_dim=80,
+    ):
+        super().__init__()
+        num_nodes = travel_time_matrix.shape[0]
+        self.time_vocab_size = time_vocab_size
 
-    def extract_request_components(
-        self, node_embs: torch.Tensor, step: int,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """From node embeddings return (fixed_mean, current_emb).
+        self.register_buffer("node_features", torch.eye(num_nodes))
 
-        Args:
-            node_embs: [B, 2*(step+1)+1, D] — depot + requests 1..step+1
-            step: 0-indexed step (request index = step+1)
+        self.gcn = GCN(num_nodes, gcn_hidden, gcn_out, travel_time_matrix)
+        self.pickup_embed = nn.Embedding(time_vocab_size, time_embed_dim)
+        self.dropoff_embed = nn.Embedding(time_vocab_size, time_embed_dim)
 
-        Returns:
-            fixed_mean:   [B, D]  mean embedding of requests 1..step (or zeros)
-            current_emb:  [B, D]  embedding of request step+1
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=transformer_embed_dim,
+            nhead=num_heads,
+            dim_feedforward=transformer_embed_dim * 4,
+            batch_first=True,
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers)
+
+        total_dim = gcn_out * 2 + time_embed_dim * 4
+        self.project = nn.Linear(total_dim, transformer_embed_dim)
+
+    def forward(self, states):
         """
-        B, _, D = node_embs.shape
-        num_requests = step + 1  # requests 1..step+1
+        Args:
+            states: (B, C, 6) — columns are
+                [origin, pickup_tw_early, pickup_tw_late,
+                 dest,   dropoff_tw_early, dropoff_tw_late]
+        Returns:
+            (B, C, transformer_embed_dim)
+        """
+        B, C, _ = states.shape
+        node_emb = self.gcn(self.node_features)  # (N, gcn_out)
+        max_idx = self.time_vocab_size - 1
 
-        # Per-request embedding = mean(pickup, dropoff) — skip depot at idx 0
-        pickup_embs = node_embs[:, 1::2]   # [B, num_requests, D]
-        dropoff_embs = node_embs[:, 2::2]  # [B, num_requests, D]
-        request_embs = (pickup_embs + dropoff_embs) / 2  # [B, num_requests, D]
+        origin_idx = states[..., 0].long()
+        dest_idx = states[..., 3].long()
 
-        current_emb = request_embs[:, -1]  # [B, D]
-        if num_requests > 1:
-            fixed_mean = request_embs[:, :-1].mean(dim=1)
-        else:
-            fixed_mean = torch.zeros(B, D, device=node_embs.device)
-        return fixed_mean, current_emb
+        pickup_tw_early = states[..., 1].long().clamp(0, max_idx)
+        pickup_tw_late = states[..., 2].long().clamp(0, max_idx)
+        drop_tw_early = states[..., 4].long().clamp(0, max_idx)
+        drop_tw_late = states[..., 5].long().clamp(0, max_idx)
 
-    def build_state(
-        self, fixed_mean: torch.Tensor, current_emb: torch.Tensor,
-    ) -> torch.Tensor:
-        """s_t = [ fixed_mean ‖ current_emb ] ∈ ℝ^{2D}."""
-        return torch.cat([fixed_mean, current_emb], dim=-1)  # [B, 2D]
+        trip_emb = torch.cat(
+            [
+                node_emb[origin_idx],
+                node_emb[dest_idx],
+                self.pickup_embed(pickup_tw_early),
+                self.pickup_embed(pickup_tw_late),
+                self.dropoff_embed(drop_tw_early),
+                self.dropoff_embed(drop_tw_late),
+            ],
+            dim=-1,
+        )  # (B, C, total_dim)
+
+        # Zero-mask padded customers (all-zero rows)
+        padding_mask = states.abs().sum(dim=-1) == 0  # (B, C)
+        trip_emb = trip_emb.masked_fill(padding_mask.unsqueeze(-1), 0.0)
+        trip_emb = self.project(trip_emb)
+
+        return self.transformer(trip_emb, src_key_padding_mask=padding_mask)
 
 
-# --------------------------------------------------------------------------- #
-# Policy / Value heads
-# --------------------------------------------------------------------------- #
-class PolicyNet(nn.Module):
-    def __init__(self, state_dim: int, hidden_dim: int = 512, num_actions: int = NUM_ACTIONS):
+class PolicyNetwork(nn.Module):
+    def __init__(self, travel_time_matrix, gcn_hidden=32, gcn_out=32,
+                 time_embed_dim=16, time_vocab_size=500,
+                 transformer_embed_dim=64, action_dim=NUM_ACTIONS,
+                 hidden_dim=512, num_heads=8, num_layers=3):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.Tanh(),
-            nn.Linear(hidden_dim // 2, num_actions),
+        self.backbone = TripRequestEmbeddingModel(
+            travel_time_matrix, gcn_hidden, gcn_out, time_embed_dim,
+            time_vocab_size, num_heads, num_layers, transformer_embed_dim,
+        )
+        self.network = nn.Sequential(
+            nn.Linear(transformer_embed_dim, hidden_dim), nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim), nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim // 2), nn.Tanh(),
+            nn.Linear(hidden_dim // 2, action_dim),
         )
 
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        return self.net(state)  # raw logits [B, num_actions]
+    def forward(self, states):
+        return self.network(self.backbone(states).mean(dim=1))
 
 
-class ValueNet(nn.Module):
-    def __init__(self, state_dim: int, hidden_dim: int = 512):
+class ValueNetwork(nn.Module):
+    def __init__(self, travel_time_matrix, gcn_hidden=32, gcn_out=32,
+                 time_embed_dim=16, time_vocab_size=500,
+                 transformer_embed_dim=64, hidden_dim=512,
+                 num_heads=8, num_layers=3):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.Tanh(),
+        self.backbone = TripRequestEmbeddingModel(
+            travel_time_matrix, gcn_hidden, gcn_out, time_embed_dim,
+            time_vocab_size, num_heads, num_layers, transformer_embed_dim,
+        )
+        self.network = nn.Sequential(
+            nn.Linear(transformer_embed_dim, hidden_dim), nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim), nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim // 2), nn.Tanh(),
             nn.Linear(hidden_dim // 2, 1),
         )
 
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        return self.net(state).squeeze(-1)  # [B]
+    def forward(self, states):
+        return self.network(self.backbone(states).mean(dim=1)).squeeze(-1)
 
 
-# --------------------------------------------------------------------------- #
-# PPO Agent
-# --------------------------------------------------------------------------- #
+class ActorCritic(nn.Module):
+    def __init__(self, travel_time_matrix, gcn_hidden=32, gcn_out=32,
+                 time_embed_dim=16, time_vocab_size=500,
+                 transformer_embed_dim=64, action_dim=NUM_ACTIONS,
+                 hidden_dim=512, num_heads=8, num_layers=3):
+        super().__init__()
+        common = dict(
+            travel_time_matrix=travel_time_matrix, gcn_hidden=gcn_hidden,
+            gcn_out=gcn_out, time_embed_dim=time_embed_dim,
+            time_vocab_size=time_vocab_size,
+            transformer_embed_dim=transformer_embed_dim,
+            hidden_dim=hidden_dim, num_heads=num_heads, num_layers=num_layers,
+        )
+        self.policy_network = PolicyNetwork(**common, action_dim=action_dim)
+        self.value_network = ValueNetwork(**common)
+
+    def forward(self, state):
+        logits = self.policy_network(state)
+        value = self.value_network(state)
+        return logits, value
+
+
+# =========================================================================== #
+#   PPO Agent
+# =========================================================================== #
+
 class PPOAgent:
     def __init__(
         self,
-        checkpoint_path: str,
-        embed_dim: int = 128,
+        travel_time_matrix: torch.Tensor,
+        num_customers: int = 30,
+        gcn_hidden: int = 32,
+        gcn_out: int = 32,
+        time_embed_dim: int = 16,
+        time_vocab_size: int = 500,
+        transformer_embed_dim: int = 64,
         hidden_dim: int = 512,
+        num_heads: int = 4,
+        num_layers: int = 2,
         lr_policy: float = 3e-4,
         lr_value: float = 1e-3,
         gamma: float = 0.99,
@@ -145,6 +208,7 @@ class PPOAgent:
         value_epochs: int = 10,
         policy_epochs: int = 4,
         entropy_coef: float = 0.01,
+        max_grad_norm: float = 1.0,
         device: str = "cpu",
     ):
         self.device = torch.device(device)
@@ -154,38 +218,61 @@ class PPOAgent:
         self.value_epochs = value_epochs
         self.policy_epochs = policy_epochs
         self.entropy_coef = entropy_coef
+        self.max_grad_norm = max_grad_norm
+        self.num_customers = num_customers
 
-        state_dim = 2 * embed_dim
+        self.actor_critic = ActorCritic(
+            travel_time_matrix=travel_time_matrix,
+            gcn_hidden=gcn_hidden, gcn_out=gcn_out,
+            time_embed_dim=time_embed_dim, time_vocab_size=time_vocab_size,
+            transformer_embed_dim=transformer_embed_dim,
+            action_dim=NUM_ACTIONS, hidden_dim=hidden_dim,
+            num_heads=num_heads, num_layers=num_layers,
+        ).to(self.device)
 
-        self.encoder = FrozenEncoder(checkpoint_path, embed_dim, device).to(self.device)
-        self.policy = PolicyNet(state_dim, hidden_dim).to(self.device)
-        self.value = ValueNet(state_dim, hidden_dim).to(self.device)
-
-        # Separate optimisers
-        self.policy_optim = torch.optim.Adam(
-            self.policy.parameters(), lr=lr_policy,
-        )
-        self.value_optim = torch.optim.Adam(
-            self.value.parameters(), lr=lr_value,
-        )
+        # Separate optimisers with per-component learning rates
+        self.policy_optim = torch.optim.Adam([
+            {"params": self.actor_critic.policy_network.backbone.parameters(),
+             "lr": lr_policy * 0.1},
+            {"params": self.actor_critic.policy_network.network.parameters(),
+             "lr": lr_policy},
+        ])
+        self.value_optim = torch.optim.Adam([
+            {"params": self.actor_critic.value_network.backbone.parameters(),
+             "lr": lr_value * 0.1},
+            {"params": self.actor_critic.value_network.network.parameters(),
+             "lr": lr_value},
+        ])
 
     # ------------------------------------------------------------------ #
     # State encoding (from raw observation)
     # ------------------------------------------------------------------ #
-    def encode_obs(self, obs: dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Encode an observation into a state vector [B, 2D]."""
-        td = TensorDict({
-            "h3_indices": obs["h3_indices"],
-            "travel_time_matrix": obs["travel_time_matrix"],
-            "locs": obs["locs"],
-            "demand": obs["demand"],
-            "time_windows": obs["time_windows"],
-        }, batch_size=[obs["h3_indices"].shape[0]])
+    def encode_obs(self, obs: dict) -> torch.Tensor:
+        """Convert env observation to state tensor [B, C, 6].
 
-        node_embs = self.encoder.encode_nodes(td)
+        Pads to num_customers with zeros for requests not yet revealed.
+        """
         step = int(obs["step"][0].item())
-        fixed_mean, current_emb = self.encoder.extract_request_components(node_embs, step)
-        return self.encoder.build_state(fixed_mean, current_emb)
+        h3 = obs["h3_indices"]           # [B, 2*(step+1)+1]
+        tw = obs["time_windows"]         # [B, 2*(step+1)+1, 2]
+        B = h3.shape[0]
+        C = self.num_customers
+
+        state = torch.zeros(B, C, 6, device=self.device)
+        num_visible = step + 1  # requests 1..step+1
+
+        # request i (0-indexed): pickup_node = 2*i+1, dropoff_node = 2*i+2
+        for i in range(num_visible):
+            p_node = 2 * i + 1
+            d_node = 2 * i + 2
+            state[:, i, 0] = h3[:, p_node].float()       # origin h3
+            state[:, i, 1] = tw[:, p_node, 0]             # pickup early
+            state[:, i, 2] = tw[:, p_node, 1]             # pickup late
+            state[:, i, 3] = h3[:, d_node].float()       # dest h3
+            state[:, i, 4] = tw[:, d_node, 0]             # dropoff early
+            state[:, i, 5] = tw[:, d_node, 1]             # dropoff late
+
+        return state
 
     # ------------------------------------------------------------------ #
     # Action selection
@@ -194,11 +281,12 @@ class PPOAgent:
         self, state: torch.Tensor, mask: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Sample actions; returns (action, log_prob, value) — all [B]."""
-        logits = self.policy(state)
-        logits[~mask] = -float("inf")
-        dist = Categorical(logits=logits)
-        action = dist.sample()
-        return action, dist.log_prob(action).detach(), self.value(state).detach()
+        with torch.no_grad():
+            logits, value = self.actor_critic(state)
+            logits[~mask] = -float("inf")
+            dist = Categorical(logits=logits)
+            action = dist.sample()
+        return action, dist.log_prob(action), value
 
     # ------------------------------------------------------------------ #
     # PPO update
@@ -210,30 +298,33 @@ class PPOAgent:
             states, actions, old_log_probs,
             old_values, rewards, dones, masks
         """
-        states = buffer["states"]        # [T*B, 2D]
+        states = buffer["states"]        # [T*B, C, 6]
         actions = buffer["actions"]      # [T*B]
         old_lp = buffer["old_log_probs"] # [T*B]
         old_val = buffer["old_values"]   # [T*B]
         rewards = buffer["rewards"]      # [T*B]
         dones = buffer["dones"]          # [T*B]
-        masks = buffer["masks"]          # [T*B, 49]
+        masks = buffer["masks"]          # [T*B, 16]
         num_envs = buffer["num_envs"]
 
         # ---- 1. GAE advantages (using old values, no grad) ------------ #
         advantages, returns = self._compute_gae(rewards, old_val, dones, num_envs)
 
         # ---- 2. Value network update --------------------------------- #
+        value_params = list(self.actor_critic.value_network.parameters())
         for _ in range(self.value_epochs):
-            v = self.value(states)
+            v = self.actor_critic.value_network(states)
             value_loss = F.mse_loss(v, returns)
             self.value_optim.zero_grad()
             value_loss.backward()
+            nn.utils.clip_grad_norm_(value_params, self.max_grad_norm)
             self.value_optim.step()
 
         # ---- 3. Policy update (clipped PPO) -------------------------- #
         adv_norm = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        policy_params = list(self.actor_critic.policy_network.parameters())
         for _ in range(self.policy_epochs):
-            logits = self.policy(states)
+            logits = self.actor_critic.policy_network(states)
             logits[~masks] = -float("inf")
             dist = Categorical(logits=logits)
             new_lp = dist.log_prob(actions)
@@ -247,6 +338,7 @@ class PPOAgent:
 
             self.policy_optim.zero_grad()
             loss.backward()
+            nn.utils.clip_grad_norm_(policy_params, self.max_grad_norm)
             self.policy_optim.step()
 
         return {

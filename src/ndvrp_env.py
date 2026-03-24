@@ -4,8 +4,9 @@ Batched environment for training a PPO agent to find optimal time-window
 perturbations for the Dial-a-Ride Problem. At each step the agent perturbs
 one incoming customer request; routing cost is evaluated via the oracle policy.
 
-Action space: 49 discrete = 7 pickup shifts × 7 dropoff shifts
-Shifts ∈ {-30, -20, -10, 0, 10, 20, 30} minutes.
+Action space: 16 discrete = 4 pickup shifts × 4 dropoff shifts
+Pickup shifts ∈ {-30, -20, -10, 0} minutes.
+Dropoff shifts ∈ {0, 10, 20, 30} minutes.
 """
 
 import torch
@@ -15,12 +16,13 @@ from typing import Dict
 # --------------------------------------------------------------------------- #
 # Action helpers
 # --------------------------------------------------------------------------- #
-SHIFTS = torch.tensor([-30, -20, -10, 0, 10, 20, 30], dtype=torch.float32)
-NUM_ACTIONS = len(SHIFTS) ** 2  # 49
+P_SHIFT_VALUES = torch.tensor([-30, -20, -10, 0], dtype=torch.float32)
+D_SHIFT_VALUES = torch.tensor([0, 10, 20, 30], dtype=torch.float32)
+NUM_ACTIONS = len(P_SHIFT_VALUES) * len(D_SHIFT_VALUES)  # 16
 # Pre-built index tables: action_id → (pickup_shift, dropoff_shift)
-P_SHIFTS = SHIFTS.repeat_interleave(7)  # [49]
-D_SHIFTS = SHIFTS.repeat(7)             # [49]
-NO_PERTURBATION_ACTION = 24             # index of (0, 0)
+P_SHIFTS = P_SHIFT_VALUES.repeat_interleave(4)  # [16]
+D_SHIFTS = D_SHIFT_VALUES.repeat(4)              # [16]
+NO_PERTURBATION_ACTION = 12                      # index of (0, 0)
 
 
 def action_to_shifts(actions: torch.Tensor, device: torch.device):
@@ -132,20 +134,23 @@ class NDVRPEnv:
         }
 
     # ------------------------------------------------------------------ #
-    # Feasibility mask (vectorised over 49 actions)
+    # Feasibility mask (vectorised over 16 actions)
     # ------------------------------------------------------------------ #
     def _compute_mask(self) -> torch.Tensor:
-        """Auto-mask actions that shrink the gap below the original gap."""
+        """Auto-mask actions where dropoff_early - pickup_late - trip_time < 15."""
         t = self.step_idx
         p_node, d_node = 2 * t + 1, 2 * t + 2
 
         pickup_tw = self.original_tw[:, p_node]    # [B, 2]
         dropoff_tw = self.original_tw[:, d_node]   # [B, 2]
 
-        original_gap = dropoff_tw[:, 0] - pickup_tw[:, 1]  # [B]
+        batch_idx = torch.arange(self.num_envs, device=self.device)
+        p_h3 = self.td["h3_indices"][:, p_node]
+        d_h3 = self.td["h3_indices"][:, d_node]
+        trip_time = self.td["travel_time_matrix"][batch_idx, p_h3, d_h3]  # [B]
 
-        p_shifts = P_SHIFTS.to(self.device)  # [49]
-        d_shifts = D_SHIFTS.to(self.device)  # [49]
+        p_shifts = P_SHIFTS.to(self.device)  # [16]
+        d_shifts = D_SHIFTS.to(self.device)  # [16]
 
         new_pickup_late = torch.clamp(
             pickup_tw[:, 1:2] + p_shifts.unsqueeze(0), min=0,
@@ -153,8 +158,7 @@ class NDVRPEnv:
         new_dropoff_early = torch.clamp(
             dropoff_tw[:, 0:1] + d_shifts.unsqueeze(0), min=0,
         )  # [B, 49]
-        new_gap = new_dropoff_early - new_pickup_late  # [B, 49]
-        return new_gap >= original_gap.unsqueeze(1)
+        return (new_dropoff_early - new_pickup_late - trip_time.unsqueeze(1)) >= 15.0
 
     # ------------------------------------------------------------------ #
     # Cost evaluation via oracle policy
