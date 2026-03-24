@@ -83,66 +83,86 @@ def train(args):
 
     best_improvement = -float("inf")
 
-    for episode in range(args.episodes): #! Parallel env would load multiple episodes
-        # Each episode runs num_envs (default 512) instances in parallel as a single batch.
+    for episode in range(args.episodes):
         t0 = time.time()
-        obs = env.reset() # This is a parallel env
 
-        # Collection buffers
-        states_buf = []
-        actions_buf, log_probs_buf, values_buf = [], [], []
-        rewards_buf, dones_buf, masks_buf = [], [], []
-        final_ppo_cost = torch.zeros(args.num_envs, device=device)
+        # Accumulate rollouts across buffer_rollouts iterations
+        all_states, all_actions, all_lp, all_val = [], [], [], []
+        all_rewards, all_dones, all_masks = [], [], []
+        all_ppo_costs, all_base_costs = [], []
+        total_valid = 0
 
-        for step in tqdm(range(args.num_customers), desc=f"Ep {episode}", leave=False):
-            state = agent.encode_obs(obs)
-            mask = obs["action_mask"]
-            action, lp, val = agent.select_action(state, mask)
+        for rollout in range(args.buffer_rollouts):
+            obs = env.reset()
+            states_buf = []
+            actions_buf, log_probs_buf, values_buf = [], [], []
+            rewards_buf, dones_buf, masks_buf = [], [], []
 
-            obs, reward, done, info = env.step(action)
-            reward = reward - args.penalty  # per-step penalty
+            for step in tqdm(range(args.num_customers),
+                             desc=f"Ep {episode} roll {rollout+1}/{args.buffer_rollouts}",
+                             leave=False):
+                state = agent.encode_obs(obs)
+                mask = obs["action_mask"]
+                action, lp, val = agent.select_action(state, mask)
 
-            states_buf.append(state)
-            actions_buf.append(action)
-            log_probs_buf.append(lp)
-            values_buf.append(val)
-            rewards_buf.append(reward)
-            dones_buf.append(done)
-            masks_buf.append(mask)
+                obs, reward, done, info = env.step(action)
+                reward = reward - args.penalty
 
-            final_ppo_cost = info["ppo_cost"]
+                states_buf.append(state)
+                actions_buf.append(action)
+                log_probs_buf.append(lp)
+                values_buf.append(val)
+                rewards_buf.append(reward)
+                dones_buf.append(done)
+                masks_buf.append(mask)
 
-        # Filter out stuck envs, stack buffer: [T*B'] where B' = valid envs
-        valid = ~env.stuck_mask  # [B]
-        num_valid = valid.sum().item()
-        if num_valid == 0:
-            continue  # entire batch stuck, skip update
+            # Filter stuck envs for this rollout
+            valid = ~env.stuck_mask
+            num_valid = valid.sum().item()
+            if num_valid == 0:
+                continue
 
-        def interleave(lst):
-            stacked = torch.stack(lst, dim=0)        # [T, B, ...]
-            return stacked[:, valid].reshape(-1, *stacked.shape[2:]).squeeze(-1) \
-                if stacked.dim() > 2 else stacked[:, valid].reshape(-1)
+            def interleave(lst, v=valid):
+                stacked = torch.stack(lst, dim=0)
+                return stacked[:, v].reshape(-1, *stacked.shape[2:]).squeeze(-1) \
+                    if stacked.dim() > 2 else stacked[:, v].reshape(-1)
+
+            all_states.append(torch.stack(states_buf, dim=0)[:, valid].reshape(-1, 256))
+            all_actions.append(interleave(actions_buf))
+            all_lp.append(interleave(log_probs_buf))
+            all_val.append(interleave(values_buf))
+            all_rewards.append(interleave(rewards_buf))
+            all_dones.append(interleave(dones_buf))
+            all_masks.append(torch.stack(masks_buf, dim=0)[:, valid].reshape(-1, 49))
+
+            # Logging costs (from last rollout's valid envs)
+            n_nodes = 2 * args.num_customers + 1
+            no_pert_cost = env._eval_cost(env.original_tw, n_nodes)
+            all_ppo_costs.append(info["ppo_cost"][valid])
+            all_base_costs.append(no_pert_cost[valid])
+            total_valid += num_valid
+
+        if total_valid == 0:
+            continue
 
         buffer = {
-            "states": torch.stack(states_buf, dim=0)[:, valid].reshape(-1, 256),
-            "actions": interleave(actions_buf),
-            "old_log_probs": interleave(log_probs_buf),
-            "old_values": interleave(values_buf),
-            "rewards": interleave(rewards_buf),
-            "dones": interleave(dones_buf),
-            "masks": torch.stack(masks_buf, dim=0)[:, valid].reshape(-1, 49),
-            "num_envs": num_valid,
+            "states": torch.cat(all_states),
+            "actions": torch.cat(all_actions),
+            "old_log_probs": torch.cat(all_lp),
+            "old_values": torch.cat(all_val),
+            "rewards": torch.cat(all_rewards),
+            "dones": torch.cat(all_dones),
+            "masks": torch.cat(all_masks),
+            "num_envs": total_valid,
         }
 
         update_info = agent.update(buffer)
 
         # ------ Logging ----------------------------------------------------- #
         dt = time.time() - t0
-        n_nodes = 2 * args.num_customers + 1
-        no_pert_cost = env._eval_cost(env.original_tw, n_nodes)
-        mean_ppo = final_ppo_cost[valid].mean().item()
-        mean_base = no_pert_cost[valid].mean().item()
-        mean_reward = (mean_base - mean_ppo)
+        mean_ppo = torch.cat(all_ppo_costs).mean().item()
+        mean_base = torch.cat(all_base_costs).mean().item()
+        mean_reward = mean_base - mean_ppo
         improvement = mean_reward / (abs(mean_base) + 1e-8) * 100
 
         writer.add_scalar("train/reward", mean_reward, episode)
@@ -153,14 +173,9 @@ def train(args):
         writer.add_scalar("train/value_loss", update_info["value_loss"], episode)
         writer.add_scalar("train/entropy", update_info["entropy"], episode)
 
-        if episode % args.log_interval == 0 and episode > 0:
-            log.info(
-                "ep %4d | reward %.1f | ppo_cost %.1f | base_cost %.1f | "
-                "impr %.2f%% | p_loss %.4f | v_loss %.4f | ent %.3f | %.1fs",
-                episode, mean_reward, mean_ppo, mean_base, improvement,
-                update_info["policy_loss"], update_info["value_loss"],
-                update_info["entropy"], dt,
-            )
+        pbar_msg = (f"rwd={mean_reward:.1f} ppo={mean_ppo:.1f} base={mean_base:.1f} "
+                    f"impr={improvement:.2f}% valid={total_valid}")
+        log.info("ep %4d | %s | %.1fs", episode, pbar_msg, dt)
 
         # Checkpoint
         if improvement > best_improvement:
@@ -203,6 +218,8 @@ def parse_args():
     p.add_argument("--value-epochs", type=int, default=10)
     p.add_argument("--policy-epochs", type=int, default=4)
     p.add_argument("--entropy-coef", type=float, default=0.01)
+    p.add_argument("--buffer-rollouts", type=int, default=1,
+                   help="rollouts to accumulate before each PPO update")
     # Training
     p.add_argument("--episodes", type=int, default=10000)
     p.add_argument("--solver-ckpt", type=str, default="checkpoints/refined/best.pt")
