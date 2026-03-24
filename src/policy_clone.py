@@ -62,7 +62,7 @@ def train(args: argparse.Namespace) -> None:
         num_encoder_layers=3,
         num_heads=8,
         feedforward_hidden=512,
-        temperature=2.0,
+        temperature=1.2,
     ).to(device)
 
     optimizer = torch.optim.Adam(policy.parameters(), lr=args.lr)

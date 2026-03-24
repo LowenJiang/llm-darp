@@ -1,6 +1,8 @@
 """
 Self-contained PDPTW Attention Policy
 Based on Kool et al. (2019) - Attention Model for Vehicle Routing
+
+python oracle_main.py --init-checkpoint ../checkpoint/cloned/best.pt --checkpoint-dir ../checkpoint/finetune --epoch 75 --batch-size 256 --train-data-size 50_000 --val-data-size 1000 --lr 1e-4 --log-dir ../runs/finetune --free-vehicle 5 --vehicle-penalty 200
 """
 
 import logging
@@ -626,10 +628,6 @@ class PDPTWAttentionPolicy(nn.Module):
             step += 1
             if max_steps is not None and step >= max_steps:
                 if not td["done"].all():
-                    log.warning(
-                        "Reached max_steps (%d) before all environments finished; returning partial actions.",
-                        max_steps,
-                    )
                     truncated = True
                 break
 

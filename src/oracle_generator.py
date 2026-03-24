@@ -88,6 +88,7 @@ class SFGenerator(Generator):
         device: torch.device | str = "cpu",
         pickup_earliest_min: Optional[int] = None,
         dropoff_latest_min: Optional[int] = None,
+        h3_override: bool = True,
         **kwargs,
     ):
         """
@@ -101,6 +102,9 @@ class SFGenerator(Generator):
             depot_h3: Optional H3 index for the depot; defaults to a central SF H3 cell.
             shuffle_pairs: Whether to shuffle pickup/dropoff pairs in the output.
             seed: Optional deterministic seed for sampling.
+            h3_override: If True (default), node GPS coordinates are snapped to
+                H3 cell centroids matching the travel-time granularity.  If False,
+                raw GPS coordinates from the CSV are used for ``locs``.
             pickup_earliest_min: If set, only keep CSV trips whose pickup window
                 start >= this value (minutes after midnight).
             dropoff_latest_min: If set, only keep CSV trips whose dropoff window
@@ -119,6 +123,7 @@ class SFGenerator(Generator):
         self.pickup_earliest_min = pickup_earliest_min
         self.dropoff_latest_min = dropoff_latest_min
         self.demand_per_customer = demand_per_customer
+        self.h3_override = h3_override
         self.shuffle_pairs = shuffle_pairs
         self.csv_path = (
             Path(csv_path) if csv_path is not None else Path(__file__).with_name("traveler_trip_types_res_7.csv")
@@ -586,9 +591,12 @@ class SFGenerator(Generator):
                 "dropoff_tw": torch.tensor(
                     [t["dropoff_tw"] for t in trips], dtype=torch.float32
                 ),  # [n_trips, 2]
-                # Use H3 cell centroids instead of raw GPS — matches cost granularity
-                "origin_gps": centroids_cpu[origin_h3_idx],   # [n_trips, 2]
-                "dest_gps": centroids_cpu[dest_h3_idx],       # [n_trips, 2]
+                "origin_gps": centroids_cpu[origin_h3_idx] if self.h3_override else torch.tensor(
+                    [t["origin_gps"] for t in trips], dtype=torch.float32
+                ),   # [n_trips, 2]
+                "dest_gps": centroids_cpu[dest_h3_idx] if self.h3_override else torch.tensor(
+                    [t["destination_gps"] for t in trips], dtype=torch.float32
+                ),       # [n_trips, 2]
                 "flex_idx": torch.tensor(
                     [self._flexibility_to_index(t["flexibility"]) for t in trips],
                     dtype=torch.float32,

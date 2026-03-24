@@ -495,12 +495,10 @@ class DVRPEnv(gym.Env):
                     max_vehicles=self.max_vehicles,
                     time_limit_seconds=self.solver_time_limit,
                 )
-                cost = result["total_time"]
+                cost = float(result["total_time"])
                 if cost == float("inf"):
                     solver_failures[b] = True
-                    new_costs[b] = cost
-                else:
-                    new_costs[b] = cost
+                new_costs[b] = cost
 
         rewards = self.previous_cost - new_costs - patience_penalties
         rewards = torch.where(
