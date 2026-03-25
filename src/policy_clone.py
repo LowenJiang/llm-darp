@@ -79,7 +79,7 @@ def train(args: argparse.Namespace) -> None:
         checkpoint_path = Path(args.resume_path).expanduser() if args.resume_path else checkpoint_dir / "latest.pt"
         checkpoint = load_checkpoint(checkpoint_path, device)
         policy.load_state_dict(checkpoint["policy_state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        #optimizer.load_state_dict(checkpoint["optimizer_state_dict"]) #? Do we need to load optimizer state dict? The model is RL trained, so the optimzer might be different
         best_loss = float(checkpoint.get("best_loss", checkpoint.get("loss", best_loss)))
         start_epoch = int(checkpoint.get("epoch", -1)) + 1
         log.info("Resuming from %s (epoch %d)", checkpoint_path, start_epoch + 1)
@@ -179,20 +179,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=64, help="Batch size.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
     parser.add_argument("--grad-clip", type=float, default=1.0, help="Gradient clip norm.")
-    parser.add_argument(
-        "--plot-path",
+    parser.add_argument("--plot-path",
         type=str,
         default="runs/pdptw_clone/train_curve.png",
         help="Path to save training curve (PNG).",
     )
-    parser.add_argument(
-        "--checkpoint-dir",
+    parser.add_argument("--checkpoint-dir",
         type=str,
         default="checkpoints/pdptw_clone",
         help="Directory to save checkpoints.",
     )
-    parser.add_argument(
-        "--resume",
+    parser.add_argument("--resume",
         action="store_true",
         help="Resume training from a checkpoint.",
     )
