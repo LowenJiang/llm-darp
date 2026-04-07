@@ -1,6 +1,8 @@
 """
 Self-contained PDPTW Attention Policy
 Based on Kool et al. (2019) - Attention Model for Vehicle Routing
+
+python oracle_main.py --init-checkpoint ../checkpoint/cloned/best.pt --checkpoint-dir ../checkpoint/finetune --epoch 75 --batch-size 256 --train-data-size 50_000 --val-data-size 1000 --lr 1e-4 --log-dir ../runs/finetune --free-vehicle 5 --vehicle-penalty 200
 """
 
 import logging
@@ -319,29 +321,110 @@ class GraphAttentionNetwork(nn.Module):
 # =============================================================================
 
 class PDPTWInitEmbedding(nn.Module):
-    """Initial embedding: H3 travel times + demand + time windows."""
-    def __init__(self, embed_dim: int, num_h3: int = 31):
+    """Initial embedding: node features + partner features + pair travel time."""
+    def __init__(self, embed_dim: int):
         super().__init__()
-        self.project = nn.Linear(num_h3 + 3, embed_dim)
+        # 2 (coords) + 2 (tw) + 1 (demand) + 2 (partner coords) + 2 (partner tw) + 1 (pair travel) = 10
+        self.project = nn.Linear(10, embed_dim)
 
     def forward(self, td: TensorDict) -> Tensor:
-        h3_feats = gather_by_index(td["travel_time_matrix"], td["h3_indices"], dim=1)
-        demand = td["demand"].unsqueeze(-1)
-        time_windows = td["time_windows"]
-        return self.project(torch.cat([h3_feats, demand, time_windows], dim=-1))
+        locs = td["locs"]  # [B, 2N+1, 2] -- includes depot at index 0
+        B, n, _ = locs.shape
+        device = locs.device
+
+        # Instance-wise min-max normalisation of coordinates to [0, 1]
+        loc_min = locs.min(dim=1, keepdim=True).values
+        loc_max = locs.max(dim=1, keepdim=True).values
+        loc_range = (loc_max - loc_min).clamp(min=1e-6)
+        norm_locs = (locs - loc_min) / loc_range  # [B, 2N+1, 2]
+
+        time_windows = td["time_windows"]  # [B, 2N+1, 2] (minutes)
+        # Normalise time windows to [0, 1] using instance min/max
+        tw_min = time_windows.min(dim=1, keepdim=True).values.min(dim=-1, keepdim=True).values
+        tw_max = time_windows.max(dim=1, keepdim=True).values.max(dim=-1, keepdim=True).values
+        tw_range = (tw_max - tw_min).clamp(min=1e-6)
+        norm_tw = (time_windows - tw_min) / tw_range  # [B, 2N+1, 2]
+
+        demand = td["demand"].unsqueeze(-1)  # [B, 2N+1, 1]
+
+        # Build partner index: depot→depot, 1↔2, 3↔4, ...
+        partner_idx = torch.arange(n, device=device)
+        partner_idx[1::2] = torch.arange(2, n, 2, device=device)  # pickup→delivery
+        partner_idx[2::2] = torch.arange(1, n, 2, device=device)  # delivery→pickup
+
+        partner_locs = norm_locs[:, partner_idx]  # [B, n, 2]
+        partner_tw = norm_tw[:, partner_idx]      # [B, n, 2]
+
+        # Pair travel time (always pickup→delivery direction)
+        h3 = td["h3_indices"]  # [B, n]
+        ttm = td["travel_time_matrix"]  # [B, H, H]
+        pickup_h3 = h3[:, 1::2]   # [B, num_pairs]
+        delivery_h3 = h3[:, 2::2]  # [B, num_pairs]
+        # Gather row for each pickup, then column for each delivery
+        pickup_rows = ttm.gather(1, pickup_h3.unsqueeze(-1).expand(-1, -1, ttm.size(2)))  # [B, pairs, H]
+        pair_tt = pickup_rows.gather(2, delivery_h3.unsqueeze(-1)).squeeze(-1)  # [B, pairs]
+        # Normalize by instance max
+        pair_tt = pair_tt / pair_tt.max(dim=1, keepdim=True).values.clamp(min=1e-6)
+        # Assign same value to both pickup and delivery; depot gets 0
+        travel_to_partner = torch.zeros(B, n, device=device)
+        travel_to_partner[:, 1::2] = pair_tt
+        travel_to_partner[:, 2::2] = pair_tt
+
+        return self.project(torch.cat([
+            norm_locs,                          # 2
+            norm_tw,                            # 2
+            demand,                             # 1
+            partner_locs,                       # 2
+            partner_tw,                         # 2
+            travel_to_partner.unsqueeze(-1),    # 1
+        ], dim=-1))  # [B, n, 10]
 
 
 class PDPTWContextEmbedding(nn.Module):
-    """Context: current node + capacity + time + step."""
+    """6-signal context embedding: graph, current node, depot, time, masked, pending."""
     def __init__(self, embed_dim: int):
         super().__init__()
-        self.project_context = nn.Linear(embed_dim + 3, embed_dim, bias=True)
+        self.w_time = nn.Parameter(torch.randn(embed_dim) * 0.01)
+        self.mlp = nn.Sequential(
+            nn.Linear(6 * embed_dim, 2 * embed_dim),
+            nn.ReLU(),
+            nn.Linear(2 * embed_dim, embed_dim),
+        )
 
     def forward(self, embeddings: Tensor, td: TensorDict) -> Tensor:
-        cur_node = gather_by_index(embeddings, td["current_node"])
-        remaining_cap = td["vehicle_capacity"] - td["used_capacity"]
-        context = torch.cat([cur_node, remaining_cap, td["current_time"], td["i"]], dim=-1)
-        return self.project_context(context)
+        B, n, d = embeddings.shape
+
+        # Signal 1: graph embedding (mean over all nodes)
+        graph_emb = embeddings.mean(dim=1)  # [B, d]
+
+        # Signal 2: current node embedding
+        cur_node_emb = gather_by_index(embeddings, td["current_node"])  # [B, d]
+
+        # Signal 3: depot embedding
+        depot_emb = embeddings[:, 0, :]  # [B, d]
+
+        # Signal 4: time signal (scalar current_time * learnable vector)
+        time_signal = td["current_time"] * self.w_time  # [B, d]
+
+        # Signal 5: masked-node embedding (mean of infeasible nodes)
+        action_mask = td["action_mask"]  # [B, n] True=feasible
+        infeasible = ~action_mask  # True=infeasible
+        inf_count = infeasible.float().sum(dim=-1, keepdim=True).clamp(min=1)  # [B, 1]
+        masked_emb = (embeddings * infeasible.unsqueeze(-1).float()).sum(dim=1) / inf_count  # [B, d]
+
+        # Signal 6: pending-node embedding (mean of picked-up-but-not-yet-delivered)
+        # pending_schedule is [B, capacity] with node indices; 0 = empty slot
+        pending_idx = td["pending_schedule"]  # [B, capacity]
+        pending_mask = (pending_idx != 0).float()  # [B, capacity]
+        pend_count = pending_mask.sum(dim=-1, keepdim=True).clamp(min=1)  # [B, 1]
+        # Gather embeddings at pending indices and weight by mask
+        pending_idx_exp = pending_idx.unsqueeze(-1).expand(-1, -1, d)  # [B, capacity, d]
+        pending_gathered = embeddings.gather(1, pending_idx_exp)  # [B, capacity, d]
+        pending_emb = (pending_gathered * pending_mask.unsqueeze(-1)).sum(dim=1) / pend_count  # [B, d]
+
+        # Concatenate and project through 2-layer MLP
+        context = torch.cat([graph_emb, cur_node_emb, depot_emb, time_signal, masked_emb, pending_emb], dim=-1)  # [B, 6d]
+        return self.mlp(context)  # [B, d]
 
 
 class StaticEmbedding(nn.Module):
@@ -384,13 +467,12 @@ class PrecomputedCache:
 class PDPTWAttentionPolicy(nn.Module):
     """
     Attention Model Policy for PDPTW.
-    
+
     Args:
         embed_dim: Embedding dimension
-        num_encoder_layers: Number of encoder layers  
+        num_encoder_layers: Number of encoder layers
         num_heads: Number of attention heads
         feedforward_hidden: FFN hidden dimension
-        num_h3: Number of H3 cells
         temperature: Softmax temperature
         tanh_clipping: Logit clipping
         train_decode_type: Training decode strategy
@@ -405,8 +487,6 @@ class PDPTWAttentionPolicy(nn.Module):
         num_heads: int = 8,
         feedforward_hidden: int = 512,
         normalization: str = "batch",
-        num_h3: int = 31,
-        use_graph_context: bool = True,
         temperature: float = 1.0,
         tanh_clipping: float = 10.0,
         mask_logits: bool = True,
@@ -414,12 +494,12 @@ class PDPTWAttentionPolicy(nn.Module):
         val_decode_type: str = "greedy",
         test_decode_type: str = "greedy",
         check_nan: bool = True,
+        **kwargs,
     ):
         super().__init__()
-        
+
         self.embed_dim = embed_dim
         self.num_heads = num_heads
-        self.use_graph_context = use_graph_context
         self.temperature = temperature
         self.tanh_clipping = tanh_clipping
         self.mask_logits = mask_logits
@@ -428,7 +508,7 @@ class PDPTWAttentionPolicy(nn.Module):
         self.test_decode_type = test_decode_type
 
         # Encoder
-        self.init_embedding = PDPTWInitEmbedding(embed_dim, num_h3)
+        self.init_embedding = PDPTWInitEmbedding(embed_dim)
         self.encoder = GraphAttentionNetwork(num_heads, embed_dim, num_encoder_layers, normalization, feedforward_hidden)
 
         # Decoder
@@ -436,7 +516,6 @@ class PDPTWAttentionPolicy(nn.Module):
         self.dynamic_embedding = StaticEmbedding()
         self.pointer = PointerAttention(embed_dim, num_heads, check_nan=check_nan)
         self.project_node_embeddings = nn.Linear(embed_dim, 3 * embed_dim, bias=False)
-        self.project_fixed_context = nn.Linear(embed_dim, embed_dim, bias=False)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -456,15 +535,11 @@ class PDPTWAttentionPolicy(nn.Module):
     def _precompute_cache(self, embeddings: Tensor) -> PrecomputedCache:
         """Precompute K, V, logit_key."""
         k, v, l = self.project_node_embeddings(embeddings).chunk(3, dim=-1)
-        ctx = self.project_fixed_context(embeddings.mean(1)) if self.use_graph_context else 0
-        return PrecomputedCache(embeddings, ctx, k, v, l)
+        return PrecomputedCache(embeddings, 0, k, v, l)
 
     def _compute_query(self, cache: PrecomputedCache, td: TensorDict) -> Tensor:
         """Compute query."""
-        ctx = cache.graph_context
-        if td.dim() == 2 and isinstance(ctx, Tensor):
-            ctx = ctx.unsqueeze(1)
-        q = self.context_embedding(cache.node_embeddings, td) + ctx
+        q = self.context_embedding(cache.node_embeddings, td)
         return q.unsqueeze(1) if q.ndim == 2 else q
 
     def _compute_kv(self, cache: PrecomputedCache, td: TensorDict) -> Tuple[Tensor, Tensor, Tensor]:
@@ -553,10 +628,6 @@ class PDPTWAttentionPolicy(nn.Module):
             step += 1
             if max_steps is not None and step >= max_steps:
                 if not td["done"].all():
-                    log.warning(
-                        "Reached max_steps (%d) before all environments finished; returning partial actions.",
-                        max_steps,
-                    )
                     truncated = True
                 break
 

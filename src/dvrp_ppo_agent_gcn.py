@@ -22,6 +22,7 @@ from tqdm import tqdm
 # ==============================================================================
 
 class GCN(nn.Module):
+    # TODO: The travel time should be inverse with connectivity strength no?
     def __init__(self, in_dim, hidden_dim, out_dim, travel_time_matrix):
         super().__init__()
         self.register_buffer("travel_time_matrix", travel_time_matrix)
@@ -50,7 +51,8 @@ class TripRequestEmbeddingModel(nn.Module):
         gcn_hidden=32,
         gcn_out=32,
         time_embed_dim=16,
-        time_vocab_size=500,  # you must set this appropriately
+        time_vocab_size=20, 
+        # changed to the discrete bins as in state space. Properly set the time-vocab to be coherent with the time slots
         num_heads=4,
         num_layers=3,
         transformer_embed_dim=80
@@ -59,7 +61,7 @@ class TripRequestEmbeddingModel(nn.Module):
 
         num_nodes = travel_time_matrix.shape[0]
         self.time_vocab_size = time_vocab_size  # Store for clamping in forward
-
+        
         # Node features (identity)
         self.register_buffer("node_features", torch.eye(num_nodes))
 
@@ -72,7 +74,7 @@ class TripRequestEmbeddingModel(nn.Module):
         )
 
         # Time embeddings (two fields per TW)
-        self.pickup_embed  = nn.Embedding(time_vocab_size, time_embed_dim)
+        self.pickup_embed  = nn.Embedding(time_vocab_size, time_embed_dim) 
         self.dropoff_embed = nn.Embedding(time_vocab_size, time_embed_dim)
 
         # Transformer Encoder
@@ -85,7 +87,8 @@ class TripRequestEmbeddingModel(nn.Module):
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers)
 
         # Projection into transformer dimension
-        total_dim = gcn_out * 2 + time_embed_dim * 4
+        total_dim = gcn_out * 2 + time_embed_dim * 4 #-> 128
+
         self.project = nn.Linear(total_dim, transformer_embed_dim)
 
     def forward(self, states):
@@ -101,14 +104,15 @@ class TripRequestEmbeddingModel(nn.Module):
         # Col 0: h3_pickup, Col 1: pickup_tw_early, Col 2: pickup_tw_late
         # Col 3: h3_dropoff, Col 4: dropoff_tw_early, Col 5: dropoff_tw_late
         origin_idx = states[..., 0].long()      # h3_pickup
-        pickup_tw_early = states[..., 1].long()  # pickup_tw_early
-        pickup_tw_late  = states[..., 2].long()  # pickup_tw_late
+        pickup_tw_early = (states[..., 1].long() - 7*60 )//30  # pickup_tw_early
+        pickup_tw_late  = (states[..., 2].long() - 7*60)//30  # pickup_tw_late
         dest_idx   = states[..., 3].long()      # h3_dropoff
-        drop_tw_early   = states[..., 4].long()  # dropoff_tw_early
-        drop_tw_late    = states[..., 5].long()  # dropoff_tw_late
+        drop_tw_early   = (states[..., 4].long() - 7*60)//30  # dropoff_tw_early
+        drop_tw_late    = (states[..., 5].long() - 7*60)//30  # dropoff_tw_late
 
         # Clamp time window indices to valid range [0, time_vocab_size-1]
         max_idx = self.time_vocab_size - 1
+
 
         # Debug: Check for out-of-range values before clamping
         if pickup_tw_early.max() > max_idx or pickup_tw_late.max() > max_idx or \
@@ -117,7 +121,7 @@ class TripRequestEmbeddingModel(nn.Module):
             print(f"  pickup_tw range: [{pickup_tw_early.min()}, {pickup_tw_early.max()}], [{pickup_tw_late.min()}, {pickup_tw_late.max()}]")
             print(f"  dropoff_tw range: [{drop_tw_early.min()}, {drop_tw_early.max()}], [{drop_tw_late.min()}, {drop_tw_late.max()}]")
 
-        pickup_tw_early = torch.clamp(pickup_tw_early, 0, max_idx)
+        pickup_tw_early = torch.clamp(pickup_tw_early , 0, max_idx) 
         pickup_tw_late = torch.clamp(pickup_tw_late, 0, max_idx)
         drop_tw_early = torch.clamp(drop_tw_early, 0, max_idx)
         drop_tw_late = torch.clamp(drop_tw_late, 0, max_idx)
@@ -146,12 +150,16 @@ class TripRequestEmbeddingModel(nn.Module):
         padding_mask = (states.abs().sum(dim=-1) == 0)   # shape (B, C)
         # zero the embeddings
         trip_emb = trip_emb.masked_fill(padding_mask.unsqueeze(-1), 0.0)
+        #print(trip_emb.shape)
+        
+        #raise AssertionError
         # (4.5) project into transformer dimension
         trip_emb = self.project(trip_emb)
 
         # (5) Transformer
         out = self.transformer(trip_emb, src_key_padding_mask=padding_mask)  # (B,C,transformer_dim)
-
+        #print(out.shape)
+        #raise AssertionError
         return out
 
 class PolicyNetwork(nn.Module):
@@ -159,7 +167,7 @@ class PolicyNetwork(nn.Module):
     Policy network (Actor) for PPO.
 
     Input: State (state_rows, 2) flattened to state_dim-dimensional vector
-           For SF dataset with 207 locations: (606, 2) -> 1212-dimensional
+           For SF dataset with 31 locations: (31, 2) -> 1212-dimensional #! THIS IS INCORRECT. Lets read the implementation
     Output: Action probabilities over discrete actions
     """
 
@@ -169,7 +177,7 @@ class PolicyNetwork(nn.Module):
         gcn_hidden: int = 32,
         gcn_out: int = 32,
         time_embed_dim: int = 16,
-        time_vocab_size=500,
+        time_vocab_size=20,
         transformer_embed_dim: int = 64,
         action_dim: int = 16,
         hidden_dim: int = 512,   # MLP Hidden Layer Size
@@ -193,12 +201,13 @@ class PolicyNetwork(nn.Module):
         )
 
     def forward(self, states):
-        # Step 1: Encode Graph to vector
-        state_vector = self.backbone(states)  # (B, C, D)
-        state_vector = state_vector.mean(dim=1)  # (B, D)
+        # Step 1: Encode Graph to vector 
+        state_vector = self.backbone(states)  # (B, C, D) 
+        state_vector = state_vector.mean(dim=1)  # (B, D) #! Taking the graph aggregate 
         # Step 2: MLP
+        #print(self.network(state_vector).shape)
+        #raise AssertionError
         return self.network(state_vector)
-
 
 class ValueNetwork(nn.Module):
     """
@@ -208,6 +217,7 @@ class ValueNetwork(nn.Module):
            For SF dataset with 207 locations: (606, 2) -> 1212-dimensional
     Output: State value estimation
     """
+
 
     def __init__(
         self,
@@ -241,7 +251,6 @@ class ValueNetwork(nn.Module):
         state_vector = self.backbone(states)  # (B, C, D)
         state_vector = state_vector.mean(dim=1)  # (B, D)
         return self.network(state_vector)
-
 
 class ActorCritic(nn.Module):
     """
@@ -291,11 +300,16 @@ class ActorCritic(nn.Module):
         """
         # Policy network: action logits
         action_logits = self.policy_network(state)
-        action_probs = torch.softmax(action_logits, dim=-1)
+
+        #? Still need to use softmax to turn into probabilities
+        mod = torch.Tensor([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+
+        action_logits += torch.Tensor(mod)
 
         # Value network: state value
         state_value = self.value_network(state)
 
+        action_probs = torch.softmax(action_logits, dim=-1)
         return action_probs, state_value
     
     def mask_action(self, action_probs, mask, eps=0):
@@ -313,9 +327,10 @@ class ActorCritic(nn.Module):
             Combined action probabilities
         """
 
-        masked_probs = mask * action_probs
+        masked_probs = mask * action_probs # 1-> allow, 0->dont allow
         masked_probs = masked_probs / masked_probs.sum()
-        return (1-eps) * masked_probs + eps * action_probs
+        return (1-eps) * masked_probs + eps * action_probs #? So eps is reweighting on the mask; not on personality?
+        # That makes sense
 
         """
         unmasked_count = mask.sum()
@@ -356,7 +371,7 @@ class ActorCritic(nn.Module):
 
         Args:
             state: State tensor of shape (state_rows, 2)
-                   For SF dataset: (606, 2)
+                   For SF dataset: (606, 2) #! The resolution is 31 for h3 matrix at res-7
             mask: Action mask tensor of shape (state_rows, action_dim) where 1 = allowed, 0 = masked
             epsilon: Epsilon for epsilon-greedy masking (forced exploration into masked actions)
 
@@ -366,8 +381,8 @@ class ActorCritic(nn.Module):
             value: State value estimation
         """
         # Add batch dimension
-        state = state.unsqueeze(0)
-
+        #state = state.unsqueeze(0) -> [2,30,6]
+        print(state.shape)
         action_probs, state_value = self.forward(state)
 
         # Apply mask with epsilon-greedy exploration
@@ -381,8 +396,10 @@ class ActorCritic(nn.Module):
         dist = Categorical(action_probs)
         action = dist.sample()
         log_prob = dist.log_prob(action)
-
-        return action.item(), log_prob, state_value.squeeze()
+        #print(action)
+        #print(log_prob)
+        #print(state_value)
+        return action, log_prob, state_value
 
     def evaluate(
         self, states: torch.Tensor, actions: torch.Tensor
@@ -400,6 +417,7 @@ class ActorCritic(nn.Module):
             state_values: State values
             entropy: Entropy of action distribution
         """
+
         action_probs, state_values = self.forward(states)
 
         dist = Categorical(action_probs)
@@ -469,6 +487,7 @@ class PPOAgent:
         self.rewards: List[float] = []
         self.values: List[torch.Tensor] = []
         self.dones: List[bool] = []
+        #self.masks: List[torch.Tensor] = []
 
     def select_action(
         self,
@@ -551,7 +570,7 @@ class PPOAgent:
 
                 action_probs, state_values = self.policy.forward(state_tensor)
 
-                # Safety: Handle NaNs from network output (exploding gradients)
+                # Safety: Handle NaNs from network output (explo ding gradients)
                 #if torch.isnan(action_probs).any():
                     # Fallback to uniform distribution if network breaks
                  #   action_probs = torch.ones_like(action_probs) / action_probs.shape[1]
@@ -593,6 +612,9 @@ class PPOAgent:
                     # Normalize to sum to 1
                     masked_probs = masked_probs / (sum_probs + 1e-8)
 
+                else:
+                    masked_probs = action_probs
+
                 # Final Safety: Clamp to remove 0s or negatives (numerical errors)
                 # Categorical requires > 0 and sum=1 (implied, but good to be safe)
                 masked_probs = torch.clamp(masked_probs, min=1e-8)
@@ -601,6 +623,7 @@ class PPOAgent:
                 # 4. Sample Actions (epsilon: ignore mask)
                 try:
                     if masks is not None and epsilon > 0.0:
+                        #! Check this line: epsilon = 1: action_probs; epsilon = 0: masked_probs 🙆
                         mixed_probs = (1.0 - float(epsilon)) * masked_probs + float(epsilon) * action_probs
                         mixed_probs = torch.clamp(mixed_probs, min=1e-8)
                         mixed_probs = mixed_probs / mixed_probs.sum(dim=1, keepdim=True)
@@ -618,6 +641,9 @@ class PPOAgent:
                     actions = torch.zeros(batch_size, device=self.device, dtype=torch.long)
                     log_probs = torch.zeros(batch_size, device=self.device)
 
+                dist_unmasked = Categorical(probs=action_probs)
+                log_probs = dist_unmasked.log_prob(actions)
+
             # 5. Store data
             state_cpu = state_tensor.cpu()
             actions_cpu = actions.cpu()
@@ -629,6 +655,8 @@ class PPOAgent:
                 self.actions.append(actions_cpu[i].item())
                 self.log_probs.append(log_probs_cpu[i])
                 self.values.append(values_cpu[i])
+
+
 
             return actions.cpu().numpy()
 
@@ -680,6 +708,8 @@ class PPOAgent:
         # ========================================
         # Convert buffers to tensors
         # ========================================
+        #print(f"{self.state}")
+        #print(f"{self.actions}")
         states = torch.stack(self.states).to(self.device)
         actions = torch.LongTensor(self.actions).to(self.device)
         old_log_probs = torch.stack(self.log_probs).to(self.device)
@@ -687,7 +717,8 @@ class PPOAgent:
         old_values = torch.stack(self.values).to(self.device)
         dones = torch.FloatTensor(self.dones).to(self.device)
 
-        num_samples = len(states)
+        num_samples = len(states) # this returns the 1d episode length * num_envs
+        #print(f"{num_samples}")
 
         # ========================================
         # 1. TRAIN VALUE FUNCTION ONLY
@@ -701,28 +732,39 @@ class PPOAgent:
         ])
         total_value_loss = 0.0
         old_values = None
+        num_value_updates = 0
 
         print("\tTraining value network...")
         for value_epoch in tqdm(range(num_value_epochs)):
             if value_epoch == 0:
                 with torch.no_grad():
                     _, old_values = self.policy.forward(states)
+
+                if num_envs is not None and num_steps is not None:
+                    _, returns = self._compute_gae_parallel(rewards, old_values, dones, num_envs, num_steps)
+                else:
+                    _, returns = self._compute_gae(rewards, old_values, dones)
+
+
             idx = np.random.permutation(num_samples)
+            
             for start in tqdm(range(0, num_samples, batch_size), leave = False):
                 end = min(start + batch_size, num_samples)
                 batch_idx = idx[start:end]
-
                 batch_states = states[batch_idx]
                 batch_rewards = rewards[batch_idx]
                 batch_dones = dones[batch_idx]
                 batch_old_values = old_values[batch_idx]
+
+                batch_returns = returns[batch_idx]
 
                 # Compute updated values
                 #with torch.no_grad():
                  #   _, new_values = self.policy.forward(batch_states)
 
                 # Compute new returns using updated values (bootstrapped)
-                _, batch_returns = self._compute_gae(batch_rewards, batch_old_values.squeeze(), batch_dones)
+                #? Does the permuted idx and batch_rewards serve well for the GAE input?
+                #_, batch_returns = self._compute_gae(batch_rewards, batch_old_values.squeeze(), batch_dones)
 
                 # Forward again for gradient
                 _, predicted_values = self.policy.forward(batch_states)
@@ -735,6 +777,9 @@ class PPOAgent:
                 value_loss.backward()
                 nn.utils.clip_grad_norm_(value_params, self.max_grad_norm)
                 value_optimizer.step()
+                num_value_updates += 1
+
+
 
         # ========================================
         # 2. COMPUTE ADVANTAGES USING NEW VALUE FUNCTION
@@ -743,16 +788,13 @@ class PPOAgent:
             _, updated_values = self.policy.forward(states)
             updated_values = updated_values.squeeze()
 
-        # Use parallel GAE if num_envs and num_steps are provided
         if num_envs is not None and num_steps is not None:
             advantages, returns = self._compute_gae_parallel(
-                rewards, updated_values, dones, num_envs, num_steps
-            )
+                rewards, updated_values, dones, num_envs, num_steps)
         else:
             advantages, returns = self._compute_gae(rewards, updated_values, dones)
 
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
         # ========================================
         # 3. UPDATE POLICY VIA PPO CLIPPED OBJECTIVE
         # ========================================
@@ -765,7 +807,7 @@ class PPOAgent:
 
         total_policy_loss = 0
         total_entropy = 0
-        num_updates = 0
+        num_policy_updates = 0
 
         print("\tTraining policy network...")
         for _ in tqdm(range(num_policy_epochs)):
@@ -781,6 +823,7 @@ class PPOAgent:
                 batch_old_log_probs = old_log_probs[batch_idx]
 
                 # Evaluate with current policy
+                #batch_masks = masks_all[batch_idx] if masks_all is not None else None
                 log_probs, _, entropy = self.policy.evaluate(batch_states, batch_actions)
 
                 # PPO ratio
@@ -802,7 +845,7 @@ class PPOAgent:
 
                 total_policy_loss += policy_loss.item()
                 total_entropy += entropy.mean().item()
-                num_updates += 1
+                num_policy_updates += 1
 
         # ========================================
         # Clear buffer and return logs
@@ -810,9 +853,9 @@ class PPOAgent:
         self.clear_buffer()
 
         return {
-            "policy_loss": total_policy_loss / num_updates,
-            "value_loss": total_value_loss / num_updates,
-            "entropy": total_entropy / num_updates,
+            "policy_loss": total_policy_loss / num_policy_updates,
+            "value_loss": total_value_loss / num_value_updates,
+            "entropy": total_entropy / num_policy_updates,
         }
 
     def _compute_gae(
@@ -887,6 +930,11 @@ class PPOAgent:
             advantages: GAE advantages, shape (num_envs * num_steps,)
             returns: Discounted returns, shape (num_envs * num_steps,)
         """
+
+        rewards = rewards.flatten()
+        values = values.flatten()
+        dones = dones.flatten()
+
         total_samples = len(rewards)
 
         # Verify buffer size matches expected
@@ -948,6 +996,7 @@ class PPOAgent:
         self.values.clear()
         self.dones.clear()
 
+
     def save(self, path: str) -> None:
         """Save model to disk."""
         torch.save(
@@ -1005,6 +1054,7 @@ def test_agent():
     action = agent.select_action(state)
     print(f"Selected action: {action}")
 
+
     # Store reward
     agent.store_reward(reward=10.0, done=False)
 
@@ -1023,7 +1073,7 @@ def test_agent():
 
     # Final state
     state = np.zeros((num_trips, 6), dtype=np.float32)
-    state[:, 0] = np.random.randint(0, num_nodes, size=num_trips)
+    state[:, 0] = np.random.randint(0, num_nodes, size=num_trips) #loc
     state[:, 1] = np.random.randint(0, 50, size=num_trips)
     state[:, 2] = np.random.randint(0, 50, size=num_trips)
     state[:, 3] = np.random.randint(0, num_nodes, size=num_trips)
@@ -1032,7 +1082,6 @@ def test_agent():
 
     action = agent.select_action(state)
     agent.store_reward(reward=5.0, done=True)
-
     # Update agent
     print("\nPerforming PPO update...")
     stats = agent.update(num_value_epochs=5, num_policy_epochs=3, batch_size=2)

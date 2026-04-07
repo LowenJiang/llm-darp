@@ -79,12 +79,15 @@ class SFGenerator(Generator):
         csv_path: Optional[str | Path] = None,
         travel_time_matrix_path: Optional[str | Path] = None,
         num_customers: int = 30,
-        perturbation: int = 0,
+        perturbation: int = 30, # turn to 30 for enrichment; turn to 0 for off
         vehicle_capacity: int = 8,
         demand_per_customer: int = 1,
         depot_h3: Optional[str] = None,
         shuffle_pairs: bool = False,
         seed: Optional[int] = None,
+        device: torch.device | str = "cpu",
+        pickup_earliest_min: Optional[int] = 7*60,
+        dropoff_latest_min: Optional[int] = 17*60,
         **kwargs,
     ):
         """
@@ -98,11 +101,23 @@ class SFGenerator(Generator):
             depot_h3: Optional H3 index for the depot; defaults to a central SF H3 cell.
             shuffle_pairs: Whether to shuffle pickup/dropoff pairs in the output.
             seed: Optional deterministic seed for sampling.
+            pickup_earliest_min: If set, only keep CSV trips whose pickup window
+                start >= this value (minutes after midnight).
+            dropoff_latest_min: If set, only keep CSV trips whose dropoff window
+                end <= this value (minutes after midnight).
         """
         super().__init__(**kwargs)
+
+        # Normalize device to ensure it has an index
+        self.device = torch.device(device) if isinstance(device, str) else device
+        if self.device.type in ("mps", "cuda") and self.device.index is None:
+            self.device = torch.device(f"{self.device.type}:0")
+
         self.num_customers = num_customers
         self.perturbation = max(0, perturbation)
         self.vehicle_capacity = vehicle_capacity
+        self.pickup_earliest_min = pickup_earliest_min
+        self.dropoff_latest_min = dropoff_latest_min
         self.demand_per_customer = demand_per_customer
         self.shuffle_pairs = shuffle_pairs
         self.csv_path = (
@@ -140,6 +155,14 @@ class SFGenerator(Generator):
         
         self._h3_to_gps = {} # To store GPS coordinates for rendering
 
+        # Precompute H3 cell centroids [num_cells, 2] — (lat, lng)
+        # All nodes sharing an H3 cell get identical spatial embeddings,
+        # matching the granularity of the travel-time cost function.
+        self._h3_centroids = self._build_centroid_table()
+
+        # CPU copy of travel-time matrix for fast perturbation feasibility checks
+        self._travel_time_cpu = self.travel_time_matrix.cpu()
+
         self._trips_by_traveler = self._load_trips()
         expected_ids = set(range(1, self.num_customers + 1))
         if not expected_ids.issubset(self._trips_by_traveler):
@@ -149,6 +172,7 @@ class SFGenerator(Generator):
                 "Ensure the CSV contains rows for the requested IDs."
             )
         self._traveler_ids = sorted(expected_ids)
+        self._precompute_trip_arrays()
 
     def _flexibility_to_index(self, flexibility_str: str) -> int:
         """Convert flexibility string to numeric index."""
@@ -165,26 +189,98 @@ class SFGenerator(Generator):
         flat_batch = math.prod(batch_shape)
         num_nodes = self.num_customers * 2
 
-        # H3 indices instead of GPS coordinates
+        # Allocate on CPU for fast batch filling; bulk-transfer to device after loop
         h3_indices = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
-        # We also store GPS coordinates for rendering
         locs = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
         time_windows = torch.zeros(flat_batch, num_nodes, 2, dtype=torch.float32)
         demand = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
-        # User ID tensor - tracks which traveler each node belongs to
         user_id = torch.zeros(flat_batch, num_nodes, dtype=torch.long)
-        # Flexibility tensor - stores numeric flexibility index per node
         flexibility = torch.zeros(flat_batch, num_nodes, dtype=torch.float32)
-        # Trip metadata - store as list of dicts for each batch instance
-        # Each dict maps traveler_id -> trip metadata
-        trip_metadata_batch = []
+        trip_metadata_batch = [{} for _ in range(flat_batch)]
 
-        for instance_idx in range(flat_batch):
-            trip_metadata = {}  # Maps traveler_id -> metadata dict
-            for cust_idx, traveler_id in enumerate(self._traveler_ids):
-                trip = self._sample_trip(traveler_id)
-                # Store trip metadata for this traveler
-                trip_metadata[traveler_id] = {
+        # Vectorized: iterate over 30 customers, batch-sample all instances at once
+        for cust_idx, traveler_id in enumerate(self._traveler_ids):
+            trips = self._trips_by_traveler[traveler_id]
+            arr = self._trip_arrays[traveler_id]
+            n_trips = len(trips)
+
+            # Batch-sample trip indices for all instances
+            if n_trips == 1:
+                trip_indices = torch.zeros(flat_batch, dtype=torch.long)
+            else:
+                trip_indices = torch.randint(
+                    n_trips, (flat_batch,), generator=self.generator
+                )
+
+            # Gather sampled trip fields via batch indexing (all CPU)
+            sampled_origin_h3 = arr["origin_h3_idx"][trip_indices]
+            sampled_dest_h3 = arr["dest_h3_idx"][trip_indices]
+            sampled_pickup_tw = arr["pickup_tw"][trip_indices]    # [flat_batch, 2]
+            sampled_dropoff_tw = arr["dropoff_tw"][trip_indices]  # [flat_batch, 2]
+            sampled_origin_gps = arr["origin_gps"][trip_indices]  # [flat_batch, 2]
+            sampled_dest_gps = arr["dest_gps"][trip_indices]      # [flat_batch, 2]
+            sampled_flex = arr["flex_idx"][trip_indices]           # [flat_batch]
+
+            # Apply perturbation via rejection sampling (fully vectorized)
+            # Sample random deltas, keep only those that preserve the
+            # feasibility constraint: dropoff_early - pickup_late >= travel_time + 15 #! 
+            if self.perturbation > 0:
+                travel_time = self._travel_time_cpu[sampled_origin_h3, sampled_dest_h3]
+                min_gap = travel_time + 15.0
+
+                # Start with no shift applied
+                pickup_deltas = torch.zeros(flat_batch)
+                dropoff_deltas = torch.zeros(flat_batch)
+                unsettled = torch.ones(flat_batch, dtype=torch.bool)
+
+                for _attempt in range(10):
+                    if not unsettled.any():
+                        break
+                    n_open = int(unsettled.sum().item())
+                    # Sample candidate deltas for unsettled instances
+                    cand_p = self._sample_perturbation_batch(n_open)
+                    cand_d = self._sample_perturbation_batch(n_open)
+                    # Compute shifted windows
+                    cand_pickup_tw = self._shift_window_signed(
+                        sampled_pickup_tw[unsettled], cand_p
+                    )
+                    cand_dropoff_tw = self._shift_window_signed(
+                        sampled_dropoff_tw[unsettled], cand_d
+                    )
+                    # Check feasibility: gap >= travel_time + 15
+                    gap = cand_dropoff_tw[:, 0] - cand_pickup_tw[:, 1]
+                    feasible = gap >= min_gap[unsettled]
+                    # Accept feasible candidates
+                    accept_idx = unsettled.nonzero(as_tuple=True)[0][feasible]
+                    pickup_deltas[accept_idx] = cand_p[feasible]
+                    dropoff_deltas[accept_idx] = cand_d[feasible]
+                    unsettled[accept_idx] = False
+
+                # unsettled instances keep delta=0 (original windows are feasible)
+                sampled_pickup_tw = self._shift_window_signed(sampled_pickup_tw, pickup_deltas)
+                sampled_dropoff_tw = self._shift_window_signed(sampled_dropoff_tw, dropoff_deltas)
+
+            pickup_idx = cust_idx * 2
+            dropoff_idx = pickup_idx + 1
+
+            h3_indices[:, pickup_idx] = sampled_origin_h3
+            h3_indices[:, dropoff_idx] = sampled_dest_h3
+            locs[:, pickup_idx] = sampled_origin_gps
+            locs[:, dropoff_idx] = sampled_dest_gps
+            time_windows[:, pickup_idx] = sampled_pickup_tw
+            time_windows[:, dropoff_idx] = sampled_dropoff_tw
+            demand[:, pickup_idx] = self.demand_per_customer
+            demand[:, dropoff_idx] = -self.demand_per_customer
+            user_id[:, pickup_idx] = traveler_id
+            user_id[:, dropoff_idx] = traveler_id
+            flexibility[:, pickup_idx] = sampled_flex
+            flexibility[:, dropoff_idx] = sampled_flex
+
+            # Build trip metadata (Python dicts — fast even in flat_batch loop)
+            indices_list = trip_indices.tolist()
+            for i, idx in enumerate(indices_list):
+                trip = trips[idx]
+                trip_metadata_batch[i][traveler_id] = {
                     "flexibility": trip["flexibility"],
                     "trip_purpose": trip["trip_purpose"],
                     "departure_location": trip["departure_location"],
@@ -192,44 +288,14 @@ class SFGenerator(Generator):
                     "departure_time_window": trip["departure_time_window"],
                     "arrival_time_window": trip["arrival_time_window"],
                 }
-                pickup_window = self._shift_window(
-                    trip["pickup_tw"],
-                    direction="earlier",
-                    delta=self._sample_perturbation_step(),
-                )
-                dropoff_window = self._shift_window(
-                    trip["dropoff_tw"],
-                    direction="later",
-                    delta=self._sample_perturbation_step(),
-                )
 
-                pickup_idx = cust_idx * 2
-                dropoff_idx = pickup_idx + 1
-
-                # Store H3 indices instead of GPS coordinates
-                h3_indices[instance_idx, pickup_idx] = self._h3_to_idx[trip["origin_h3"]]
-                h3_indices[instance_idx, dropoff_idx] = self._h3_to_idx[trip["destination_h3"]]
-                
-                # Store GPS coordinates
-                locs[instance_idx, pickup_idx] = torch.tensor(trip["origin_gps"])
-                locs[instance_idx, dropoff_idx] = torch.tensor(trip["destination_gps"])
-
-                time_windows[instance_idx, pickup_idx] = torch.tensor(pickup_window, dtype=torch.float32)
-                time_windows[instance_idx, dropoff_idx] = torch.tensor(dropoff_window, dtype=torch.float32)
-                demand[instance_idx, pickup_idx] = self.demand_per_customer
-                demand[instance_idx, dropoff_idx] = -self.demand_per_customer
-
-                # Store user_id (traveler_id) for both pickup and dropoff nodes
-                user_id[instance_idx, pickup_idx] = traveler_id
-                user_id[instance_idx, dropoff_idx] = traveler_id
-
-                # Store flexibility index for both pickup and dropoff nodes
-                flex_idx = self._flexibility_to_index(trip["flexibility"])
-                flexibility[instance_idx, pickup_idx] = flex_idx
-                flexibility[instance_idx, dropoff_idx] = flex_idx
-
-            # Store trip metadata for this batch instance
-            trip_metadata_batch.append(trip_metadata)
+        # Bulk transfer to device
+        h3_indices = h3_indices.to(self.device)
+        locs = locs.to(self.device)
+        time_windows = time_windows.to(self.device)
+        demand = demand.to(self.device)
+        user_id = user_id.to(self.device)
+        flexibility = flexibility.to(self.device)
 
         if self.shuffle_pairs and self.num_customers > 1:
             h3_indices, time_windows, demand, locs, user_id, flexibility = self._shuffle_pairs(
@@ -237,32 +303,31 @@ class SFGenerator(Generator):
             )
 
         # Add depot time window
-        depot_tw = torch.zeros(flat_batch, 1, 2, dtype=time_windows.dtype)
+        depot_tw = torch.zeros(flat_batch, 1, 2, dtype=time_windows.dtype, device=self.device)
         depot_tw[:, 0, 1] = float(self.day_minutes)
         time_windows = torch.cat([depot_tw, time_windows], dim=1)
 
         # Add depot H3 index at position 0
-        depot_h3_indices = torch.full((flat_batch, 1), self.depot_h3_idx, dtype=torch.long)
+        depot_h3_indices = torch.full((flat_batch, 1), self.depot_h3_idx, dtype=torch.long, device=self.device)
         h3_indices = torch.cat([depot_h3_indices, h3_indices], dim=1)
-        
-        # Add depot GPS coordinates at position 0
-        depot_gps = self._h3_to_gps.get(self.depot_h3, (37.7833, -122.4167)) # Default to downtown SF if not found
-        depot_locs = torch.tensor(depot_gps, dtype=torch.float32).expand(flat_batch, 1, 2)
+
+        # Add depot GPS coordinates at position 0 (H3 centroid)
+        depot_locs = self._h3_centroids[self.depot_h3_idx].view(1, 1, 2).expand(flat_batch, 1, 2)
         locs = torch.cat([depot_locs, locs], dim=1)
 
         # Add depot user_id (0 for depot)
-        depot_user_id = torch.zeros(flat_batch, 1, dtype=torch.long)
+        depot_user_id = torch.zeros(flat_batch, 1, dtype=torch.long, device=self.device)
         user_id = torch.cat([depot_user_id, user_id], dim=1)
 
         # Add depot demand (0 for depot)
-        depot_demand = torch.zeros(flat_batch, 1, dtype=torch.float32)
+        depot_demand = torch.zeros(flat_batch, 1, dtype=torch.float32, device=self.device)
         demand = torch.cat([depot_demand, demand], dim=1)
 
         # Add depot flexibility (0 for depot)
-        depot_flexibility = torch.zeros(flat_batch, 1, dtype=torch.float32)
+        depot_flexibility = torch.zeros(flat_batch, 1, dtype=torch.float32, device=self.device)
         flexibility = torch.cat([depot_flexibility, flexibility], dim=1)
 
-        capacity = torch.full((flat_batch,), float(self.vehicle_capacity), dtype=torch.float32)
+        capacity = torch.full((flat_batch,), float(self.vehicle_capacity), dtype=torch.float32, device=self.device)
 
         # Reshape for batch dimensions
         h3_indices = h3_indices.view(*batch_shape, num_nodes + 1)
@@ -314,11 +379,21 @@ class SFGenerator(Generator):
         idx_to_h3 = {idx: h3 for idx, h3 in enumerate(h3_cells)}
 
         # Convert to tensor and convert seconds to minutes
-        travel_time_matrix = torch.tensor(df.values, dtype=torch.float32) / 60.0
+        travel_time_matrix = torch.tensor(df.values, dtype=torch.float32, device=self.device) / 60.0
 
         log.info(f"Loaded travel time matrix with {len(h3_cells)} H3 cells")
 
         return h3_to_idx, idx_to_h3, travel_time_matrix
+
+    def _build_centroid_table(self) -> torch.Tensor:
+        """Build a [num_h3_cells, 2] tensor mapping cell index → (lat, lng) centroid."""
+        num_cells = len(self._idx_to_h3)
+        centroids = torch.zeros(num_cells, 2, dtype=torch.float32, device=self.device)
+        for idx, h3_str in self._idx_to_h3.items():
+            lat, lng = h3.cell_to_latlng(h3_str)
+            centroids[idx, 0] = lat
+            centroids[idx, 1] = lng
+        return centroids
 
     def _load_trips(self) -> Dict[int, List[Dict[str, Tuple[int, int] | H3Index]]]:
         if not self.csv_path.exists():
@@ -333,8 +408,6 @@ class SFGenerator(Generator):
         missing_cols = required_columns - set(df.columns)
         if missing_cols:
             raise ValueError(f"Missing columns {missing_cols} in {self.csv_path}")
-
-        df = df[(df["departure_time_window"] >= "14:00-14:00") & (df["departure_time_window"] <= "19:00-19:00")]
 
         trips: Dict[int, List[Dict[str, Tuple[int, int] | H3Index]]] = {}
         for traveler_id, group in df.groupby("traveler_id"):
@@ -357,6 +430,12 @@ class SFGenerator(Generator):
                     
                     origin_gps = parse_gps(origin_gps_str)
                     destination_gps = parse_gps(destination_gps_str)
+
+                    # Filter by time-window bounds (prune pool before sampling)
+                    if self.pickup_earliest_min is not None and pickup_tw[0] < self.pickup_earliest_min:
+                        continue
+                    if self.dropoff_latest_min is not None and dropoff_tw[1] > self.dropoff_latest_min:
+                        continue
 
                     # Validate H3 indices exist in the travel time matrix
                     if origin_h3 not in self._h3_to_idx:
@@ -484,6 +563,65 @@ class SFGenerator(Generator):
         if new_end <= new_start:
             new_end = min(self.day_minutes, new_start + max(duration, 10))
         return int(new_start), int(new_end)
+
+    def _precompute_trip_arrays(self):
+        """Pre-build CPU tensors for each traveler's trips for fast batch sampling."""
+        # H3 centroids are on self.device; move to CPU for batch construction
+        centroids_cpu = self._h3_centroids.cpu()
+        self._trip_arrays = {}
+        for traveler_id in self._traveler_ids:
+            trips = self._trips_by_traveler[traveler_id]
+            origin_h3_idx = torch.tensor(
+                [self._h3_to_idx[t["origin_h3"]] for t in trips], dtype=torch.long
+            )
+            dest_h3_idx = torch.tensor(
+                [self._h3_to_idx[t["destination_h3"]] for t in trips], dtype=torch.long
+            )
+            self._trip_arrays[traveler_id] = {
+                "origin_h3_idx": origin_h3_idx,
+                "dest_h3_idx": dest_h3_idx,
+                "pickup_tw": torch.tensor(
+                    [t["pickup_tw"] for t in trips], dtype=torch.float32
+                ),  # [n_trips, 2]
+                "dropoff_tw": torch.tensor(
+                    [t["dropoff_tw"] for t in trips], dtype=torch.float32
+                ),  # [n_trips, 2]
+                # Use H3 cell centroids instead of raw GPS — matches cost granularity
+                "origin_gps": centroids_cpu[origin_h3_idx],   # [n_trips, 2]
+                "dest_gps": centroids_cpu[dest_h3_idx],       # [n_trips, 2]
+                "flex_idx": torch.tensor(
+                    [self._flexibility_to_index(t["flexibility"]) for t in trips],
+                    dtype=torch.float32,
+                ),  # [n_trips]
+            }
+
+    def _sample_perturbation_batch(self, n: int) -> torch.Tensor:
+        """Sample signed perturbation deltas uniform in [-perturbation, +perturbation] (CPU)."""
+        if self.perturbation <= 0:
+            return torch.zeros(n)
+        return (torch.rand(n, generator=self.generator) * 2 - 1) * self.perturbation
+
+    def _shift_window_signed(
+        self,
+        windows: torch.Tensor,
+        deltas: torch.Tensor,
+    ) -> torch.Tensor:
+        """Shift time windows by signed deltas, preserving window duration.
+
+        Args:
+            windows: [N, 2] time windows (start, end)
+            deltas: [N] signed perturbation (positive = later, negative = earlier)
+
+        Returns:
+            [N, 2] shifted windows clamped to [0, day_minutes]
+        """
+        duration = torch.clamp(windows[:, 1] - windows[:, 0], min=0)
+        new_starts = torch.clamp(windows[:, 0] + deltas, min=0,
+                                 max=float(self.day_minutes))
+        new_ends = torch.clamp(new_starts + duration, max=float(self.day_minutes))
+        # Ensure duration is preserved even when clamped at day end
+        new_starts = torch.clamp(new_ends - duration, min=0)
+        return torch.stack([new_starts, new_ends], dim=-1)
 
     def _randint(self, high: int) -> int:
         if high <= 1:

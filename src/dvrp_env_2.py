@@ -35,7 +35,6 @@ from oracle_policy import PDPTWAttentionPolicy
 from or_tools import darp_solver
 from tensordict.tensordict import TensorDict
 from dvrp_ppo_agent_gcn import PPOAgent
-import copy
 # Node-indexed TensorDict fields that need slicing / concatenation
 NODE_FIELDS = {
     "h3_indices", "time_windows", "demand", "locs",
@@ -171,9 +170,7 @@ class DVRPEnv:
             key = (int(row["traveler_id"]), row["trip_purpose"].strip(),
                    row["departure_location"].strip(), row["arrival_location"].strip(),
                    int(row["pickup_shift_min"]), int(row["dropoff_shift_min"]))
-            self.decision_lookup[key] = [row[row["flexibility"]]=="accept", 
-                                         [row[flex_type]=="accept" for flex_type in flex_cols]]
-                                         
+            self.decision_lookup[key] = row[row["flexibility"]]=="accept"
                 #col: str(row[col]).strip().lower() == "accept" for col in flex_cols #! def wrong
                 
             
@@ -234,17 +231,14 @@ class DVRPEnv:
         #self.upcoming=_slice_nodes(self.pending_requests, pd_indx_next)
 
         shifts = self.action_tensor[action]  # [B, 2]
-        
-        pickup_shifts, dropoff_shifts = shifts[:, 0] , shifts[:, 1] 
+        pickup_shifts, dropoff_shifts = shifts[:, 0], shifts[:, 1]
 
         # --- Acceptance ---
-        #print(shifts)
         accepted = self._get_accepted(pickup_shifts, dropoff_shifts) #! Very Important, check later
 
         # Zero out shifts for rejections; compute patience penalty
-        #! This line is changed for comparison
-        final_p = pickup_shifts * accepted.float() 
-        final_d = dropoff_shifts * accepted.float() 
+        final_p = pickup_shifts * accepted.float()
+        final_d = dropoff_shifts * accepted.float()
         patience = (final_p.abs() + final_d.abs()) * self.patience_factor
 
         # --- Apply perturbation inline ---
@@ -302,7 +296,7 @@ class DVRPEnv:
         for b in range(self.batch_size): 
             uid = int(user_ids[b].item()) 
             meta = _unwrap_metadata(trip_md, b)
-            #print(meta)
+
             if meta is None:
                 print("meta not fonud")
             user_meta = meta.get(uid)
@@ -315,8 +309,7 @@ class DVRPEnv:
                    abs(int(pickup_shifts[b].item())),
                    abs(int(dropoff_shifts[b].item())))
             
-            #print(key)
-            decision = self.decision_lookup.get(key)[0] #! Here directly query is ok
+            decision = self.decision_lookup.get(key) #! Here directly query is ok
 
             if decision is None:
                 print(f"WARNING: Flexibility '{user_meta['flexibility']}' not in CSV")
@@ -421,7 +414,7 @@ def test_env():
     device = 'cpu'
     model_path = "checkpoints/refined/best.pt"
     num_customers = 30
-    num_envs=3
+    num_envs=2
     env = DVRPEnv(num_customers=num_customers, batch_size=num_envs, 
                   traveler_decisions_path=str(decisions_path), model_path=model_path)
     
@@ -431,29 +424,25 @@ def test_env():
         gcn_hidden=16,
         gcn_out=16,
         time_embed_dim=8,
-        time_vocab_size=21,
+        time_vocab_size=50,
         transformer_embed_dim=32,
-        action_dim=16,
+        action_dim=5,
         hidden_dim=64,
         num_heads=2,
         num_layers=2,
         device="cpu"
     )
-    #baseline = env
+    baseline = env
     
     obs, info = env.reset()
-    baseline = copy.deepcopy(env)
-
-
+    #print(obs)
+    #print(f"fixed: {obs['fixed'].shape}, new: {obs['new'].shape}")
     rl = []
     acc = []
     for i in range(num_customers):
         #action = torch.randint(0, 16, (env.batch_size,))
-        action = agent.select_action_batch(obs)
-        #action = 12*np.ones_like(action)
-
+        action = agent.select_action(obs)
         obs, reward, accepted, done, info = env.step(action)
-        agent.store_rewards_batch(rewards=reward, dones=done)
         rl.append(reward)
         acc.append(accepted)
         print(f"Step {i+1}: reward={reward.tolist()}, accepted={info['accepted'].tolist()}, action={action}")
@@ -461,15 +450,9 @@ def test_env():
             break
 
     final_cost = np.array(rl).sum(axis=0)
-    print(f"{final_cost=}")
     baseline_cost = np.array(baseline._evaluate_costs(baseline.pending_requests))
-    print(f"{baseline_cost=}")
-    stats = agent.update(num_value_epochs=5, num_policy_epochs=3, batch_size=10)
-    print(stats)
     print(final_cost)
-    print(f"rl:{torch.stack(rl).sum()}")
-
-    print(f"acceptance rate: {np.array(acc).sum(axis=0)/num_customers}")
+    print(f"acceptance rate: {np.array(acc).sum(axis=0)/num_customers/num_envs}")
     print(f"Improvement Rate: {(final_cost + baseline_cost)/baseline_cost*100} %")
     
 
